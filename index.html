@@ -3124,7 +3124,10 @@
     <!-- JavaScript - All Modules -->
     <!-- CRITICAL SCRIPTS - Load immediately (required for basic functionality) -->
     <!-- Core Modules (Consolidated) -->
+    <script src="src/js/core-constants.js"></script>
     <script src="src/js/core-utils.js"></script>
+    <script src="src/js/core-helpers.js"></script>
+    <script src="src/js/core-security.js"></script>
     <script src="src/js/core-ui.js"></script>
     <script src="src/js/core-validation.js"></script>
     <script src="src/js/core-features.js"></script>
@@ -3135,20 +3138,18 @@
     <script src="src/js/core-analytics.js"></script>
     <script src="src/js/core-enhancements.js"></script>
     <script src="src/js/core-performance.js"></script>
-    <!-- Legacy compatibility shims -->
-    <script src="src/js/constants.js"></script>
-    <script src="src/js/utils.js"></script>
-    <script src="src/js/helper-functions.js"></script>
     <!-- Main Application -->
     <script src="src/js/api-client.js"></script>
     <script src="src/js/app.js"></script>
     <script src="src/js/drag-drop-scheduler.js"></script>
     <script src="src/js/bug-fixes.js"></script>
-    <script src="src/js/csrf-protection.js"></script>
-    <script src="src/js/missing-functions.js"></script>
 
     <!-- NON-CRITICAL SCRIPTS - Deferred loading (enhance functionality) -->
     <!-- CONSOLIDATED MODULES - The following are now in core-*.js files: -->
+    <!-- core-constants.js: constants.js, app-constants.js -->
+    <!-- core-utils.js: logger.js, dom-utils.js, storage-utils.js -->
+    <!-- core-helpers.js: helper-functions.js, code-quality-utils.js, validation-helper.js, loading-helper.js, missing-functions.js -->
+    <!-- core-security.js: csrf-protection.js, password-hashing-util.js, session-timeout.js, sanitize-helper.js, quick-actions.js -->
     <!-- core-notifications.js: notification-center.js, notification-service.js -->
     <!-- core-calendar.js: enhanced-calendar.js, staff-availability-calendar.js -->
     <!-- core-analytics.js: analytics-charts.js, data-visualization.js, export-reports.js -->
@@ -3159,21 +3160,15 @@
     <!-- core-features.js: boss-features.js, remaining-features.js -->
     <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script defer src="src/js/mechanics-improvements.js"></script>
-    <script defer src="src/js/password-hashing-util.js"></script>
-    <script defer src="src/js/session-timeout.js"></script>
     <script defer src="src/js/internationalization.js"></script>
     <script defer src="src/js/payroll-system.js"></script>
     <script defer src="src/js/undo-redo.js"></script>
-    <script defer src="src/js/quick-actions.js"></script>
     <script defer src="src/js/global-search.js"></script>
     <script defer src="src/js/super-boss-bridge.js"></script>
-    <!-- Dev/Test tools removed for production - can be loaded dynamically when needed -->
     <script defer src="src/js/voice-commands.js"></script>
     <script defer src="src/js/multi-location.js"></script>
     <script defer src="src/js/super-admin-patch.js"></script>
     <script defer src="src/js/quality-integration.js"></script>
-    <script defer src="src/js/app-constants.js"></script>
-    <script defer src="src/js/code-quality-utils.js"></script>
 
     <!-- Initialize All Enhancements -->
     <script>
