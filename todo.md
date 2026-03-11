@@ -1,34 +1,26 @@
-# Lifestar Comprehensive Optimization - Active Tasks
+# Src Folder Consolidation & Optimization
 
-## Phase 1: Core Modules Created ✅
-- [x] core-utils.js (Logger, DOMUtils, StorageUtils, DateUtils) - 792 lines
-- [x] core-ui.js (ModalManager, AlertManager, ToastManager) - 720 lines
-- [x] core-validation.js (ValidationUtils, SchemaValidator, TimeValidation) - 634 lines
-- [x] core-features.js (CrewManager, ShiftTradeManager, SwapMarketplace) - ~700 lines
-- [x] core-permissions.js (Permission definitions and management) - ~550 lines
-- [x] core-accessibility.js (ModalFocusManager, AccessibilityManager) - ~530 lines
+## Phase 1: Analyze & Plan ✅
+- [x] Identify all JS files (62 files, 28,307 lines)
+- [x] Categorize files by functionality
+- [x] Create consolidation plan
 
-## Phase 2: Update index.html ✅
-- [x] Add new consolidated modules to loading order
-- [x] Remove old redundant files from loading
-- [x] Verify script loading order is correct
+## Phase 2: Create Consolidated Modules
+- [x] Create core-notifications.js (notification-center + notification-service)
+- [x] Create core-calendar.js (enhanced-calendar + staff-availability-calendar)
+- [x] Create core-analytics.js (analytics-charts + data-visualization + export-reports)
+- [x] Create core-enhancements.js (mobile + dark-mode + keyboard-shortcuts + dropdown + click-helper)
+- [x] Create core-performance.js (performance-optimizer + memory-leak-fixes + edge-case + rate-limiter)
 
-## Phase 3: Additional Consolidation ✅
-- [x] Created core-features.js (consolidates boss-features.js, remaining-features.js)
-- [x] Created core-permissions.js (consolidates permissions-system.js, advanced-permissions.js)
-- [x] Created core-accessibility.js (consolidates accessibility files)
+## Phase 3: Archive Consolidated Files
+- [x] Create _archived folder
+- [x] Move old files to archive (23 files archived)
+- [x] Update index.html
 
-## Phase 4: Final Cleanup
-- [ ] Remove or archive old redundant files
-- [ ] Test all functionality works
-- [ ] Push to GitHub
+## Phase 4: Clean Up Test/Dev Files
+- [x] Remove test files from production loading
+- [x] Organize dev tools
 
-## Summary of Consolidations
-| Original Files | Lines | Consolidated Into | Lines |
-|----------------|-------|-------------------|-------|
-| boss-features.js + remaining-features.js | 1483 | core-features.js | ~700 |
-| permissions-system.js + advanced-permissions.js | 1181 | core-permissions.js | ~550 |
-| accessibility-enhancements.js + accessibility-improvements.js + modal-focus-manager.js | 1158 | core-accessibility.js | ~530 |
-| **Total Saved** | **3822** | | **~1780** |
-
-**Reduction: ~50% code reduction through consolidation**
+## Phase 5: Push to GitHub
+- [ ] Commit all changes
+- [ ] Push to repository

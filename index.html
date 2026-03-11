@@ -3130,6 +3130,11 @@
     <script src="src/js/core-features.js"></script>
     <script src="src/js/core-permissions.js"></script>
     <script src="src/js/core-accessibility.js"></script>
+    <script src="src/js/core-notifications.js"></script>
+    <script src="src/js/core-calendar.js"></script>
+    <script src="src/js/core-analytics.js"></script>
+    <script src="src/js/core-enhancements.js"></script>
+    <script src="src/js/core-performance.js"></script>
     <!-- Legacy compatibility shims -->
     <script src="src/js/constants.js"></script>
     <script src="src/js/utils.js"></script>
@@ -3143,41 +3148,29 @@
     <script src="src/js/missing-functions.js"></script>
 
     <!-- NON-CRITICAL SCRIPTS - Deferred loading (enhance functionality) -->
-    <!-- Note: accessibility-improvements.js, modal-focus-manager.js, accessibility-enhancements.js consolidated into core-accessibility.js -->
-    <!-- Note: permissions-system.js, advanced-permissions.js consolidated into core-permissions.js -->
-    <!-- Note: boss-features.js, remaining-features.js consolidated into core-features.js -->
+    <!-- CONSOLIDATED MODULES - The following are now in core-*.js files: -->
+    <!-- core-notifications.js: notification-center.js, notification-service.js -->
+    <!-- core-calendar.js: enhanced-calendar.js, staff-availability-calendar.js -->
+    <!-- core-analytics.js: analytics-charts.js, data-visualization.js, export-reports.js -->
+    <!-- core-enhancements.js: mobile-enhancements.js, dark-mode.js, keyboard-shortcuts.js, dropdown-compatibility.js, click-helper.js -->
+    <!-- core-performance.js: advanced-performance-optimizer.js, memory-leak-fixes.js, edge-case-handler.js, rate-limiter.js -->
+    <!-- core-accessibility.js: accessibility-improvements.js, modal-focus-manager.js, accessibility-enhancements.js -->
+    <!-- core-permissions.js: permissions-system.js, advanced-permissions.js -->
+    <!-- core-features.js: boss-features.js, remaining-features.js -->
     <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script defer src="src/js/mechanics-improvements.js"></script>
-    <script defer src="src/js/keyboard-shortcuts.js"></script>
     <script defer src="src/js/password-hashing-util.js"></script>
     <script defer src="src/js/session-timeout.js"></script>
-    <script defer src="src/js/dropdown-compatibility.js"></script>
-    <script defer src="src/js/click-helper.js"></script>
     <script defer src="src/js/internationalization.js"></script>
-    <script defer src="src/js/advanced-performance-optimizer.js"></script>
-    <script defer src="src/js/analytics-charts.js"></script>
     <script defer src="src/js/payroll-system.js"></script>
-    <script defer src="src/js/notification-service.js"></script>
     <script defer src="src/js/undo-redo.js"></script>
     <script defer src="src/js/quick-actions.js"></script>
-    <script defer src="src/js/enhanced-calendar.js"></script>
-    <script defer src="src/js/staff-availability-calendar.js"></script>
-    <script defer src="src/js/export-reports.js"></script>
-    <script defer src="src/js/notification-center.js"></script>
     <script defer src="src/js/global-search.js"></script>
-    <script defer src="src/js/mobile-enhancements.js"></script>
-    <script defer src="src/js/data-visualization.js"></script>
-    <script defer src="src/js/dark-mode.js"></script>
     <script defer src="src/js/super-boss-bridge.js"></script>
     <!-- Dev/Test tools removed for production - can be loaded dynamically when needed -->
     <script defer src="src/js/voice-commands.js"></script>
     <script defer src="src/js/multi-location.js"></script>
     <script defer src="src/js/super-admin-patch.js"></script>
-    
-    <!-- Critical Fix Files for 100% Quality -->
-    <script defer src="src/js/rate-limiter.js"></script>
-    <script defer src="src/js/memory-leak-fixes.js"></script>
-    <script defer src="src/js/edge-case-handler.js"></script>
     <script defer src="src/js/quality-integration.js"></script>
     <script defer src="src/js/app-constants.js"></script>
     <script defer src="src/js/code-quality-utils.js"></script>
