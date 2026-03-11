@@ -563,6 +563,31 @@ router.put('/notifications/read-all', authenticate, async (req, res) => {
 });
 
 /**
+ * DELETE /api/logs/notifications/read
+ * Delete all read notifications for current user
+ * NOTE: Must be defined BEFORE DELETE /notifications/:id to avoid
+ * Express matching 'read' as the :id param.
+ */
+router.delete('/notifications/read', authenticate, async (req, res) => {
+    try {
+        const db = getDb();
+        const result = db.prepare('DELETE FROM notifications WHERE userId = ? AND read = 1').run(req.user.id);
+        
+        res.json({
+            message: 'Read notifications deleted',
+            deletedCount: result.changes,
+            code: 'NOTIFICATIONS_PURGED'
+        });
+    } catch (err) {
+        console.error('[notifications/purge] Error:', err.message);
+        res.status(CONSTANTS.HTTP_STATUS.SERVER_ERROR).json({
+            error: 'Failed to delete read notifications',
+            code: 'NOTIFICATIONS_PURGE_ERROR'
+        });
+    }
+});
+
+/**
  * DELETE /api/logs/notifications/:id
  * Delete a notification
  */
@@ -595,29 +620,6 @@ router.delete('/notifications/:id', authenticate, async (req, res) => {
         res.status(CONSTANTS.HTTP_STATUS.SERVER_ERROR).json({
             error: 'Failed to delete notification',
             code: 'NOTIFICATION_DELETE_ERROR'
-        });
-    }
-});
-
-/**
- * DELETE /api/logs/notifications/read
- * Delete all read notifications for current user
- */
-router.delete('/notifications/read', authenticate, async (req, res) => {
-    try {
-        const db = getDb();
-        const result = db.prepare('DELETE FROM notifications WHERE userId = ? AND read = 1').run(req.user.id);
-        
-        res.json({
-            message: 'Read notifications deleted',
-            deletedCount: result.changes,
-            code: 'NOTIFICATIONS_PURGED'
-        });
-    } catch (err) {
-        console.error('[notifications/purge] Error:', err.message);
-        res.status(CONSTANTS.HTTP_STATUS.SERVER_ERROR).json({
-            error: 'Failed to delete read notifications',
-            code: 'NOTIFICATIONS_PURGE_ERROR'
         });
     }
 });

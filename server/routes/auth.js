@@ -15,6 +15,7 @@ const bcrypt = require('bcryptjs');
 const { getDb, addLog } = require('../db/database');
 const { generateToken, authenticate, setTokenCookie, clearTokenCookie } = require('../middleware/auth');
 const rateLimit = require('express-rate-limit');
+const { ipKeyGenerator } = rateLimit;
 
 const router = express.Router();
 
@@ -53,10 +54,10 @@ const loginLimiter = rateLimit({
     },
     standardHeaders: true,
     legacyHeaders: false,
-    // Use IP + username as key to prevent distributed attacks
+    // Use normalized IP + username as key to prevent distributed attacks
     keyGenerator: (req) => {
         const username = req.body?.username || 'unknown';
-        return `${req.ip}:${username}`;
+        return `${ipKeyGenerator(req)}:${username}`;
     }
 });
 

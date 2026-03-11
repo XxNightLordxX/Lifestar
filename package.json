@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node server/index.js",
     "dev": "node server/index.js",
-    "test": "echo &quot;Run E2E tests in browser at /index.html > Developer Tools&quot; && exit 0"
+    "test": "echo \"Run E2E tests in browser at /index.html - Developer Tools\" && exit 0"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

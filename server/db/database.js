@@ -412,25 +412,14 @@ class DatabaseManager {
     // ============================================
 
     /**
-     * Log query execution
-     * @param {Object} info - Query info
+     * Log query execution — better-sqlite3 verbose passes SQL string, not an object
+     * @param {string} sql - SQL query string
      */
-    _logQuery(info) {
+    _logQuery(sql) {
         this.queryCount++;
-        
-        const duration = Date.now() - (info.start || Date.now());
-        
-        if (duration > CONSTANTS.SLOW_QUERY_THRESHOLD) {
-            this.slowQueries.push({
-                sql: info.sql,
-                duration,
-                timestamp: new Date().toISOString()
-            });
-            
-            // Keep only last 100 slow queries
-            if (this.slowQueries.length > 100) {
-                this.slowQueries.shift();
-            }
+        // Periodic milestone log
+        if (this.queryCount % 1000 === 0) {
+            this._log(`Query count milestone: ${this.queryCount}`);
         }
     }
 
@@ -1066,12 +1055,12 @@ function seedDefaults(conn) {
             VALUES (?, ?, ?, ?, ?, ?)
         `);
         
-        insert.run('super', bcrypt.hashSync('super123', salt), 'Super Administrator', 'super', '555-0001', now);
-        insert.run('boss', bcrypt.hashSync('boss123', salt), 'Station Manager', 'boss', '555-0002', now);
-        insert.run('paramedic1', bcrypt.hashSync('paramedic123', salt), 'Sarah Medic', 'paramedic', '555-0003', now);
-        insert.run('paramedic2', bcrypt.hashSync('paramedic123', salt), 'Mike Medic', 'paramedic', '555-0004', now);
-        insert.run('emt1', bcrypt.hashSync('emt123', salt), 'Tom EMT', 'emt', '555-0005', now);
-        insert.run('emt2', bcrypt.hashSync('emt123', salt), 'Lisa EMT', 'emt', '555-0006', now);
+        insert.run('super', bcrypt.hashSync('Super123!', salt), 'Super Administrator', 'super', '555-0001', now);
+        insert.run('boss', bcrypt.hashSync('Boss123!', salt), 'Station Manager', 'boss', '555-0002', now);
+        insert.run('paramedic1', bcrypt.hashSync('Paramedic1!', salt), 'Sarah Medic', 'paramedic', '555-0003', now);
+        insert.run('paramedic2', bcrypt.hashSync('Paramedic2!', salt), 'Mike Medic', 'paramedic', '555-0004', now);
+        insert.run('emt1', bcrypt.hashSync('Emt1Pass!', salt), 'Tom EMT', 'emt', '555-0005', now);
+        insert.run('emt2', bcrypt.hashSync('Emt2Pass!', salt), 'Lisa EMT', 'emt', '555-0006', now);
         
         console.log('✅ Default users seeded (passwords hashed with bcrypt)');
     }
