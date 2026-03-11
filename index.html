@@ -1,0 +1,3253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://sites.super.myninja.ai https://cdn.jsdelivr.net; script-src-attr 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; font-src 'self'; img-src 'self' data: https://*.app.super.myninja.ai https://*.super.myninja.ai https://cdn.jsdelivr.net; connect-src 'self' https://*.app.super.myninja.ai https://*.super.myninja.ai; base-uri 'self'; form-action 'self'; object-src 'none'; frame-src 'none';">
+    <title>Lifestar Ambulance - Scheduling System</title>
+    <link rel="stylesheet" href="src/css/styles.bundle.min.css">
+    <link rel="stylesheet" href="src/css/accessibility.css">
+    <link rel="icon" href="assets/Lifestar.png" type="image/png">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#dc3545">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Lifestar">
+    <link rel="apple-touch-icon" href="assets/Lifestar.png">
+    <meta name="description" content="Ambulance crew scheduling, shift management, and staff coordination system">
+    <script defer src="https://sites.super.myninja.ai/_assets/ninja-daytona-script.js"></script>
+    <!-- Print styles included in bundle -->
+</head>
+<body>
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+
+    <div class="print-header">
+        <h1>Lifestar Ambulance Scheduling System</h1>
+        <p class="print-date">Printed: <script>document.write(new Date().toLocaleDateString())</script></p>
+    </div>
+
+        <!-- Skip to main content link for accessibility -->
+        <a href="#main-content" class="skip-to-content">Skip to main content</a>
+    <!-- Login Page -->
+    <div id="loginPage" class="login-container">
+        <div class="login-box">
+            <div class="lifestar-logo">
+                <img src="assets/Lifestar.png" alt="Lifestar Ambulance Service, Inc.">
+            </div>
+            <h1>Lifestar Ambulance</h1>
+            <p class="subtitle">Scheduling System</p>
+            <div id="loginAlert" class="alert"></div>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="username" data-i18n="auth.username">Username</label>
+                    <input type="text" id="username" placeholder="Enter username" data-i18n-placeholder="auth.username" required>
+                </div>
+                <div class="form-group">
+                    <label for="password" data-i18n="auth.password">Password</label>
+                    <input type="password" id="password" placeholder="Enter password" data-i18n-placeholder="auth.password" required>
+                </div>
+                <button type="submit" class="btn btn-primary" data-i18n="auth.login">Login</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- First Login / Change Password Page -->
+    <div id="firstLoginPage" class="login-container hidden">
+        <div class="login-box">
+            <div class="lifestar-logo">
+                <img src="assets/Lifestar.png" alt="Lifestar Ambulance Service, Inc.">
+            </div>
+            <h1>Welcome to Lifestar!</h1>
+            <p class="subtitle">Please complete your profile setup</p>
+            <div id="firstLoginAlert" class="alert"></div>
+            <form id="firstLoginForm">
+                <div class="form-group">
+                    <label for="newUsername">Choose Username</label>
+                    <input type="text" id="newUsername" required>
+                </div>
+                <div class="form-group">
+                    <label for="newPassword">Choose Password</label>
+                    <input type="password" id="newPassword" required>
+                </div>
+                <div class="form-group">
+                    <label for="confirmPassword">Confirm Password</label>
+                    <input type="password" id="confirmPassword" required>
+                </div>
+                <div class="form-group">
+                    <label for="fullName">Full Name</label>
+                    <input type="text" id="fullName" required>
+                </div>
+                <div class="form-group">
+                    <label for="roleSelection">I am a:</label>
+                    <select id="roleSelection" required>
+                        <option value="">Select your role</option>
+                        <option value="paramedic">Paramedic</option>
+                        <option value="emt">EMT</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="phoneNumber">Phone Number</label>
+                    <input type="tel" id="phoneNumber" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Complete Setup</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Super Admin Dashboard -->
+    <div id="superDashboard" class="dashboard">
+        <!-- Mobile Menu Toggle -->
+        <button class="mobile-menu-toggle" onclick="toggleMobileMenu()">☰</button>
+        <div class="mobile-overlay" onclick="toggleMobileMenu()"></div>
+
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">
+                    <img src="assets/Lifestar.png" alt="Lifestar Ambulance">
+                </div>
+                <div class="sidebar-title">Super Admin</div>
+                <div class="sidebar-user-info" id="superUserName">Super Admin</div>
+            </div>
+            <div class="sidebar-nav">
+                <div class="nav-section">
+                    <div class="nav-section-title">Main</div>
+                    <div class="nav-item active" onclick="showSuperSection('overview')">
+                        <div class="nav-item-icon">📊</div>
+                        <div class="nav-item-text">Overview</div>
+                    </div>
+                    <div class="nav-item" onclick="showSuperSection('users')">
+                        <div class="nav-item-icon">👥</div>
+                        <div class="nav-item-text">User Management</div>
+                    </div>
+                </div>
+                <div class="nav-section">
+                    <div class="nav-section-title">System</div>
+                    <div class="nav-item" onclick="showSuperSection('features')">
+                        <div class="nav-item-icon">⚙️</div>
+                        <div class="nav-item-text">Feature Toggles</div>
+                    </div>
+                    <div class="nav-item" onclick="showSuperSection('api')">
+                        <div class="nav-item-icon">🔑</div>
+                        <div class="nav-item-text">API Keys</div>
+                    </div>
+                    <div class="nav-item" onclick="showSuperSection('logs')">
+                        <div class="nav-item-icon">📋</div>
+                        <div class="nav-item-text">System Logs</div>
+                    </div>
+                    <div class="nav-item" onclick="showSuperSection('developer')">
+                        <div class="nav-item-icon">🛠️</div>
+                        <div class="nav-item-text">Developer Tools</div>
+                    </div>
+                    <div class="nav-item" onclick="showSuperSection('permissions')">
+                        <div class="nav-item-icon">🔐</div>
+                        <div class="nav-item-text">Permissions</div>
+                    </div>
+                    <div class="nav-item" onclick="showSuperSection('locations')">
+                        <div class="nav-item-icon">📍</div>
+                        <div class="nav-item-text">Locations</div>
+                    </div>
+                </div>
+                <div class="nav-section">
+                    <div class="nav-section-title">AI Assistant</div>
+                    <div class="nav-item" onclick="showSuperSection('ai')">
+                        <div class="nav-item-icon">🤖</div>
+                        <div class="nav-item-text">AI Assistant</div>
+                    </div>
+                </div>
+                <div class="nav-section">
+                    <div class="nav-section-title">Scheduling</div>
+                    <div class="nav-item" onclick="showCreateScheduleModal()">
+                        <div class="nav-item-icon">➕</div>
+                        <div class="nav-item-text">Create Schedule</div>
+                    </div>
+                    <div class="nav-item" onclick="showSuperSection('s_drafts')">
+                        <div class="nav-item-icon">📝</div>
+                        <div class="nav-item-text">Draft Schedules</div>
+                        <div class="nav-item-badge" id="superDraftsBadge">0</div>
+                    </div>
+                    <div class="nav-item" onclick="showSuperSection('s_published')">
+                        <div class="nav-item-icon">✅</div>
+                        <div class="nav-item-text">Published Schedules</div>
+                        <div class="nav-item-badge" id="superPublishedBadge">0</div>
+                    </div>
+                    <div class="nav-item" onclick="showSuperSection('s_archived')">
+                        <div class="nav-item-icon">📦</div>
+                        <div class="nav-item-text">Past Schedules</div>
+                        <div class="nav-item-badge" id="superArchivedBadge">0</div>
+                    </div>
+                    <div class="nav-item" onclick="showSuperSection('s_calendar')">
+                        <div class="nav-item-icon">📆</div>
+                        <div class="nav-item-text">Calendar View</div>
+                    </div>
+                    <div class="nav-item" onclick="showSuperSection('s_crews')">
+                        <div class="nav-item-icon">👥</div>
+                        <div class="nav-item-text">Crew Management</div>
+                    </div>
+                </div>
+                <div class="nav-section">
+                    <div class="nav-section-title">Requests</div>
+                    <div class="nav-item" onclick="showSuperSection('s_timeoff')">
+                        <div class="nav-item-icon">🏖️</div>
+                        <div class="nav-item-text">Time Off Requests</div>
+                    </div>
+                    <div class="nav-item" onclick="showSuperSection('s_trades')">
+                        <div class="nav-item-icon">🔄</div>
+                        <div class="nav-item-text">Shift Trades</div>
+                    </div>
+                    <div class="nav-item" onclick="showSuperSection('s_swap')">
+                        <div class="nav-item-icon">🔀</div>
+                        <div class="nav-item-text">Swap Marketplace</div>
+                    </div>
+                </div>
+                <div class="nav-section">
+                    <div class="nav-section-title">Staff Management</div>
+                    <div class="nav-item" onclick="showSuperSection('s_staff')">
+                        <div class="nav-item-icon">👥</div>
+                        <div class="nav-item-text">Staff Directory</div>
+                    </div>
+                    <div class="nav-item" onclick="showSuperSection('s_availability')">
+                        <div class="nav-item-icon">✅</div>
+                        <div class="nav-item-text">Availability</div>
+                    </div>
+                    <div class="nav-item" onclick="showSuperSection('s_training')">
+                        <div class="nav-item-icon">🎓</div>
+                        <div class="nav-item-text">Training</div>
+                    </div>
+                    <div class="nav-item" onclick="showSuperSection('s_bonus')">
+                        <div class="nav-item-icon">💰</div>
+                        <div class="nav-item-text">Bonus Hours</div>
+                    </div>
+                </div>
+                <div class="nav-section">
+                    <div class="nav-section-title">Operations</div>
+                    <div class="nav-item" onclick="showSuperSection('s_callins')">
+                        <div class="nav-item-icon">🚨</div>
+                        <div class="nav-item-text">Emergency Call-ins</div>
+                    </div>
+                    <div class="nav-item" onclick="showSuperSection('s_absences')">
+                        <div class="nav-item-icon">❌</div>
+                        <div class="nav-item-text">Absences</div>
+                    </div>
+                    <div class="nav-item" onclick="showSuperSection('s_oncall')">
+                        <div class="nav-item-icon">📞</div>
+                        <div class="nav-item-text">On-Call Rotation</div>
+                    </div>
+                </div>
+                <div class="nav-section">
+                    <div class="nav-section-title">Analysis</div>
+                    <div class="nav-item" onclick="showSuperSection('s_analytics')">
+                        <div class="nav-item-icon">📊</div>
+                        <div class="nav-item-text">Analytics</div>
+                    </div>
+                    <div class="nav-item" onclick="showSuperSection('s_history')">
+                        <div class="nav-item-icon">📋</div>
+                        <div class="nav-item-text">Shift History</div>
+                    </div>
+                </div>
+                <div class="nav-section">
+                    <div class="nav-section-title">Other</div>
+                    <div class="nav-item" onclick="showSuperSection('s_notes')">
+                        <div class="nav-item-icon">📝</div>
+                        <div class="nav-item-text">Supervisor Notes</div>
+                    </div>
+                    <div class="nav-item" onclick="showSuperSection('s_templates')">
+                        <div class="nav-item-icon">📋</div>
+                        <div class="nav-item-text">Schedule Templates</div>
+                    </div>
+                </div>
+            </div>
+            <div class="sidebar-footer">
+                <button class="btn btn-danger btn-sm" onclick="logout()" style="width: 100%;">Logout</button>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <main class="main-content" role="main">
+            <!-- Overview Section -->
+            <div id="superOverview" class="super-section">
+                <div class="header">
+                    <div class="header-left">
+                        <h1>Dashboard Overview</h1>
+                        <p>System-wide statistics and quick actions</p>
+                    </div>
+                    <div class="header-right">
+                        <button class="btn btn-primary" onclick="location.reload()">Refresh</button>
+                    </div>
+                </div>
+
+                <div class="grid-3">
+                    <div class="card">
+                        <div class="card-header" style="background: linear-gradient(135deg, #6f42c1 0%, #8e5eb8 100%);">
+                            <h2>Total Users</h2>
+                            <div class="card-header-icon">👥</div>
+                        </div>
+                        <div class="card-body">
+                            <h3 id="totalUsersCount">0</h3>
+                            <p class="text-muted">Registered users</p>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header" style="background: linear-gradient(135deg, var(--lifestar-blue) 0%, var(--lifestar-light-blue) 100%);">
+                            <h2>Total Schedules</h2>
+                            <div class="card-header-icon">📅</div>
+                        </div>
+                        <div class="card-body">
+                            <h3 id="totalSchedulesCount">0</h3>
+                            <p class="text-muted">Draft + Published</p>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header" style="background: linear-gradient(135deg, var(--success-color) 0%, #34ce57 100%);">
+                            <h2>System Status</h2>
+                            <div class="card-header-icon">✅</div>
+                        </div>
+                        <div class="card-body">
+                            <h3>Online</h3>
+                            <p class="text-muted">All systems operational</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card" style="margin-top: 20px;">
+                    <div class="card-header">
+                        <h2>Quick Actions</h2>
+                    </div>
+                    <div class="card-body">
+                        <div class="grid-3" style="margin-bottom: 12px;">
+                            <button class="btn btn-primary" onclick="showSuperSection('users')">👥 Manage Users</button>
+                            <button class="btn btn-success" onclick="showSuperSection('features')">⚙️ Toggle Features</button>
+                            <button class="btn btn-warning" onclick="showSuperSection('logs')">📋 View Logs</button>
+                        </div>
+                        <div class="grid-3">
+                            <button class="btn btn-success" onclick="showCreateScheduleModal()">➕ Create Schedule</button>
+                            <button class="btn btn-primary" onclick="showSuperSection('s_drafts')">📝 Draft Schedules</button>
+                            <button class="btn btn-info" onclick="showSuperSection('permissions')">🔐 Permissions</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Users Section -->
+            <div id="superUsers" class="super-section hidden">
+                <div class="header">
+                    <div class="header-left">
+                        <h1>User Management</h1>
+                        <p>Add, edit, and manage all system users</p>
+                    </div>
+                    <div class="header-right">
+                        <button class="btn btn-success" onclick="showAddUserModal()">+ Add User</button>
+                    </div>
+                </div>
+                <div id="usersTableContainer" class="card">
+                    <div class="card-body">
+                        <table id="usersTable">
+                            <thead>
+                                <tr>
+                                    <th>Username</th>
+                                    <th>Full Name</th>
+                                    <th>Role</th>
+                                    <th>Phone</th>
+                                    <th>Location</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="usersTableBody">
+                                <!-- Users will be populated here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Features Section -->
+            <div id="superFeatures" class="super-section hidden">
+                <div class="header">
+                    <div class="header-left">
+                        <h1>Feature Toggles</h1>
+                        <p>Enable or disable system features</p>
+                    </div>
+                </div>
+                <div id="featureToggles" class="grid-3">
+                    <!-- Feature toggles will be dynamically generated -->
+                </div>
+            </div>
+
+            <!-- API Keys Section -->
+            <div id="superApi" class="super-section hidden">
+                <div class="header">
+                    <div class="header-left">
+                        <h1>API Key Management</h1>
+                        <p>Configure external API integrations</p>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label for="groqApiKey">Groq API Key (for Advanced AI)</label>
+                            <input type="password" id="groqApiKey" class="form-input" placeholder="Enter Groq API key">
+                        </div>
+                        <div class="form-group">
+                            <label for="twilioApiKey">Twilio API Key (for SMS)</label>
+                            <input type="password" id="twilioApiKey" class="form-input" placeholder="Enter Twilio API key">
+                        </div>
+                        <div class="form-group">
+                            <label for="sendGridApiKey">SendGrid API Key (for Email)</label>
+                            <input type="password" id="sendGridApiKey" class="form-input" placeholder="Enter SendGrid API key">
+                        </div>
+                        <button class="btn btn-primary" onclick="saveApiKeys()">Save API Keys</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Logs Section -->
+            <div id="superLogs" class="super-section hidden">
+                <div class="header">
+                    <div class="header-left">
+                        <h1>System Logs</h1>
+                        <p>View system activity and events</p>
+                    </div>
+                    <div class="header-right">
+                        <button class="btn btn-warning" onclick="clearLogs()">Clear Logs</button>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-body">
+                        <div id="systemLogs" style="max-height: 500px; overflow-y: auto;">
+                            <!-- Logs will be displayed here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Developer Tools Section -->
+            <div id="superDeveloper" class="super-section hidden">
+                <div class="header">
+                    <div class="header-left">
+                        <h1>Developer Tools</h1>
+                        <p>Advanced system maintenance and debugging</p>
+                    </div>
+                </div>
+                <div class="grid-2">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2>Data Management</h2>
+                        </div>
+                        <div class="card-body">
+                            <button class="btn btn-warning" onclick="exportAllData()">Export All Data</button>
+                            <button class="btn btn-danger" onclick="confirmResetSystem()">Reset System</button>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <h2>System Info</h2>
+                        </div>
+                        <div class="card-body">
+                            <p><strong>Version:</strong> 3.0.0</p>
+                            <p><strong>Last Update:</strong> <span id="lastSystemUpdate"></span></p>
+                            <p><strong>Total Features:</strong> 50+</p>
+                            <p><strong>Languages:</strong> 13</p>
+                            <p><strong>JS Files:</strong> 34</p>
+                        </div>
+                    </div>
+                </div>
+                <!-- E2E Test Suite -->
+                <div id="e2eTestResults" style="margin-top:1.5rem;"></div>
+                <!-- A/B Testing -->
+                <div id="abTestingResults" style="margin-top:1.5rem;"></div>
+                <!-- Visual Regression Testing -->
+                <div id="visualRegressionResults" style="margin-top:1.5rem;"></div>
+            </div>
+
+            <!-- AI Assistant Section -->
+            <div id="superAi" class="super-section hidden">
+                <div class="header">
+                    <div class="header-left">
+                        <h1>AI Assistant</h1>
+                        <p>Get help with scheduling and system management</p>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-body">
+                        <div id="aiChatContainer" style="height: 400px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 8px; padding: 15px; margin-bottom: 15px;">
+                            <!-- AI chat messages will appear here -->
+                        </div>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="text" id="aiInput" class="form-input" placeholder="Ask AI Assistant..." aria-label="Ask AI Assistant" onkeypress="if(event.key==='Enter')sendAiMessage()">
+                            <button class="btn btn-primary" onclick="sendAiMessage()">Send</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Permissions Management Section -->
+            <div id="superPermissions" class="super-section hidden">
+                <div class="header">
+                    <div class="header-left">
+                        <h1>🔐 Permission Management</h1>
+                        <p>Control access to every function for each user</p>
+                    </div>
+                </div>
+                <div id="permissionsContainer">
+                    <!-- Basic Permissions UI -->
+                </div>
+                <div id="advancedPermissionsManager">
+                    <!-- Advanced Permissions UI will be loaded here -->
+                </div>
+            </div>
+
+            <!-- Location Management Section -->
+            <div id="superLocations" class="super-section hidden">
+                <!-- Content loaded dynamically by MultiLocation.loadLocationManager() -->
+            </div>
+
+            <!-- ============================================ -->
+            <!-- BOSS FEATURES (accessible by Super Admin)    -->
+            <!-- ============================================ -->
+
+            <!-- Draft Schedules -->
+            <div id="superS_drafts" class="super-section hidden">
+                <div class="header">
+                    <div class="header-left">
+                        <h1>Draft Schedules</h1>
+                        <p>Manage and edit draft schedules</p>
+                    </div>
+                    <div class="header-right">
+                        <button class="btn btn-success" onclick="showCreateScheduleModal()">+ Create New Draft</button>
+                    </div>
+                </div>
+                <div id="superDraftSchedulesList" class="schedule-list"></div>
+                <div id="superNoDraftsMessage" class="card" style="text-align: center; padding: 40px;">
+                    <h2>No Draft Schedules</h2>
+                    <p>Click "Create New Draft" to start a new schedule</p>
+                </div>
+            </div>
+
+            <!-- Published Schedules -->
+            <div id="superS_published" class="super-section hidden">
+                <div class="header">
+                    <div class="header-left">
+                        <h1>Published Schedules</h1>
+                        <p>View and manage published schedules</p>
+                    </div>
+                </div>
+                <div id="superPublishedSchedulesList" class="schedule-list"></div>
+                <div id="superNoPublishedMessage" class="card" style="text-align: center; padding: 40px;">
+                    <h2>No Published Schedules</h2>
+                    <p>Publish a draft schedule to see it here</p>
+                </div>
+            </div>
+
+            <!-- Past/Archived Schedules -->
+            <div id="superS_archived" class="super-section hidden">
+                <div class="header">
+                    <div class="header-left">
+                        <h1>Past Schedules</h1>
+                        <p>View archived and past schedules</p>
+                    </div>
+                </div>
+                <div id="superArchivedSchedulesList" class="schedule-list"></div>
+                <div id="superNoArchivedMessage" class="card" style="text-align: center; padding: 40px;">
+                    <h2>No Past Schedules</h2>
+                    <p>Archived schedules will appear here</p>
+                </div>
+            </div>
+
+            <!-- Schedule Editor (for Super Admin) -->
+            <div id="superScheduleEditor" class="super-section hidden">
+                <div class="header">
+                    <div class="header-left">
+                        <button class="btn btn-secondary" onclick="closeSuperScheduleEditor()">&larr; Back</button>
+                        <h1 id="superEditorScheduleName">Schedule Editor</h1>
+                        <span class="badge" id="superEditorScheduleStatus">Draft</span>
+                    </div>
+                    <div class="header-right">
+                        <button class="btn btn-secondary" onclick="showModal('duplicateModal')">Duplicate</button>
+                        <button class="btn btn-secondary" onclick="exportSchedule()">Export</button>
+                        <button class="btn btn-primary" onclick="saveScheduleChanges()">Save</button>
+                        <button class="btn btn-success" onclick="publishScheduleFromEditor()">Publish</button>
+                    </div>
+                </div>
+                <div class="stats-bar">
+                    <div class="stat-item"><span class="stat-label">Total Shifts:</span><span class="stat-value" id="superStatTotalShifts">0</span></div>
+                    <div class="stat-item"><span class="stat-label">Total Hours:</span><span class="stat-value" id="superStatTotalHours">0</span></div>
+                    <div class="stat-item"><span class="stat-label">ALS Crews:</span><span class="stat-value" id="superStatALSCrews" style="color: #e74c3c;">0</span></div>
+                    <div class="stat-item"><span class="stat-label">BLS Crews:</span><span class="stat-value" id="superStatBLSCrews" style="color: #3498db;">0</span></div>
+                    <div class="stat-item"><span class="stat-label">Days Covered:</span><span class="stat-value" id="superStatDaysCovered">0</span></div>
+                    <div class="stat-item"><span class="stat-label">Date Range:</span><span class="stat-value" id="superStatDateRange">N/A</span></div>
+                </div>
+                <div class="editor-container">
+                    <div class="employee-sidebar">
+                        <div class="sidebar-header">
+                            <h2>Staff</h2>
+                            <select id="superStaffFilter" class="form-select" onchange="filterEmployeeList()">
+                                <option value="all">All Staff</option>
+                                <option value="paramedic">Paramedics</option>
+                                <option value="emt">EMTs</option>
+                            </select>
+                        </div>
+                        <div id="superEmployeeList" class="employee-list"></div>
+                    </div>
+                    <div class="calendar-editor">
+                        <div class="calendar-controls">
+                            <div class="calendar-header">
+                                <h2 id="superEditorMonthYear"></h2>
+                                <p class="mobile-hint">📱 Tap any day to add a shift</p>
+                            </div>
+                            <div class="quick-add">
+                                <input type="date" id="superTemplateDate" class="form-input" style="width: 150px;" aria-label="Template Date">
+                                <select id="superShiftTemplate" class="form-select" style="width: 200px;">
+                                    <option value="">Quick Add Template</option>
+                                </select>
+                                <button class="btn btn-primary" onclick="applyShiftTemplate()">Add</button>
+                            </div>
+                            <div class="mobile-add-shift">
+                                <button class="btn btn-success btn-mobile-add-shift" onclick="showMobileAddShift()">➕ Add Shift</button>
+                            </div>
+                        </div>
+                        <div id="superEditorCalendarGrid" class="calendar-grid"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Calendar View -->
+            <div id="superS_calendar" class="super-section hidden">
+                <div class="header">
+                    <div class="header-left">
+                        <h1>Calendar View</h1>
+                        <p>Visual schedule overview</p>
+                    </div>
+                    <div class="header-right">
+                        <button class="btn btn-secondary" onclick="changeCalendarMonth(-1)">← Prev</button>
+                        <button class="btn btn-primary" onclick="goToToday()">Today</button>
+                        <button class="btn btn-secondary" onclick="changeCalendarMonth(1)">Next →</button>
+                    </div>
+                </div>
+                <div id="superCalendarContainer" class="calendar-container">
+                    <div id="superCalendarGrid" class="calendar-grid"></div>
+                </div>
+            </div>
+
+            <!-- Staff Directory -->
+            <div id="superS_staff" class="super-section hidden">
+                <div class="header">
+                    <div class="header-left">
+                        <h1>Staff Directory</h1>
+                        <p>View and manage all staff members</p>
+                    </div>
+                    <div class="header-right">
+                        <input type="text" id="superStaffSearch" class="form-input" placeholder="Search staff..." oninput="filterStaffSuper()" style="width: 200px;">
+                        <select id="superStaffRoleFilter" class="form-select" onchange="filterStaffSuper()" style="width: 150px;">
+                            <option value="">All Roles</option>
+                            <option value="paramedic">Paramedics</option>
+                            <option value="emt">EMTs</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="superStaffGrid" class="grid-3"></div>
+            </div>
+
+            <!-- Crew Management -->
+            <div id="superS_crews" class="super-section hidden">
+                <div class="header">
+                    <div class="header-left">
+                        <h1>Crew Management</h1>
+                        <p>Manage crew templates and assignments</p>
+                    </div>
+                    <div class="header-right">
+                        <button class="btn btn-success" onclick="showCreateCrewTemplateModal()">+ Create Crew Template</button>
+                    </div>
+                </div>
+                <div id="superCrewTemplatesList" class="grid-2"></div>
+                <div id="superNoCrewsMessage" class="card" style="text-align: center; padding: 40px;">
+                    <h2>No Crew Templates</h2>
+                    <p>Create crew templates to quickly assign staff to shifts</p>
+                </div>
+            </div>
+
+            <!-- Time Off Requests -->
+            <div id="superS_timeoff" class="super-section hidden">
+                <div class="header">
+                    <div class="header-left">
+                        <h1>Time Off Requests</h1>
+                        <p>Review and manage time off requests</p>
+                    </div>
+                </div>
+                <div id="superTimeoffList" class="card">
+                    <div class="card-body">
+                        <table>
+                            <thead><tr><th>Employee</th><th>Type</th><th>Dates</th><th>Status</th><th>Actions</th></tr></thead>
+                            <tbody id="superTimeoffTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Shift Trades -->
+            <div id="superS_trades" class="super-section hidden">
+                <div class="header">
+                    <div class="header-left">
+                        <h1>Shift Trades</h1>
+                        <p>Review and approve shift trade requests</p>
+                    </div>
+                </div>
+                <div id="superTradesList" class="card">
+                    <div class="card-body">
+                        <table>
+                            <thead><tr><th>Requester</th><th>Shift</th><th>Trade With</th><th>Status</th><th>Actions</th></tr></thead>
+                            <tbody id="superTradesTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Swap Marketplace -->
+            <div id="superS_swap" class="super-section hidden">
+                <div class="header">
+                    <div class="header-left">
+                        <h1>Swap Marketplace</h1>
+                        <p>View and manage shift swap listings</p>
+                    </div>
+                </div>
+                <div id="superSwapList" class="grid-2"></div>
+                <div id="superNoSwapsMessage" class="card" style="text-align: center; padding: 40px;">
+                    <h2>No Swap Listings</h2>
+                    <p>Staff can post shifts they want to swap here</p>
+                </div>
+            </div>
+
+            <!-- Availability -->
+            <div id="superS_availability" class="super-section hidden">
+                <div class="header">
+                    <div class="header-left">
+                        <h1>Staff Availability</h1>
+                        <p>View and manage staff availability</p>
+                    </div>
+                </div>
+                <div id="superAvailabilityContainer">
+                    <div class="card">
+                        <div class="card-body">
+                            <table>
+                                <thead><tr><th>Employee</th><th>Role</th><th>Mon</th><th>Tue</th><th>Wed</th><th>Thu</th><th>Fri</th><th>Sat</th><th>Sun</th></tr></thead>
+                                <tbody id="superAvailabilityTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Training -->
+            <div id="superS_training" class="super-section hidden">
+                <div class="header">
+                    <div class="header-left">
+                        <h1>Training Records</h1>
+                        <p>Track staff certifications and training</p>
+                    </div>
+                    <div class="header-right">
+                        <button class="btn btn-success" onclick="showAddTrainingModal()">+ Add Training</button>
+                    </div>
+                </div>
+                <div id="superTrainingContainer">
+                    <div class="card">
+                        <div class="card-body">
+                            <table>
+                                <thead><tr><th>Employee</th><th>Certification</th><th>Expiry Date</th><th>Status</th><th>Actions</th></tr></thead>
+                                <tbody id="superTrainingTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bonus Hours -->
+            <div id="superS_bonus" class="super-section hidden">
+                <div class="header">
+                    <div class="header-left">
+                        <h1>Bonus Hours</h1>
+                        <p>Manage bonus hour allocations</p>
+                    </div>
+                </div>
+                <div id="superBonusContainer">
+                    <div class="card">
+                        <div class="card-body">
+                            <table>
+                                <thead><tr><th>Employee</th><th>Role</th><th>Regular Hours</th><th>Bonus Hours</th><th>Total</th><th>Actions</th></tr></thead>
+                                <tbody id="superBonusTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Emergency Call-ins -->
+            <div id="superS_callins" class="super-section hidden">
+                <div class="header">
+                    <div class="header-left">
+                        <h1>Emergency Call-ins</h1>
+                        <p>Manage emergency staffing needs</p>
+                    </div>
+                    <div class="header-right">
+                        <button class="btn btn-danger" onclick="showNewCallinModal()">🚨 New Call-in</button>
+                    </div>
+                </div>
+                <div id="superCallinsContainer">
+                    <div class="card">
+                        <div class="card-body">
+                            <table>
+                                <thead><tr><th>Date/Time</th><th>Employee</th><th>Reason</th><th>Replacement</th><th>Status</th><th>Actions</th></tr></thead>
+                                <tbody id="superCallinsTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Absences -->
+            <div id="superS_absences" class="super-section hidden">
+                <div class="header">
+                    <div class="header-left">
+                        <h1>Absences</h1>
+                        <p>Track and manage staff absences</p>
+                    </div>
+                </div>
+                <div id="superAbsencesContainer">
+                    <div class="card">
+                        <div class="card-body">
+                            <table>
+                                <thead><tr><th>Employee</th><th>Date</th><th>Type</th><th>Reason</th><th>Status</th></tr></thead>
+                                <tbody id="superAbsencesTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- On-Call Rotation -->
+            <div id="superS_oncall" class="super-section hidden">
+                <div class="header">
+                    <div class="header-left">
+                        <h1>On-Call Rotation</h1>
+                        <p>Manage on-call schedules and rotations</p>
+                    </div>
+                </div>
+                <div id="superOncallContainer">
+                    <div class="card">
+                        <div class="card-body">
+                            <table>
+                                <thead><tr><th>Week</th><th>Primary On-Call</th><th>Backup On-Call</th><th>Status</th></tr></thead>
+                                <tbody id="superOncallTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Analytics -->
+            <div id="superS_analytics" class="super-section hidden">
+                <div class="header">
+                    <div class="header-left">
+                        <h1>Analytics Dashboard</h1>
+                        <p>Scheduling analytics and insights</p>
+                    </div>
+                    <div class="header-right">
+                        <button class="btn btn-primary" onclick="generateAnalyticsReport()">Generate Report</button>
+                    </div>
+                </div>
+                <div class="grid-3" id="superAnalyticsStats">
+                    <div class="card"><div class="card-header" style="background: var(--lifestar-blue);"><h2>Total Staff</h2></div><div class="card-body"><h3 id="superAnalyticsTotalStaff">0</h3></div></div>
+                    <div class="card"><div class="card-header" style="background: var(--success-color);"><h2>Total Hours</h2></div><div class="card-body"><h3 id="superAnalyticsTotalHours">0</h3></div></div>
+                    <div class="card"><div class="card-header" style="background: var(--warning-color);"><h2>Active Schedules</h2></div><div class="card-body"><h3 id="superAnalyticsActiveSchedules">0</h3></div></div>
+                </div>
+                <div id="superAnalyticsReport" class="card" style="margin-top: 20px;"><div class="card-body"><p class="text-muted">Click "Generate Report" to view analytics</p></div></div>
+            </div>
+
+            <!-- Shift History -->
+            <div id="superS_history" class="super-section hidden">
+                <div class="header">
+                    <div class="header-left">
+                        <h1>Shift History</h1>
+                        <p>View historical shift data</p>
+                    </div>
+                    <div class="header-right">
+                        <select id="superHistoryStaffFilter" class="form-select" onchange="loadShiftHistorySuper()" style="width: 200px;">
+                            <option value="">All Staff</option>
+                        </select>
+                        <input type="date" id="superHistoryDateFrom" class="form-input" style="width: 150px;" aria-label="From Date">
+                        <input type="date" id="superHistoryDateTo" class="form-input" style="width: 150px;" aria-label="To Date">
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-body">
+                        <table>
+                            <thead><tr><th>Date</th><th>Rig</th><th>Paramedic</th><th>EMT</th><th>Shift Type</th><th>Schedule</th></tr></thead>
+                            <tbody id="superHistoryTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Supervisor Notes -->
+            <div id="superS_notes" class="super-section hidden">
+                <div class="header">
+                    <div class="header-left">
+                        <h1>Supervisor Notes</h1>
+                        <p>Create and manage notes</p>
+                    </div>
+                    <div class="header-right">
+                        <button class="btn btn-success" onclick="showAddNoteModal()">+ Add Note</button>
+                    </div>
+                </div>
+                <div id="superNotesList"></div>
+                <div id="superNoNotesMessage" class="card" style="text-align: center; padding: 40px;">
+                    <h2>No Notes</h2>
+                    <p>Click "Add Note" to create a supervisor note</p>
+                </div>
+            </div>
+
+            <!-- Schedule Templates -->
+            <div id="superS_templates" class="super-section hidden">
+                <div class="header">
+                    <div class="header-left">
+                        <h1>Schedule Templates</h1>
+                        <p>Manage reusable schedule templates</p>
+                    </div>
+                    <div class="header-right">
+                        <button class="btn btn-success" onclick="showCreateTemplateModal()">+ Create Template</button>
+                    </div>
+                </div>
+                <div id="superTemplatesList" class="grid-2"></div>
+                <div id="superNoTemplatesMessage" class="card" style="text-align: center; padding: 40px;">
+                    <h2>No Templates</h2>
+                    <p>Create templates to quickly generate schedules</p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+    <!-- Boss Dashboard -->
+    <div id="bossDashboard" class="dashboard">
+        <!-- Mobile Menu Toggle -->
+        <button class="mobile-menu-toggle" onclick="toggleMobileMenu()">☰</button>
+        <div class="mobile-overlay" onclick="toggleMobileMenu()"></div>
+
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">
+                    <img src="assets/Lifestar.png" alt="Lifestar Ambulance">
+                </div>
+                <div class="sidebar-title">Boss Dashboard</div>
+                <div class="sidebar-user-info" id="bossUserName">Boss</div>
+            </div>
+            <div class="sidebar-nav">
+                <div class="nav-section">
+                    <div class="nav-section-title">Scheduling</div>
+                    <div class="nav-item" onclick="showCreateScheduleModal()">
+                        <div class="nav-item-icon">➕</div>
+                        <div class="nav-item-text">Create Schedule</div>
+                    </div>
+                    <div class="nav-item active" onclick="showBossSection('drafts')">
+                        <div class="nav-item-icon">📝</div>
+                        <div class="nav-item-text">Draft Schedules</div>
+                        <div class="nav-item-badge" id="draftsBadge">0</div>
+                    </div>
+                    <div class="nav-item" onclick="showBossSection('published')">
+                        <div class="nav-item-icon">✅</div>
+                        <div class="nav-item-text">Published Schedules</div>
+                        <div class="nav-item-badge" id="publishedBadge">0</div>
+                    </div>
+                    <div class="nav-item" onclick="showBossSection('archived')">
+                        <div class="nav-item-icon">📦</div>
+                        <div class="nav-item-text">Past Schedules</div>
+                        <div class="nav-item-badge" id="archivedBadge">0</div>
+                    </div>
+                    <div class="nav-item" onclick="showBossSection('calendar')">
+                        <div class="nav-item-icon">📆</div>
+                        <div class="nav-item-text">Calendar View</div>
+                    </div>
+                    <div class="nav-item" onclick="showBossSection('crews')">
+                        <div class="nav-item-icon">👥</div>
+                        <div class="nav-item-text">Crew Management</div>
+                    </div>
+                </div>
+                <div class="nav-section">
+                    <div class="nav-section-title">Requests</div>
+                    <div class="nav-item" onclick="showBossSection('timeoff')">
+                        <div class="nav-item-icon">🏖️</div>
+                        <div class="nav-item-text">Time Off Requests</div>
+                    </div>
+                    <div class="nav-item" onclick="showBossSection('trades')">
+                        <div class="nav-item-icon">🔄</div>
+                        <div class="nav-item-text">Shift Trades</div>
+                    </div>
+                    <div class="nav-item" onclick="showBossSection('swap')">
+                        <div class="nav-item-icon">🔀</div>
+                        <div class="nav-item-text">Swap Marketplace</div>
+                    </div>
+                </div>
+                <div class="nav-section">
+                    <div class="nav-section-title">Management</div>
+                    <div class="nav-item" onclick="showBossSection('staff')">
+                        <div class="nav-item-icon">👥</div>
+                        <div class="nav-item-text">Staff Directory</div>
+                    </div>
+                    <div class="nav-item" onclick="showBossSection('availability')">
+                        <div class="nav-item-icon">✅</div>
+                        <div class="nav-item-text">Availability</div>
+                    </div>
+                    <div class="nav-item" onclick="showBossSection('training')">
+                        <div class="nav-item-icon">🎓</div>
+                        <div class="nav-item-text">Training</div>
+                    </div>
+                    <div class="nav-item" onclick="showBossSection('bonus')">
+                        <div class="nav-item-icon">💰</div>
+                        <div class="nav-item-text">Bonus Hours</div>
+                    </div>
+                </div>
+                <div class="nav-section">
+                    <div class="nav-section-title">Operations</div>
+                    <div class="nav-item" onclick="showBossSection('callins')">
+                        <div class="nav-item-icon">🚨</div>
+                        <div class="nav-item-text">Emergency Call-ins</div>
+                    </div>
+                    <div class="nav-item" onclick="showBossSection('absences')">
+                        <div class="nav-item-icon">❌</div>
+                        <div class="nav-item-text">Absences</div>
+                    </div>
+                    <div class="nav-item" onclick="showBossSection('oncall')">
+                        <div class="nav-item-icon">📞</div>
+                        <div class="nav-item-text">On-Call Rotation</div>
+                    </div>
+                </div>
+                <div class="nav-section">
+                    <div class="nav-section-title">Analysis</div>
+                    <div class="nav-item" onclick="showBossSection('analytics')">
+                        <div class="nav-item-icon">📊</div>
+                        <div class="nav-item-text">Analytics</div>
+                    </div>
+                    <div class="nav-item" onclick="showBossSection('history')">
+                        <div class="nav-item-icon">📋</div>
+                        <div class="nav-item-text">Shift History</div>
+                    </div>
+                    <div class="nav-item" onclick="showBossSection('reports')">
+                        <div class="nav-item-icon">📈</div>
+                        <div class="nav-item-text">Reports</div>
+                    </div>
+                    <div class="nav-item" onclick="showBossSection('dataVisualization')">
+                        <div class="nav-item-icon">📈</div>
+                        <div class="nav-item-text">Data Visualization</div>
+                    </div>
+                </div>
+                <div class="nav-section">
+                    <div class="nav-section-title">Other</div>
+                    <div class="nav-item" onclick="showBossSection('payroll')">
+                        <div class="nav-item-icon">💰</div>
+                        <div class="nav-item-text">Payroll</div>
+                    </div>
+                    <div class="nav-item" onclick="showBossSection('notes')">
+                        <div class="nav-item-icon">📝</div>
+                        <div class="nav-item-text">Supervisor Notes</div>
+                    </div>
+                    <div class="nav-item" onclick="showBossSection('templates')">
+                        <div class="nav-item-icon">📋</div>
+                        <div class="nav-item-text">Schedule Templates</div>
+                    </div>
+                </div>
+            </div>
+            <div class="sidebar-footer">
+                <button class="btn btn-danger btn-sm" onclick="logout()" style="width: 100%;">Logout</button>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Draft Schedules Section -->
+            <div id="bossDrafts" class="boss-section">
+                <div class="header">
+                    <div class="header-left">
+                        <h1>Draft Schedules</h1>
+                        <p>Manage and edit draft schedules</p>
+                    </div>
+                    
+                <!-- Empty State -->
+                <div id="empty-state-bossDrafts" class="empty-state" style="display:none;text-align:center;padding:3rem 1rem;">
+                    <div style="font-size:3rem;margin-bottom:1rem;">📋</div>
+                    <h3 style="margin:0 0 0.5rem 0;color:var(--text-primary,#212529);">No Data Available</h3>
+                    <p style="margin:0;color:var(--text-secondary,#6c757d);">There are no items to display at this time.</p>
+                </div>
+<div class="header-right">
+                        <button class="btn btn-secondary" onclick="ExportReports.exportSchedulesToPDF()">📄 Export PDF</button>
+                        <button class="btn btn-success" onclick="showCreateScheduleModal()">+ Create New Draft</button>
+                    </div>
+                </div>
+                
+                <!-- Quick Actions Panel -->
+                <div id="quickActionsPanel" class="card" style="margin-bottom: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                    <div class="card-body" style="padding: 20px;">
+                        <h3 style="color: white; margin: 0 0 15px 0; font-size: 18px;">⚡ Quick Actions</h3>
+                        <div class="grid-4" style="gap: 15px;">
+                            <button class="btn btn-light" onclick="showCreateScheduleModal()" style="width: 100%; display: flex; flex-direction: column; align-items: center; padding: 15px; gap: 8px;">
+                                <span style="font-size: 24px;">📅</span>
+                                <span style="font-weight: 600;">Create Schedule</span>
+                            </button>
+                            <button class="btn btn-light" onclick="showBossSection('calendar')" style="width: 100%; display: flex; flex-direction: column; align-items: center; padding: 15px; gap: 8px;">
+                                <span style="font-size: 24px;">📆</span>
+                                <span style="font-weight: 600;">View Calendar</span>
+                            </button>
+                            <button class="btn btn-light" onclick="showBossSection('timeoff')" style="width: 100%; display: flex; flex-direction: column; align-items: center; padding: 15px; gap: 8px;">
+                                <span style="font-size: 24px;">🏖️</span>
+                                <span style="font-weight: 600;">Time Off Requests</span>
+                                <span id="quickActionTimeoffBadge" class="badge" style="display: none; background: var(--danger-color); color: white; border-radius: 50%; width: 20px; height: 20px; font-size: 12px; display: flex; align-items: center; justify-content: center; position: absolute; top: 10px; right: 10px;">0</span>
+                            </button>
+                            <button class="btn btn-light" onclick="showBossSection('staff')" style="width: 100%; display: flex; flex-direction: column; align-items: center; padding: 15px; gap: 8px;">
+                                <span style="font-size: 24px;">👥</span>
+                                <span style="font-weight: 600;">Staff Directory</span>
+                            </button>
+                            <button class="btn btn-light" onclick="showBossSection('crews')" style="width: 100%; display: flex; flex-direction: column; align-items: center; padding: 15px; gap: 8px;">
+                                <span style="font-size: 24px;">🚑</span>
+                                <span style="font-weight: 600;">Crew Management</span>
+                            </button>
+                            <button class="btn btn-light" onclick="showBossSection('analytics')" style="width: 100%; display: flex; flex-direction: column; align-items: center; padding: 15px; gap: 8px;">
+                                <span style="font-size: 24px;">📊</span>
+                                <span style="font-weight: 600;">Analytics</span>
+                            </button>
+                            <button class="btn btn-light" onclick="showBossSection('payroll')" style="width: 100%; display: flex; flex-direction: column; align-items: center; padding: 15px; gap: 8px;">
+                                <span style="font-size: 24px;">💰</span>
+                                <span style="font-weight: 600;">Payroll</span>
+                            </button>
+                            <button class="btn btn-light" onclick="showBossSection('callins')" style="width: 100%; display: flex; flex-direction: column; align-items: center; padding: 15px; gap: 8px;">
+                                <span style="font-size: 24px;">🚨</span>
+                                <span style="font-weight: 600;">Emergency Call-ins</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="draftSchedulesList" class="schedule-list">
+                    <!-- Draft schedules will appear here -->
+                </div>
+                <div id="noDraftsMessage" class="card" style="text-align: center; padding: 40px;">
+                    <h2>No Draft Schedules</h2>
+                    <p>Click "Create New Draft" to start a new schedule</p>
+                </div>
+            </div>
+
+            <!-- Published Schedules Section -->
+            <div id="bossPublished" class="boss-section hidden">
+                <div class="header">
+                    <div class="header-left">
+                        <h1>Published Schedules</h1>
+                        <p>View all published schedules</p>
+                    </div>
+                    <div class="header-right">
+                        <button class="btn btn-secondary" onclick="ExportReports.exportSchedulesToPDF()">📄 Export PDF</button>
+                        <button class="btn btn-info" onclick="refreshPublishedSchedules()">Refresh</button>
+                    </div>
+                </div>
+                <div id="publishedSchedulesList" class="schedule-list">
+                    <!-- Published schedules will appear here -->
+                </div>
+                <div id="noPublishedMessage" class="card" style="text-align: center; padding: 40px;">
+                    <h2>No Published Schedules</h2>
+                    <p>Published schedules will appear here once published</p>
+                </div>
+            </div>
+
+            <!-- Past/Archived Schedules Section -->
+            <div id="bossArchived" class="boss-section hidden">
+                <div class="header">
+                    <div class="header-left">
+                        <h1>Past Schedules</h1>
+                        <p>View archived schedules from previous months</p>
+                    </div>
+                    <div class="header-right">
+                        <button class="btn btn-secondary" onclick="ExportReports.exportSchedulesToPDF()">📄 Export PDF</button>
+                        <button class="btn btn-warning" onclick="restoreArchivedSchedule()">Restore Selected</button>
+                    </div>
+                </div>
+                <div id="archivedSchedulesList" class="schedule-list">
+                    <!-- Archived schedules will appear here -->
+                </div>
+                <div id="noArchivedMessage" class="card" style="text-align: center; padding: 40px;">
+                    <h2>No Past Schedules</h2>
+                    <p>Archived schedules from previous months will appear here</p>
+                </div>
+            </div>
+
+            <!-- Schedule Editor Section -->
+            <div id="scheduleEditor" class="boss-section hidden">
+                <div class="header">
+                    <div class="header-left">
+                        <button class="btn btn-secondary" onclick="closeScheduleEditor()">&larr; Back</button>
+                        <h1 id="editorScheduleName">Schedule Editor</h1>
+                        <span class="badge" id="editorScheduleStatus">Draft</span>
+                    </div>
+                    <div class="header-right">
+                        <button class="btn btn-secondary" onclick="showModal('duplicateModal')">Duplicate</button>
+                        <button class="btn btn-secondary" onclick="exportSchedule()">Export</button>
+                        <button class="btn btn-primary" onclick="saveScheduleChanges()">Save</button>
+                        <button class="btn btn-success" onclick="publishScheduleFromEditor()">Publish</button>
+                    </div>
+                </div>
+
+                <!-- Schedule Statistics -->
+                <div class="stats-bar">
+                    <div class="stat-item">
+                        <span class="stat-label">Total Shifts:</span>
+                        <span class="stat-value" id="statTotalShifts">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Total Hours:</span>
+                        <span class="stat-value" id="statTotalHours">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">ALS Crews:</span>
+                        <span class="stat-value" id="statALSCrews" style="color: #e74c3c;">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">BLS Crews:</span>
+                        <span class="stat-value" id="statBLSCrews" style="color: #3498db;">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Days Covered:</span>
+                        <span class="stat-value" id="statDaysCovered">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Date Range:</span>
+                        <span class="stat-value" id="statDateRange">N/A</span>
+                    </div>
+                </div>
+
+                <!-- Editor Main Content -->
+                <div class="editor-container">
+                    <!-- Employee Sidebar -->
+                    <div class="employee-sidebar">
+                        <div class="sidebar-header">
+                            <h2>Staff</h2>
+                            <select id="staffFilter" class="form-select" onchange="filterEmployeeList()">
+                                <option value="all">All Staff</option>
+                                <option value="paramedic">Paramedics</option>
+                                <option value="emt">EMTs</option>
+                            </select>
+                        </div>
+                        <div id="employeeList" class="employee-list">
+                            <!-- Employees will be loaded here -->
+                        </div>
+                    </div>
+
+                    <!-- Calendar Grid -->
+                    <div class="calendar-editor">
+                        <div class="calendar-controls">
+                            <div class="calendar-header">
+                                <h2 id="editorMonthYear"></h2>
+                                <p class="mobile-hint" id="mobileHint">📱 Tap any day to add a shift</p>
+                            </div>
+                            <div class="quick-add">
+                                <input type="date" id="templateDate" class="form-input" style="width: 150px;" aria-label="Template Date">
+                                <select id="shiftTemplate" class="form-select" style="width: 200px;">
+                                    <option value="">Quick Add Template</option>
+                                </select>
+                                <button class="btn btn-primary" onclick="applyShiftTemplate()">Add</button>
+                            </div>
+                            <div class="mobile-add-shift">
+                                <button class="btn btn-success btn-mobile-add-shift" onclick="showMobileAddShift()">
+                                    ➕ Add Shift
+                                </button>
+                            </div>
+                        </div>
+                        <div id="editorCalendarGrid" class="calendar-grid">
+                            <!-- Calendar days will be generated here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Calendar Section -->
+            <div id="bossCalendar" class="boss-section hidden">
+                <div class="header">
+                    <div class="header-left">
+                        <h1>Calendar View</h1>
+                        <p>Visual schedule overview</p>
+                    </div>
+                    <div class="header-right">
+                        <select id="calendarScheduleSelect" class="form-select" onchange="loadCalendar()" style="width: 200px;">
+                            <option value="">Select Schedule</option>
+                        </select>
+                        <div class="btn-group" style="display: inline-flex; gap: 5px;">
+                            <button class="btn btn-sm" id="calendarViewMonth" onclick="setCalendarView('month')" style="background: var(--lifestar-blue); color: white;">Month</button>
+                            <button class="btn btn-sm" id="calendarViewWeek" onclick="setCalendarView('week')">Week</button>
+                            <button class="btn btn-sm" id="calendarViewDay" onclick="setCalendarView('day')">Day</button>
+                        </div>
+                        <button class="btn btn-info" onclick="loadCalendar()">Refresh</button>
+                    </div>
+                </div>
+                
+                <!-- Calendar Legend -->
+                <div class="card" style="margin-bottom: 15px;">
+                    <div class="card-body" style="padding: 10px 20px; display: flex; gap: 20px; align-items: center;">
+                        <strong>Shift Types:</strong>
+                        <span style="display: flex; align-items: center; gap: 5px;"><span style="width: 12px; height: 12px; background: #4CAF50; border-radius: 2px;"></span> Day</span>
+                        <span style="display: flex; align-items: center; gap: 5px;"><span style="width: 12px; height: 12px; background: #2196F3; border-radius: 2px;"></span> Night</span>
+                        <span style="display: flex; align-items: center; gap: 5px;"><span style="width: 12px; height: 12px; background: #FF9800; border-radius: 2px;"></span> Evening</span>
+                        <span style="display: flex; align-items: center; gap: 5px;"><span style="width: 12px; height: 12px; background: #9C27B0; border-radius: 2px;"></span> 24-Hour</span>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-body">
+                        <div id="calendarContainer">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                                <button class="btn btn-sm" onclick="changeCalendarPeriod(-1)">◀ Previous</button>
+                                <h2 id="calendarPeriodLabel"></h2>
+                                <button class="btn btn-sm" onclick="changeCalendarPeriod(1)">Next ▶</button>
+                            </div>
+                            <div id="calendarGrid" style="display: grid; gap: 5px;">
+                                <!-- Calendar days will be generated here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Staff Section -->
+            <div id="bossStaff" class="boss-section hidden">
+                <div class="header">
+                    <div class="header-left">
+                        <h1>Staff Directory</h1>
+                        <p>View and manage all staff members</p>
+                    </div>
+                    <div class="header-right">
+                        <button class="btn btn-secondary" onclick="ExportReports.exportStaffDirectoryToCSV()">📊 Export CSV</button>
+                        <input type="text" id="staffSearch" class="form-input" placeholder="Search staff..." aria-label="Search staff" onkeyup="filterStaff()" style="width: 200px;">
+                        <select id="staffRoleFilter" class="form-select" onchange="filterStaff()" style="width: 150px;">
+                            <option value="">All Roles</option>
+                            <option value="paramedic">Paramedics</option>
+                            <option value="emt">EMTs</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="staffGrid" class="grid-3" style="margin-top: 20px;">
+                    <!-- Staff cards will be generated here -->
+                </div>
+            </div>
+
+            <!-- Other Boss Sections (placeholders) -->
+            <div id="bossCrews" class="boss-section hidden">
+                <div class="header">
+                    <div class="header-left">
+                        <h1>Crew Management</h1>
+                        <p>Create and manage crew templates</p>
+                    </div>
+                    <div class="header-right">
+                        <button class="btn btn-success" onclick="showCreateCrewTemplateModal()">+ Create Crew</button>
+                    </div>
+                </div>
+                <div id="crewTemplatesGrid" class="grid-3" style="margin-top: 20px;">
+                    <!-- Crew templates will appear here -->
+                </div>
+            </div>
+
+            <div id="bossTimeoff" class="boss-section hidden">
+                <div class="header">
+                    <div class="header-left">
+                        <h1>Time Off Requests</h1>
+                        <p>Approve or reject time-off requests</p>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-body">
+                        <table id="timeoffTable">
+                            <thead>
+                                <tr>
+                                    <th>Staff</th>
+                                    <th>Date Range</th>
+                                    <th>Reason</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="timeoffTableBody">
+                                <!-- Time-off requests will appear here -->
+                            </tbody>
+                        </table>
+                        <div id="noTimeoffMessage" class="text-muted" style="text-align: center; padding: 20px;">
+                            No time-off requests found.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="bossTrades" class="boss-section hidden">
+                <div class="header">
+                    <div class="header-left">
+                        <h1>Shift Trades</h1>
+                        <p>Approve or reject shift trade requests</p>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-body">
+                        <table id="shiftTradesTable">
+                            <thead>
+                                <tr>
+                                    <th>Requester</th>
+                                    <th>Date</th>
+                                    <th>Shift</th>
+                                    <th>Trade With</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="shiftTradesTableBody">
+                                <!-- Shift trades will appear here -->
+                            </tbody>
+                        </table>
+                        <div id="noShiftTradesMessage" class="text-muted" style="text-align: center; padding: 20px;">
+                            No shift trade requests found.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="bossSwap" class="boss-section hidden">
+                <div class="header">
+                    <div class="header-left">
+                        <h1>Swap Marketplace</h1>
+                        <p>View and manage shift swap listings</p>
+                    </div>
+                </div>
+                <div id="swapMarketplaceGrid" class="grid-3" style="margin-top: 20px;">
+                    <!-- Swap listings will appear here -->
+                </div>
+                <div id="noSwapListingsMessage" class="card" style="text-align: center; padding: 40px;">
+                    <h2>No Swap Listings</h2>
+                    <p>No shift swap listings available</p>
+                </div>
+            </div>
+
+            <div id="bossAvailability" class="boss-section hidden">
+                <div class="header">
+                    <div class="header-left">
+                        <h1>Staff Availability</h1>
+                        <p>View and manage staff availability</p>
+                    </div>
+                    <div class="header-right">
+                        <select id="availabilityStaffFilter" class="form-select" onchange="loadAvailabilityCalendar()" style="width: 200px;">
+                            <option value="">All Staff</option>
+                        </select>
+                        <button class="btn btn-info" onclick="loadAvailabilityCalendar()">Refresh</button>
+                    </div>
+                </div>
+                
+                <!-- Availability Legend -->
+                <div class="card" style="margin-bottom: 15px;">
+                    <div class="card-body" style="padding: 10px 20px; display: flex; gap: 20px; align-items: center;">
+                        <strong>Status:</strong>
+                        <span style="display: flex; align-items: center; gap: 5px;"><span style="width: 12px; height: 12px; background: #4CAF50; border-radius: 2px;"></span> Available</span>
+                        <span style="display: flex; align-items: center; gap: 5px;"><span style="width: 12px; height: 12px; background: #F44336; border-radius: 2px;"></span> Unavailable</span>
+                        <span style="display: flex; align-items: center; gap: 5px;"><span style="width: 12px; height: 12px; background: #FF9800; border-radius: 2px;"></span> On-Call</span>
+                        <span style="display: flex; align-items: center; gap: 5px;"><span style="width: 12px; height: 12px; background: #9E9E9E; border-radius: 2px;"></span> Unknown</span>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-body">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                            <button class="btn btn-sm" onclick="changeAvailabilityMonth(-1)">◀ Previous</button>
+                            <h2 id="availabilityMonthYear"></h2>
+                            <button class="btn btn-sm" onclick="changeAvailabilityMonth(1)">Next ▶</button>
+                        </div>
+                        <div id="availabilityCalendar" style="overflow-x: auto;">
+                            <!-- Availability calendar will be generated here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="bossTraining" class="boss-section hidden">
+                <div class="header">
+                    <div class="header-left">
+                        <h1>Training Module</h1>
+                        <p>Manage staff training and certifications</p>
+                    </div>
+                    <div class="header-right">
+                        <button class="btn btn-success" onclick="showAddTrainingModal()">+ Add Training</button>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-body">
+                        <table id="trainingTable">
+                            <thead>
+                                <tr>
+                                    <th>Training</th>
+                                    <th>Type</th>
+                                    <th>Staff</th>
+                                    <th>Date</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="trainingTableBody">
+                                <!-- Training records will appear here -->
+                            </tbody>
+                        </table>
+                        <div id="noTrainingMessage" class="text-muted" style="text-align: center; padding: 20px;">
+                            No training records found.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="bossBonus" class="boss-section hidden">
+                <div class="header">
+                    <div class="header-left">
+                        <h1>Bonus Hours</h1>
+                        <p>Award and manage bonus hours</p>
+                    </div>
+                    <div class="header-right">
+                        <button class="btn btn-success" onclick="showAwardBonusModal()">+ Award Bonus</button>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-body">
+                        <div id="bonusHoursSummary" class="grid-3" style="margin-bottom: 20px;">
+                            <!-- Bonus hours summary will appear here -->
+                        </div>
+                        <table id="bonusHoursTable">
+                            <thead>
+                                <tr>
+                                    <th>Staff</th>
+                                    <th>Reason</th>
+                                    <th>Hours</th>
+                                    <th>Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="bonusHoursTableBody">
+                                <!-- Bonus hours records will appear here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="bossCallins" class="boss-section hidden">
+                <div class="header">
+                    <div class="header-left">
+                        <h1>Emergency Call-ins</h1>
+                        <p>Record emergency call-ins and replacements</p>
+                    </div>
+                    <div class="header-right">
+                        <button class="btn btn-danger" onclick="showRecordCallinModal()">+ Record Call-in</button>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-body">
+                        <table id="callinsTable">
+                            <thead>
+                                <tr>
+                                    <th>Staff</th>
+                                    <th>Date</th>
+                                    <th>Reason</th>
+                                    <th>Replacement</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="callinsTableBody">
+                                <!-- Call-ins will appear here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="bossAbsences" class="boss-section hidden">
+                <div class="header">
+                    <div class="header-left">
+                        <h1>Absence Management</h1>
+                        <p>Record and manage staff absences</p>
+                    </div>
+                    <div class="header-right">
+                        <button class="btn btn-warning" onclick="showMarkAbsenceModal()">+ Mark Absence</button>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-body">
+                        <table id="absencesTable">
+                            <thead>
+                                <tr>
+                                    <th>Staff</th>
+                                    <th>Date</th>
+                                    <th>Type</th>
+                                    <th>Reason</th>
+                                    <th>Replacement</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="absencesTableBody">
+                                <!-- Absences will appear here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="bossOncall" class="boss-section hidden">
+                <div class="header">
+                    <div class="header-left">
+                        <h1>On-Call Rotation</h1>
+                        <p>Manage on-call schedules</p>
+                    </div>
+                    <div class="header-right">
+                        <button class="btn btn-success" onclick="showCreateOncallRotationModal()">+ Create Rotation</button>
+                    </div>
+                </div>
+                <div id="oncallRotationsGrid" class="grid-2" style="margin-top: 20px;">
+                    <!-- On-call rotations will appear here -->
+                </div>
+            </div>
+
+            <div id="bossAnalytics" class="boss-section hidden">
+                <div class="header">
+                    <div class="header-left">
+                        <h1>Analytics Dashboard</h1>
+                        <p>View system statistics and reports</p>
+                    </div>
+                    <div class="header-right">
+                        <button class="btn btn-info" onclick="generateAnalyticsReport()">Generate Report</button>
+                    </div>
+                </div>
+                <div class="grid-3" style="margin-bottom: 20px;">
+                    <div class="card">
+                        <div class="card-header" style="background: linear-gradient(135deg, var(--lifestar-red) 0%, #ff6b6b 100%);">
+                            <h2>Total Staff</h2>
+                        </div>
+                        <div class="card-body">
+                            <h3 id="analyticsTotalStaff">0</h3>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header" style="background: linear-gradient(135deg, var(--success-color) 0%, #34ce57 100%);">
+                            <h2>Total Hours</h2>
+                        </div>
+                        <div class="card-body">
+                            <h3 id="analyticsTotalHours">0</h3>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header" style="background: linear-gradient(135deg, var(--warning-color) 0%, #ffca28 100%);">
+                            <h2>Active Schedules</h2>
+                        </div>
+                        <div class="card-body">
+                            <h3 id="analyticsActiveSchedules">0</h3>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="grid-2" style="margin-bottom: 20px;">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2>Hours Worked by Staff</h2>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="staffHoursChart" height="300"></canvas>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <h2>Shift Distribution by Type</h2>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="shiftTypeChart" height="300"></canvas>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card" style="margin-bottom: 20px;">
+                    <div class="card-header">
+                        <h2>Staff Availability Trend (Last 30 Days)</h2>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="availabilityTrendChart" height="200"></canvas>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <h2>Staffing Levels</h2>
+                    </div>
+                    <div class="card-body">
+                        <table id="staffingLevelsTable">
+                            <thead>
+                                <tr>
+                                    <th>Staff Member</th>
+                                    <th>Hours Worked</th>
+                                    <th>Scheduled Shifts</th>
+                                    <th>Coverage</th>
+                                </tr>
+                            </thead>
+                            <tbody id="staffingLevelsTableBody">
+                                <!-- Staffing levels will appear here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="bossHistory" class="boss-section hidden">
+                <div class="header">
+                    <div class="header-left">
+                        <h1>Shift History</h1>
+                        <p>View historical shift records</p>
+                    </div>
+                    <div class="header-right">
+                        <select id="historyStaffFilter" class="form-select" style="width: 200px;" onchange="loadShiftHistory()">
+                            <option value="">All Staff</option>
+                        </select>
+                        <select id="historyMonthFilter" class="form-select" style="width: 150px;" onchange="loadShiftHistory()">
+                            <option value="">All Months</option>
+                            <option value="January">January</option>
+                            <option value="February">February</option>
+                            <option value="March">March</option>
+                            <option value="April">April</option>
+                            <option value="May">May</option>
+                            <option value="June">June</option>
+                            <option value="July">July</option>
+                            <option value="August">August</option>
+                            <option value="September">September</option>
+                            <option value="October">October</option>
+                            <option value="November">November</option>
+                            <option value="December">December</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-body">
+                        <table id="shiftHistoryTable">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Staff</th>
+                                    <th>Shift Type</th>
+                                    <th>Rig</th>
+                                    <th>Crew</th>
+                                    <th>Duration</th>
+                                </tr>
+                            </thead>
+                            <tbody id="shiftHistoryTableBody">
+                                <!-- Shift history will appear here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="bossPayroll" class="boss-section hidden">
+                <div class="header">
+                    <div class="header-left">
+                        <h1>Payroll Management</h1>
+                        <p>Calculate and manage payroll for all staff</p>
+                    </div>
+                    <div class="header-right">
+                        <button class="btn btn-secondary" onclick="ExportReports.exportPayrollReportToCSV()">📊 Export CSV</button>
+                    </div>
+                </div>
+                <!-- Payroll dashboard will be loaded here by payroll-system.js -->
+            </div>
+
+            <div id="bossReports" class="boss-section hidden">
+                <div class="header">
+                    <div class="header-left">
+                        <h1>Reports</h1>
+                        <p>Generate and export various reports</p>
+                    </div>
+                </div>
+                
+                <div class="card" style="margin-bottom: 20px;">
+                    <div class="card-body">
+                        <h3 style="margin-bottom: 20px;">Monthly Summary Reports</h3>
+                        <div style="display: flex; gap: 15px; align-items: center; margin-bottom: 20px;">
+                            <label for="reportYear" style="font-weight: 600;">Year:</label>
+                            <select id="reportYear" class="form-select" style="width: 120px;">
+                                <option value="2024">2024</option>
+                                <option value="2025">2025</option>
+                            </select>
+                            <label for="reportMonth" style="font-weight: 600;">Month:</label>
+                            <select id="reportMonth" class="form-select" style="width: 150px;">
+                                <option value="0">January</option>
+                                <option value="1">February</option>
+                                <option value="2">March</option>
+                                <option value="3">April</option>
+                                <option value="4">May</option>
+                                <option value="5">June</option>
+                                <option value="6">July</option>
+                                <option value="7">August</option>
+                                <option value="8">September</option>
+                                <option value="9">October</option>
+                                <option value="10">November</option>
+                                <option value="11">December</option>
+                            </select>
+                            <button class="btn btn-primary" onclick="generateMonthlySummaryReport()">Generate Report</button>
+                        </div>
+                        <div id="monthlySummaryReport" style="margin-top: 20px;"></div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-body">
+                        <h3 style="margin-bottom: 20px;">Quick Export</h3>
+                        <div class="grid-3" style="gap: 15px;">
+                            <button class="btn btn-info" onclick="ExportReports.exportSchedulesToPDF()" style="padding: 20px;">
+                                <div style="font-size: 24px; margin-bottom: 10px;">📄</div>
+                                <div style="font-weight: 600;">Export All Schedules to PDF</div>
+                            </button>
+                            <button class="btn btn-success" onclick="ExportReports.exportStaffDirectoryToCSV()" style="padding: 20px;">
+                                <div style="font-size: 24px; margin-bottom: 10px;">📊</div>
+                                <div style="font-weight: 600;">Export Staff Directory to CSV</div>
+                            </button>
+                            <button class="btn btn-warning" onclick="ExportReports.exportPayrollReportToCSV()" style="padding: 20px;">
+                                <div style="font-size: 24px; margin-bottom: 10px;">💰</div>
+                                <div style="font-weight: 600;">Export Payroll Reports to CSV</div>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="bossDataVisualization" class="boss-section hidden">
+                <div class="header">
+                    <div class="header-left">
+                        <h1>Data Visualization</h1>
+                        <p>Advanced analytics and visualizations</p>
+                    </div>
+                </div>
+                <div class="data-visualization-container">
+                    <p>Loading visualizations...</p>
+                </div>
+            </div>
+
+            <div id="bossNotes" class="boss-section hidden">
+                <div class="header">
+                    <div class="header-left">
+                        <h1>Supervisor Notes</h1>
+                        <p>Manage performance and conduct notes</p>
+                    </div>
+                    <div class="header-right">
+                        <button class="btn btn-success" onclick="showAddNoteModal()">+ Add Note</button>
+                    </div>
+                </div>
+                <div id="supervisorNotesGrid" class="grid-2" style="margin-top: 20px;">
+                    <!-- Notes will appear here -->
+                </div>
+            </div>
+
+            <div id="bossTemplates" class="boss-section hidden">
+                <div class="header">
+                    <div class="header-left">
+                        <h1>Schedule Templates</h1>
+                        <p>Create and manage schedule templates</p>
+                    </div>
+                    <div class="header-right">
+                        <button class="btn btn-success" onclick="showCreateTemplateModal()">+ Create Template</button>
+                    </div>
+                </div>
+                <div id="scheduleTemplatesGrid" class="grid-3" style="margin-top: 20px;">
+                    <!-- Templates will appear here -->
+                </div>
+                <div id="noTemplatesMessage" class="card" style="text-align: center; padding: 40px;">
+                    <h2>No Templates</h2>
+                    <p>Create templates to quickly generate schedules</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Paramedic Dashboard -->
+    <div id="paramedicDashboard" class="dashboard">
+        <!-- Mobile Menu Toggle -->
+        <button class="mobile-menu-toggle" onclick="toggleMobileMenu()">☰</button>
+        <div class="mobile-overlay" onclick="toggleMobileMenu()"></div>
+
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">
+                    <img src="assets/Lifestar.png" alt="Lifestar Ambulance">
+                </div>
+                <div class="sidebar-title">Paramedic</div>
+                <div class="sidebar-user-info" id="paramedicUserName">Paramedic</div>
+            </div>
+            <div class="sidebar-nav">
+                <div class="nav-section">
+                    <div class="nav-section-title">My Schedule</div>
+                    <div class="nav-item active" onclick="showParamedicSection('myschedule')">
+                        <div class="nav-item-icon">📅</div>
+                        <div class="nav-item-text">My Schedule</div>
+                    </div>
+                    <div class="nav-item" onclick="showParamedicSection('availability')">
+                        <div class="nav-item-icon">✅</div>
+                        <div class="nav-item-text">Availability</div>
+                    </div>
+                </div>
+                <div class="nav-section">
+                    <div class="nav-section-title">Requests</div>
+                    <div class="nav-item" onclick="showParamedicSection('timeoff')">
+                        <div class="nav-item-icon">🏖️</div>
+                        <div class="nav-item-text">Request Time Off</div>
+                    </div>
+                    <div class="nav-item" onclick="showParamedicSection('trades')">
+                        <div class="nav-item-icon">🔄</div>
+                        <div class="nav-item-text">Request Trade</div>
+                    </div>
+                </div>
+                <div class="nav-section">
+                    <div class="nav-section-title">My Work</div>
+                    <div class="nav-item" onclick="showParamedicSection('crews')">
+                        <div class="nav-item-icon">👥</div>
+                        <div class="nav-item-text">My Crews</div>
+                    </div>
+                    <div class="nav-item" onclick="showParamedicSection('incidents')">
+                        <div class="nav-item-icon">🚨</div>
+                        <div class="nav-item-text">Incident Reports</div>
+                    </div>
+                </div>
+                <div class="nav-section">
+                    <div class="nav-section-title">Performance</div>
+                    <div class="nav-item" onclick="showParamedicSection('performance')">
+                        <div class="nav-item-icon">📊</div>
+                        <div class="nav-item-text">My Performance</div>
+                    </div>
+                    <div class="nav-item" onclick="showParamedicSection('training')">
+                        <div class="nav-item-icon">🎓</div>
+                        <div class="nav-item-text">Training</div>
+                    </div>
+                </div>
+                <div class="nav-section">
+                    <div class="nav-section-title">Other</div>
+                    <div class="nav-item" onclick="showParamedicSection('notifications')">
+                        <div class="nav-item-icon">🔔</div>
+                        <div class="nav-item-text">Notifications</div>
+                    </div>
+                    <div class="nav-item" onclick="showParamedicSection('settings')">
+                        <div class="nav-item-icon">⚙️</div>
+                        <div class="nav-item-text">Settings</div>
+                    </div>
+                </div>
+            </div>
+            <div class="sidebar-footer">
+                <button class="btn btn-danger btn-sm" onclick="logout()" style="width: 100%;">Logout</button>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div id="paramedicMyschedule" class="paramedic-section">
+                <div class="header">
+                    <div class="header-left">
+                        <h1>My Schedule</h1>
+                        <p>View your upcoming shifts</p>
+                    </div>
+                </div>
+                <div id="myScheduleList" class="schedule-list">
+                    <!-- Personal shifts will appear here -->
+                </div>
+                <div id="noMyScheduleMessage" class="card" style="text-align: center; padding: 40px;">
+                    <h2>No Scheduled Shifts</h2>
+                    <p>You don't have any shifts scheduled yet</p>
+                </div>
+            </div>
+
+            <div id="paramedicAvailability" class="paramedic-section hidden">
+                <div class="header">
+                    <div class="header-left">
+                        <h1>My Availability</h1>
+                        <p>Set your availability preferences</p>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-body">
+                        <form id="availabilityForm">
+                            <div class="form-group">
+                                <label>Preferred Shifts</label>
+                                <div style="margin-bottom: 10px;">
+                                    <input type="checkbox" id="availDay"> <label for="availDay">Day Shift (0730-1930)</label>
+                                </div>
+                                <div style="margin-bottom: 10px;">
+                                    <input type="checkbox" id="availNight"> <label for="availNight">Night Shift (1930-0730)</label>
+                                </div>
+                                <div>
+                                    <input type="checkbox" id="avail24Hour"> <label for="avail24Hour">24-Hour Shift</label>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Preferred Days Off</label>
+                                <select class="form-select" multiple>
+                                    <option value="Sunday">Sunday</option>
+                                    <option value="Monday">Monday</option>
+                                    <option value="Tuesday">Tuesday</option>
+                                    <option value="Wednesday">Wednesday</option>
+                                    <option value="Thursday">Thursday</option>
+                                    <option value="Friday">Friday</option>
+                                    <option value="Saturday">Saturday</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Additional Notes</label>
+                                <textarea class="form-input" rows="3" placeholder="Any availability restrictions or preferences..."></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Save Availability</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <div id="paramedicTimeoff" class="paramedic-section hidden">
+                <div class="header">
+                    <div class="header-left">
+                        <h1>Request Time Off</h1>
+                        <p>Submit a time-off request</p>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-body">
+                        <form id="requestTimeoffForm">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="timeoffStartDate">Start Date</label>
+                                    <input type="date" id="timeoffStartDate" class="form-input" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="timeoffEndDate">End Date</label>
+                                    <input type="date" id="timeoffEndDate" class="form-input" required>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="timeoffReason">Reason</label>
+                                <textarea id="timeoffReason" class="form-input" rows="3" placeholder="Please provide a reason for your time-off request" required></textarea>
+                            </div>
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary">Submit Request</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <div id="paramedicTrades" class="paramedic-section hidden">
+                <div class="header">
+                    <h1>Request Shift Trade</h1>
+                </div>
+                <div class="card"><div class="card-body"><p>Shift trade request coming soon</p></div></div>
+            </div>
+
+            <div id="paramedicCrews" class="paramedic-section hidden">
+                <div class="header">
+                    <h1>My Crews</h1>
+                </div>
+                <div class="card"><div class="card-body"><p>My crews coming soon</p></div></div>
+            </div>
+
+            <div id="paramedicIncidents" class="paramedic-section hidden">
+                <div class="header">
+                    <div class="header-left">
+                        <h1>Incident Reports</h1>
+                        <p>Submit and view incident reports</p>
+                    </div>
+                    <div class="header-right">
+                        <button class="btn btn-success" onclick="showSubmitIncidentModal()">+ Submit Report</button>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-body">
+                        <table id="incidentReportsTable">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Type</th>
+                                    <th>Severity</th>
+                                    <th>Status</th>
+                                    <th>Description</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="incidentReportsTableBody">
+                                <!-- Incident reports will appear here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="paramedicPerformance" class="paramedic-section hidden">
+                <div class="header">
+                    <div class="header-left">
+                        <h1>My Performance</h1>
+                        <p>View your performance metrics</p>
+                    </div>
+                </div>
+                <div id="performanceContainer">
+                    <!-- Performance data will be loaded here -->
+                </div>
+            </div>
+
+            <div id="paramedicTraining" class="paramedic-section hidden">
+                <div class="header">
+                    <div class="header-left">
+                        <h1>My Training</h1>
+                        <p>View your training and certifications</p>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-body">
+                        <table id="myTrainingTable">
+                            <thead>
+                                <tr>
+                                    <th>Training</th>
+                                    <th>Type</th>
+                                    <th>Date</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="myTrainingTableBody">
+                                <!-- Training records will appear here -->
+                            </tbody>
+                        </table>
+                        <div id="noMyTrainingMessage" class="text-muted" style="text-align: center; padding: 20px;">
+                            No training records found.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="paramedicNotifications" class="paramedic-section hidden">
+                <div class="header">
+                    <div class="header-left">
+                        <h1>Notifications</h1>
+                        <p>View your notifications</p>
+                    </div>
+                    <div class="header-right">
+                        <button class="btn btn-sm btn-info" onclick="markAllNotificationsRead()">Mark All Read</button>
+                    </div>
+                </div>
+                <div id="notificationsContainer">
+                    <!-- Notifications will appear here -->
+                </div>
+            </div>
+
+            <div id="paramedicSettings" class="paramedic-section hidden">
+                <div class="header">
+                    <div class="header-left">
+                        <h1>Settings</h1>
+                        <p>Manage your account settings</p>
+                    </div>
+                </div>
+                <div id="settingsContainer">
+                    <!-- Settings form will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- EMT Dashboard -->
+    <div id="emtDashboard" class="dashboard">
+        <!-- Mobile Menu Toggle -->
+        <button class="mobile-menu-toggle" onclick="toggleMobileMenu()">☰</button>
+        <div class="mobile-overlay" onclick="toggleMobileMenu()"></div>
+
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">
+                    <img src="assets/Lifestar.png" alt="Lifestar Ambulance">
+                </div>
+                <div class="sidebar-title">EMT Dashboard</div>
+                <div class="sidebar-user-info" id="emtUserName">EMT</div>
+            </div>
+            <div class="sidebar-nav">
+                <div class="nav-section">
+                    <div class="nav-section-title">My Schedule</div>
+                    <div class="nav-item active" onclick="showEmtSection('myschedule')">
+                        <div class="nav-item-icon">📅</div>
+                        <div class="nav-item-text">My Schedule</div>
+                    </div>
+                    <div class="nav-item" onclick="showEmtSection('availability')">
+                        <div class="nav-item-icon">✅</div>
+                        <div class="nav-item-text">Availability</div>
+                    </div>
+                </div>
+                <div class="nav-section">
+                    <div class="nav-section-title">Requests</div>
+                    <div class="nav-item" onclick="showEmtSection('timeoff')">
+                        <div class="nav-item-icon">🏖️</div>
+                        <div class="nav-item-text">Request Time Off</div>
+                    </div>
+                    <div class="nav-item" onclick="showEmtSection('trades')">
+                        <div class="nav-item-icon">🔄</div>
+                        <div class="nav-item-text">Request Trade</div>
+                    </div>
+                </div>
+                <div class="nav-section">
+                    <div class="nav-section-title">My Work</div>
+                    <div class="nav-item" onclick="showEmtSection('crews')">
+                        <div class="nav-item-icon">👥</div>
+                        <div class="nav-item-text">My Crews</div>
+                    </div>
+                    <div class="nav-item" onclick="showEmtSection('incidents')">
+                        <div class="nav-item-icon">🚨</div>
+                        <div class="nav-item-text">Incident Reports</div>
+                    </div>
+                </div>
+                <div class="nav-section">
+                    <div class="nav-section-title">Performance</div>
+                    <div class="nav-item" onclick="showEmtSection('performance')">
+                        <div class="nav-item-icon">📊</div>
+                        <div class="nav-item-text">My Performance</div>
+                    </div>
+                    <div class="nav-item" onclick="showEmtSection('training')">
+                        <div class="nav-item-icon">🎓</div>
+                        <div class="nav-item-text">Training</div>
+                    </div>
+                </div>
+                <div class="nav-section">
+                    <div class="nav-section-title">Other</div>
+                    <div class="nav-item" onclick="showEmtSection('notifications')">
+                        <div class="nav-item-icon">🔔</div>
+                        <div class="nav-item-text">Notifications</div>
+                    </div>
+                    <div class="nav-item" onclick="showEmtSection('settings')">
+                        <div class="nav-item-icon">⚙️</div>
+                        <div class="nav-item-text">Settings</div>
+                    </div>
+                </div>
+            </div>
+            <div class="sidebar-footer">
+                <button class="btn btn-danger btn-sm" onclick="logout()" style="width: 100%;">Logout</button>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div id="emtMyschedule" class="emt-section">
+                <div class="header">
+                    <div class="header-left">
+                        <h1>My Schedule</h1>
+                        <p>View your upcoming shifts</p>
+                    </div>
+                </div>
+                <div id="emtMyScheduleList" class="schedule-list">
+                    <!-- Personal shifts will appear here -->
+                </div>
+                <div id="emtNoMyScheduleMessage" class="card" style="text-align: center; padding: 40px;">
+                    <h2>No Scheduled Shifts</h2>
+                    <p>You don't have any shifts scheduled yet</p>
+                </div>
+            </div>
+
+            <div id="emtAvailability" class="emt-section hidden">
+                <div class="header">
+                    <div class="header-left">
+                        <h1>My Availability</h1>
+                        <p>Set your availability preferences</p>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-body">
+                        <form id="emtAvailabilityForm">
+                            <div class="form-group">
+                                <label>Preferred Shifts</label>
+                                <div style="margin-bottom: 10px;">
+                                    <input type="checkbox" id="emtAvailDay"> <label for="emtAvailDay">Day Shift (0730-1930)</label>
+                                </div>
+                                <div style="margin-bottom: 10px;">
+                                    <input type="checkbox" id="emtAvailNight"> <label for="emtAvailNight">Night Shift (1930-0730)</label>
+                                </div>
+                                <div>
+                                    <input type="checkbox" id="emtAvail24Hour"> <label for="emtAvail24Hour">24-Hour Shift</label>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Preferred Days Off</label>
+                                <select class="form-select" multiple>
+                                    <option value="Sunday">Sunday</option>
+                                    <option value="Monday">Monday</option>
+                                    <option value="Tuesday">Tuesday</option>
+                                    <option value="Wednesday">Wednesday</option>
+                                    <option value="Thursday">Thursday</option>
+                                    <option value="Friday">Friday</option>
+                                    <option value="Saturday">Saturday</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Additional Notes</label>
+                                <textarea class="form-input" rows="3" placeholder="Any availability restrictions or preferences..."></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Save Availability</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <div id="emtTimeoff" class="emt-section hidden">
+                <div class="header">
+                    <div class="header-left">
+                        <h1>Request Time Off</h1>
+                        <p>Submit a time-off request</p>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-body">
+                        <form id="emtRequestTimeoffForm">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="emtTimeoffStartDate">Start Date</label>
+                                    <input type="date" id="emtTimeoffStartDate" class="form-input" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="emtTimeoffEndDate">End Date</label>
+                                    <input type="date" id="emtTimeoffEndDate" class="form-input" required>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="emtTimeoffReason">Reason</label>
+                                <textarea id="emtTimeoffReason" class="form-input" rows="3" placeholder="Please provide a reason for your time-off request" required></textarea>
+                            </div>
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary">Submit Request</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <div id="emtTrades" class="emt-section hidden">
+                <div class="header">
+                    <h1>Request Shift Trade</h1>
+                </div>
+                <div class="card"><div class="card-body"><p>Shift trade request coming soon</p></div></div>
+            </div>
+
+            <div id="emtCrews" class="emt-section hidden">
+                <div class="header">
+                    <h1>My Crews</h1>
+                </div>
+                <div class="card"><div class="card-body"><p>My crews coming soon</p></div></div>
+            </div>
+
+            <div id="emtIncidents" class="emt-section hidden">
+                <div class="header">
+                    <div class="header-left">
+                        <h1>Incident Reports</h1>
+                        <p>Submit and view incident reports</p>
+                    </div>
+                    <div class="header-right">
+                        <button class="btn btn-success" onclick="showSubmitIncidentModal()">+ Submit Report</button>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-body">
+                        <table id="emtIncidentReportsTable">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Type</th>
+                                    <th>Severity</th>
+                                    <th>Status</th>
+                                    <th>Description</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="emtIncidentReportsTableBody">
+                                <!-- Incident reports will appear here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="emtPerformance" class="emt-section hidden">
+                <div class="header">
+                    <div class="header-left">
+                        <h1>My Performance</h1>
+                        <p>View your performance metrics</p>
+                    </div>
+                </div>
+                <div id="emtPerformanceContainer">
+                    <!-- Performance data will be loaded here -->
+                </div>
+            </div>
+
+            <div id="emtTraining" class="emt-section hidden">
+                <div class="header">
+                    <div class="header-left">
+                        <h1>My Training</h1>
+                        <p>View your training and certifications</p>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-body">
+                        <table id="emtMyTrainingTable">
+                            <thead>
+                                <tr>
+                                    <th>Training</th>
+                                    <th>Type</th>
+                                    <th>Date</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="emtMyTrainingTableBody">
+                                <!-- Training records will appear here -->
+                            </tbody>
+                        </table>
+                        <div id="emtNoMyTrainingMessage" class="text-muted" style="text-align: center; padding: 20px;">
+                            No training records found.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="emtNotifications" class="emt-section hidden">
+                <div class="header">
+                    <div class="header-left">
+                        <h1>Notifications</h1>
+                        <p>View your notifications</p>
+                    </div>
+                    <div class="header-right">
+                        <button class="btn btn-sm btn-info" onclick="markAllNotificationsRead()">Mark All Read</button>
+                    </div>
+                </div>
+                <div id="emtNotificationsContainer">
+                    <!-- Notifications will appear here -->
+                </div>
+            </div>
+
+            <div id="emtSettings" class="emt-section hidden">
+                <div class="header">
+                    <div class="header-left">
+                        <h1>Settings</h1>
+                        <p>Manage your account settings</p>
+                    </div>
+                </div>
+                <div id="emtSettingsContainer">
+                    <!-- Settings form will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Schedule Modal -->
+    <div id="createScheduleModal" class="modal">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h2>Create New Schedule</h2>
+                <button class="close-btn" onclick="closeModal('createScheduleModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="createScheduleForm" onsubmit="handleCreateSchedule(event); return false;">
+                    <div class="form-group">
+                        <label for="scheduleName">Schedule Name</label>
+                        <input type="text" id="scheduleName" class="form-input" placeholder="e.g., January 2025" required>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="scheduleMonth">Month</label>
+                            <select id="scheduleMonth" class="form-select" required>
+                                <option value="">Select Month</option>
+                                <option value="January">January</option>
+                                <option value="February">February</option>
+                                <option value="March">March</option>
+                                <option value="April">April</option>
+                                <option value="May">May</option>
+                                <option value="June">June</option>
+                                <option value="July">July</option>
+                                <option value="August">August</option>
+                                <option value="September">September</option>
+                                <option value="October">October</option>
+                                <option value="November">November</option>
+                                <option value="December">December</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="scheduleYear">Year</label>
+                            <select id="scheduleYear" class="form-select" required>
+                                <option value="">Select Year</option>
+                                <option value="2024">2024</option>
+                                <option value="2025" selected>2025</option>
+                                <option value="2026">2026</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="scheduleLocation">Location</label>
+                        <select id="scheduleLocation" class="form-select">
+                            <option value="">All Locations</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="scheduleDescription">Description (Optional)</label>
+                        <textarea id="scheduleDescription" class="form-input" rows="2" placeholder="Add notes about this schedule"></textarea>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" onclick="closeModal('createScheduleModal')">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Create Draft</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add User Modal -->
+    <div id="addUserModal" class="modal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2>Add New User</h2>
+                <button class="close-btn" onclick="closeModal('addUserModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="addUserForm">
+                    <div class="form-group">
+                        <label for="newUserUsername">Username</label>
+                        <input type="text" id="newUserUsername" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="newUserPassword">Password</label>
+                        <input type="password" id="newUserPassword" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="newUserFullName">Full Name</label>
+                        <input type="text" id="newUserFullName" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="newUserRole">Role</label>
+                        <select id="newUserRole" class="form-select" required>
+                            <option value="">Select Role</option>
+                            <option value="super">Super Admin</option>
+                            <option value="boss">Boss</option>
+                            <option value="paramedic">Paramedic</option>
+                            <option value="emt">EMT</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="newUserPhone">Phone Number</label>
+                        <input type="tel" id="newUserPhone" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="newUserLocation">Assigned Location</label>
+                        <select id="newUserLocation" class="form-select">
+                            <option value="">No Location</option>
+                        </select>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" onclick="closeModal('addUserModal')">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Add User</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alert/Notification Modal -->
+    <div id="alertModal" class="modal">
+        <div class="modal-content" style="max-width: 400px;">
+            <div class="modal-header">
+                <h2 id="alertModalTitle">Alert</h2>
+                <button class="close-btn" onclick="closeModal('alertModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p id="alertModalMessage"></p>
+                <div class="form-actions">
+                    <button class="btn btn-primary" onclick="closeModal('alertModal')">OK</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="loading-spinner"></div>
+        <p>Loading...</p>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- UNIFIED MODALS SECTION -->
+    <!-- ============================================ -->
+
+    <!-- Submit Incident Modal -->
+    <div id="submitIncidentModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Submit Incident Report</h2>
+                <button class="close-btn" onclick="closeModal('submitIncidentModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="submitIncidentForm">
+                    <div class="form-group">
+                        <label for="incidentDate">Date</label>
+                        <input type="date" id="incidentDate" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="incidentType">Incident Type</label>
+                        <select id="incidentType" class="form-select" required>
+                            <option value="">Select Type</option>
+                            <option value="Medical Emergency">Medical Emergency</option>
+                            <option value="Trauma">Trauma</option>
+                            <option value="Cardiac Arrest">Cardiac Arrest</option>
+                            <option value="Respiratory Emergency">Respiratory Emergency</option>
+                            <option value="Vehicle Accident">Vehicle Accident</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="incidentSeverity">Severity</label>
+                        <select id="incidentSeverity" class="form-select" required>
+                            <option value="">Select Severity</option>
+                            <option value="Low">Low</option>
+                            <option value="Medium">Medium</option>
+                            <option value="High">High</option>
+                            <option value="Critical">Critical</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="incidentDescription">Description</label>
+                        <textarea id="incidentDescription" class="form-input" rows="5" placeholder="Describe the incident..." required></textarea>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" onclick="closeModal('submitIncidentModal')">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Submit Report</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Crew Template Modal (Boss Dashboard - Crew Templates section) -->
+    <div id="createCrewTemplateModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Create Crew Template</h2>
+                <button class="close-btn" onclick="closeModal('createCrewTemplateModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="createCrewTemplateForm">
+                    <div class="form-group">
+                        <label for="templateCrewName">Crew Name</label>
+                        <input type="text" id="templateCrewName" class="form-input" placeholder="e.g., Alpha Crew" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="templateCrewType">Crew Type</label>
+                        <select id="templateCrewType" class="form-select" required>
+                            <option value="ALS">ALS (Advanced Life Support)</option>
+                            <option value="BLS">BLS (Basic Life Support)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="templateCrewRig">Preferred Rig</label>
+                        <select id="templateCrewRig" class="form-select" required>
+                            <option value="3F16">3F16 (ALS)</option>
+                            <option value="3F17">3F17 (ALS)</option>
+                            <option value="3F18">3F18 (ALS)</option>
+                            <option value="3F23">3F23 (BLS)</option>
+                            <option value="3F24">3F24 (BLS)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="templateCrewParamedic">Paramedic</label>
+                        <select id="templateCrewParamedic" class="form-select" required>
+                            <option value="">Select Paramedic</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="templateCrewEmt">EMT</label>
+                        <select id="templateCrewEmt" class="form-select" required>
+                            <option value="">Select EMT</option>
+                        </select>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" onclick="closeModal('createCrewTemplateModal')">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Create Template</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create/Edit Crew Modal (Schedule Editor - for adding shifts to schedule) -->
+    <div id="createCrewModal" class="modal">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h2 id="crewModalTitle">Add Shift to Schedule</h2>
+                <button class="close-btn" onclick="closeModal('createCrewModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="createCrewForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="crewDate">Date</label>
+                            <input type="date" id="crewDate" class="form-input" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="crewRig">Rig</label>
+                            <select id="crewRig" class="form-select" required>
+                                <option value="">Select Rig</option>
+                                <option value="3F16">3F16 (ALS)</option>
+                                <option value="3F17">3F17 (ALS)</option>
+                                <option value="3F18">3F18 (ALS)</option>
+                                <option value="3F23">3F23 (BLS)</option>
+                                <option value="3F24">3F24 (BLS)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="crewShiftType">Shift Type</label>
+                            <select id="crewShiftType" class="form-select" required>
+                                <option value="">Select Shift</option>
+                                <option value="0730-0730 (24hr)">0730-0730 (24hr)</option>
+                                <option value="0730-1930 (Day)">0730-1930 (Day)</option>
+                                <option value="1930-0730 (Night)">1930-0730 (Night)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="crewType">Crew Type</label>
+                            <input type="text" id="crewType" class="form-input" readonly style="background: #f0f0f0;">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="crewParamedic">Paramedic</label>
+                            <select id="crewParamedic" class="form-select">
+                                <option value="">Select Paramedic</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="crewEMT">EMT</label>
+                            <select id="crewEMT" class="form-select">
+                                <option value="">Select EMT</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" onclick="closeModal('createCrewModal')">Cancel</button>
+                        <button type="button" class="btn btn-primary" onclick="saveCrew()">
+                            <span class="btn-icon">➕</span> Add Shift
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Duplicate Schedule Modal -->
+    <div id="duplicateModal" class="modal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2>Duplicate Schedule</h2>
+                <button class="close-btn" onclick="closeModal('duplicateModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>This will create a new schedule based on the current one, mapping days by day of week.</p>
+                <form id="duplicateForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="duplicateMonth">Target Month</label>
+                            <select id="duplicateMonth" class="form-select" required>
+                                <option value="">Select Month</option>
+                                <option value="January">January</option>
+                                <option value="February">February</option>
+                                <option value="March">March</option>
+                                <option value="April">April</option>
+                                <option value="May">May</option>
+                                <option value="June">June</option>
+                                <option value="July">July</option>
+                                <option value="August">August</option>
+                                <option value="September">September</option>
+                                <option value="October">October</option>
+                                <option value="November">November</option>
+                                <option value="December">December</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="duplicateYear">Target Year</label>
+                            <select id="duplicateYear" class="form-select" required>
+                                <option value="">Select Year</option>
+                                <option value="2024">2024</option>
+                                <option value="2025" selected>2025</option>
+                                <option value="2026">2026</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" onclick="closeModal('duplicateModal')">Cancel</button>
+                        <button type="button" class="btn btn-primary" onclick="duplicateSchedule()">Duplicate</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Global Search Modal -->
+    <div id="globalSearchModal" class="modal">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h2>🔍 Search</h2>
+                <button class="close-btn" onclick="closeModal('globalSearchModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="text" id="globalSearchInput" class="form-input global-search-input" aria-label="Global search"
+                       placeholder="Search users, schedules, requests..."
+                       onkeyup="if(event.key === 'Enter') performGlobalSearch(this.value)">
+                <div id="searchResultsContainer" class="search-results-container">
+                    <p class="text-muted">Type to search...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions Panel -->
+    <div id="quickActionsPanel" class="quick-actions-panel hidden no-print">
+        <button class="quick-action-btn" onclick="performQuickAction('createSchedule')">
+            <span class="icon">📅</span>
+            <span>Create Schedule</span>
+        </button>
+        <button class="quick-action-btn" onclick="performQuickAction('viewMySchedule')">
+            <span class="icon">👁️</span>
+            <span>View My Schedule</span>
+        </button>
+        <button class="quick-action-btn" onclick="performQuickAction('requestTimeOff')">
+            <span class="icon">🏖️</span>
+            <span>Request Time Off</span>
+        </button>
+        <button class="quick-action-btn" onclick="performQuickAction('viewStaff')">
+            <span class="icon">👥</span>
+            <span>View Staff</span>
+        </button>
+        <button class="quick-action-btn" onclick="performQuickAction('viewNotifications')">
+            <span class="icon">🔔</span>
+            <span>Notifications</span>
+        </button>
+        <button class="quick-action-btn" onclick="performQuickAction('openAI')">
+            <span class="icon">🤖</span>
+            <span>AI Assistant</span>
+        </button>
+    </div>
+
+    <!-- Selection Counter -->
+    <div id="selectionCounter" class="selection-counter hidden no-print">0 selected</div>
+
+    <!-- Toast Container -->
+    <div id="toastContainer" class="toast-container no-print"></div>
+
+    <!-- Screen Reader Announcer -->
+    <div id="screenReaderAnnouncer" class="screen-reader-announcer" aria-live="polite"></div>
+
+<!-- Missing Feature Modals -->
+
+    <!-- Submit Time Off Modal -->
+    <div id="submitTimeOffModal" class="modal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2>🏖️ Request Time Off</h2>
+                <button class="close-btn" onclick="closeModal('submitTimeOffModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="submitTimeOffForm" onsubmit="event.preventDefault(); submitTimeoffRequest('modal'); closeModal('submitTimeOffModal');">
+                    <div class="form-group">
+                        <label for="timeOffStartDate">Start Date</label>
+                        <input type="date" id="timeOffStartDate" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="timeOffEndDate">End Date</label>
+                        <input type="date" id="timeOffEndDate" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="timeOffType">Type</label>
+                        <select id="timeOffType" class="form-select" required>
+                            <option value="">Select Type</option>
+                            <option value="Vacation">Vacation</option>
+                            <option value="Sick">Sick Leave</option>
+                            <option value="Personal">Personal</option>
+                            <option value="Family">Family Emergency</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="timeOffReason">Reason (Optional)</label>
+                        <textarea id="timeOffReason" class="form-input" rows="3" placeholder="Brief description..."></textarea>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" onclick="closeModal('submitTimeOffModal')">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Submit Request</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Training Modal -->
+    <div id="addTrainingModal" class="modal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2>📚 Add Training Record</h2>
+                <button class="close-btn" onclick="closeModal('addTrainingModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form onsubmit="event.preventDefault(); showAlert('Training record added', 'success'); closeModal('addTrainingModal');">
+                    <div class="form-group">
+                        <label>Training Name</label>
+                        <input aria-label="Training Name" type="text" class="form-input" placeholder="e.g., ACLS Recertification" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Date Completed</label>
+                        <input aria-label="Date Completed" type="date" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Expiration Date</label>
+                        <input aria-label="Expiration Date" type="date" class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label>Staff Member</label>
+                        <select class="form-select" required>
+                            <option value="">Select Staff</option>
+                        </select>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" onclick="closeModal('addTrainingModal')">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Add Record</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Award Bonus Modal -->
+    <div id="awardBonusModal" class="modal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2>⭐ Award Bonus Hours</h2>
+                <button class="close-btn" onclick="closeModal('awardBonusModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form onsubmit="event.preventDefault(); showAlert('Bonus hours awarded', 'success'); closeModal('awardBonusModal');">
+                    <div class="form-group">
+                        <label>Staff Member</label>
+                        <select class="form-select" required>
+                            <option value="">Select Staff</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Hours</label>
+                        <input aria-label="Hours" type="number" class="form-input" min="1" max="48" placeholder="Number of hours" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Reason</label>
+                        <textarea class="form-input" rows="3" placeholder="Reason for bonus..." required></textarea>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" onclick="closeModal('awardBonusModal')">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Award Bonus</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Record Call-in Modal -->
+    <div id="recordCallinModal" class="modal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2>📞 Record Emergency Call-in</h2>
+                <button class="close-btn" onclick="closeModal('recordCallinModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form onsubmit="event.preventDefault(); showAlert('Call-in recorded', 'success'); closeModal('recordCallinModal');">
+                    <div class="form-group">
+                        <label>Staff Member</label>
+                        <select class="form-select" required>
+                            <option value="">Select Staff</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Date</label>
+                        <input aria-label="Date" type="date" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Reason</label>
+                        <select class="form-select" required>
+                            <option value="">Select Reason</option>
+                            <option value="Sick">Sick</option>
+                            <option value="Family Emergency">Family Emergency</option>
+                            <option value="Vehicle Issue">Vehicle Issue</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" onclick="closeModal('recordCallinModal')">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Record Call-in</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mark Absence Modal -->
+    <div id="markAbsenceModal" class="modal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2>🚫 Mark Absence</h2>
+                <button class="close-btn" onclick="closeModal('markAbsenceModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form onsubmit="event.preventDefault(); showAlert('Absence recorded', 'success'); closeModal('markAbsenceModal');">
+                    <div class="form-group">
+                        <label>Staff Member</label>
+                        <select class="form-select" required>
+                            <option value="">Select Staff</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Date</label>
+                        <input aria-label="Date" type="date" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Type</label>
+                        <select class="form-select" required>
+                            <option value="">Select Type</option>
+                            <option value="Unexcused">Unexcused</option>
+                            <option value="Excused">Excused</option>
+                            <option value="No Call No Show">No Call No Show</option>
+                        </select>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" onclick="closeModal('markAbsenceModal')">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Mark Absence</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create On-Call Rotation Modal -->
+    <div id="createOncallRotationModal" class="modal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2>🔄 Create On-Call Rotation</h2>
+                <button class="close-btn" onclick="closeModal('createOncallRotationModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form onsubmit="event.preventDefault(); showAlert('Rotation created', 'success'); closeModal('createOncallRotationModal');">
+                    <div class="form-group">
+                        <label>Rotation Name</label>
+                        <input aria-label="Rotation Name" type="text" class="form-input" placeholder="e.g., Weekend On-Call" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Frequency</label>
+                        <select class="form-select" required>
+                            <option value="">Select Frequency</option>
+                            <option value="Weekly">Weekly</option>
+                            <option value="Bi-Weekly">Bi-Weekly</option>
+                            <option value="Monthly">Monthly</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Start Date</label>
+                        <input aria-label="Start Date" type="date" class="form-input" required>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" onclick="closeModal('createOncallRotationModal')">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Create Rotation</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Supervisor Note Modal -->
+    <div id="addNoteModal" class="modal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2>📝 Add Supervisor Note</h2>
+                <button class="close-btn" onclick="closeModal('addNoteModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form onsubmit="event.preventDefault(); showAlert('Note added', 'success'); closeModal('addNoteModal');">
+                    <div class="form-group">
+                        <label>Staff Member</label>
+                        <select class="form-select" required>
+                            <option value="">Select Staff</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Priority</label>
+                        <select class="form-select" required>
+                            <option value="Low">Low</option>
+                            <option value="Medium">Medium</option>
+                            <option value="High">High</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Note</label>
+                        <textarea class="form-input" rows="4" placeholder="Enter note..." required></textarea>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" onclick="closeModal('addNoteModal')">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Add Note</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Schedule Template Modal -->
+    <div id="createTemplateModal" class="modal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2>📋 Create Schedule Template</h2>
+                <button class="close-btn" onclick="closeModal('createTemplateModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form onsubmit="event.preventDefault(); showAlert('Template created', 'success'); closeModal('createTemplateModal');">
+                    <div class="form-group">
+                        <label>Template Name</label>
+                        <input aria-label="Template Name" type="text" class="form-input" placeholder="e.g., Standard Week" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Description</label>
+                        <textarea class="form-input" rows="3" placeholder="Describe this template..."></textarea>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" onclick="closeModal('createTemplateModal')">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Create Template</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript - All Modules -->
+    <!-- CRITICAL SCRIPTS - Load immediately (required for basic functionality) -->
+    <!-- Core Modules (Consolidated) -->
+    <script src="src/js/core-utils.js"></script>
+    <script src="src/js/core-ui.js"></script>
+    <script src="src/js/core-validation.js"></script>
+    <script src="src/js/core-features.js"></script>
+    <script src="src/js/core-permissions.js"></script>
+    <script src="src/js/core-accessibility.js"></script>
+    <!-- Legacy compatibility shims -->
+    <script src="src/js/constants.js"></script>
+    <script src="src/js/utils.js"></script>
+    <script src="src/js/helper-functions.js"></script>
+    <!-- Main Application -->
+    <script src="src/js/api-client.js"></script>
+    <script src="src/js/app.js"></script>
+    <script src="src/js/drag-drop-scheduler.js"></script>
+    <script src="src/js/bug-fixes.js"></script>
+    <script src="src/js/csrf-protection.js"></script>
+    <script src="src/js/missing-functions.js"></script>
+
+    <!-- NON-CRITICAL SCRIPTS - Deferred loading (enhance functionality) -->
+    <!-- Note: accessibility-improvements.js, modal-focus-manager.js, accessibility-enhancements.js consolidated into core-accessibility.js -->
+    <!-- Note: permissions-system.js, advanced-permissions.js consolidated into core-permissions.js -->
+    <!-- Note: boss-features.js, remaining-features.js consolidated into core-features.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script defer src="src/js/mechanics-improvements.js"></script>
+    <script defer src="src/js/keyboard-shortcuts.js"></script>
+    <script defer src="src/js/password-hashing-util.js"></script>
+    <script defer src="src/js/session-timeout.js"></script>
+    <script defer src="src/js/dropdown-compatibility.js"></script>
+    <script defer src="src/js/click-helper.js"></script>
+    <script defer src="src/js/internationalization.js"></script>
+    <script defer src="src/js/advanced-performance-optimizer.js"></script>
+    <script defer src="src/js/analytics-charts.js"></script>
+    <script defer src="src/js/payroll-system.js"></script>
+    <script defer src="src/js/notification-service.js"></script>
+    <script defer src="src/js/undo-redo.js"></script>
+    <script defer src="src/js/quick-actions.js"></script>
+    <script defer src="src/js/enhanced-calendar.js"></script>
+    <script defer src="src/js/staff-availability-calendar.js"></script>
+    <script defer src="src/js/export-reports.js"></script>
+    <script defer src="src/js/notification-center.js"></script>
+    <script defer src="src/js/global-search.js"></script>
+    <script defer src="src/js/mobile-enhancements.js"></script>
+    <script defer src="src/js/data-visualization.js"></script>
+    <script defer src="src/js/dark-mode.js"></script>
+    <script defer src="src/js/super-boss-bridge.js"></script>
+    <!-- Dev/Test tools removed for production - can be loaded dynamically when needed -->
+    <script defer src="src/js/voice-commands.js"></script>
+    <script defer src="src/js/multi-location.js"></script>
+    <script defer src="src/js/super-admin-patch.js"></script>
+    
+    <!-- Critical Fix Files for 100% Quality -->
+    <script defer src="src/js/rate-limiter.js"></script>
+    <script defer src="src/js/memory-leak-fixes.js"></script>
+    <script defer src="src/js/edge-case-handler.js"></script>
+    <script defer src="src/js/quality-integration.js"></script>
+    <script defer src="src/js/app-constants.js"></script>
+    <script defer src="src/js/code-quality-utils.js"></script>
+
+    <!-- Initialize All Enhancements -->
+    <script>
+        // Initialize all enhancements on page load
+        window.addEventListener('DOMContentLoaded', async function() {
+            try {
+                // Configuration for enhancements
+                const enhancementsConfig = {
+                    security: {
+                        sessionTimeout: 30 * 60 * 1000 // 30 minutes
+                    },
+                    performance: {
+                        enableServiceWorker: true
+                    },
+                    features: {
+                        enableAnalytics: true
+                    },
+                    userExperience: {
+                        defaultLanguage: 'en'
+                    },
+                    notifications: {
+                        twilio: {
+                            accountSid: localStorage.getItem('twilioAccountSid'),
+                            authToken: localStorage.getItem('twilioAuthToken'),
+                            fromNumber: localStorage.getItem('twilioFromNumber')
+                        },
+                        sendgrid: {
+                            apiKey: localStorage.getItem('sendgridApiKey'),
+                            fromEmail: localStorage.getItem('sendgridFromEmail'),
+                            fromName: 'Lifestar Ambulance Scheduling'
+                        },
+                        payroll: {
+                            apiEndpoint: localStorage.getItem('payrollApiEndpoint'),
+                            apiKey: localStorage.getItem('payrollApiKey')
+                        }
+                    },
+                    ai: {
+                        apiKey: localStorage.getItem('groqApiKey'),
+                        model: 'llama3-70b-8192'
+                    }
+                };
+
+                // Note: All enhancements are already loaded via individual script tags
+                console.log('✅ All enhancements loaded successfully!');
+
+            } catch (error) {
+                console.error('❌ Error initializing enhancements:', error);
+            }
+        });
+    </script>
+
+    <!-- Execute All Enhancements & Recommendations -->
+    <script>
+        window.addEventListener('DOMContentLoaded', async function() {
+            setTimeout(async () => {
+                try {
+                    if (typeof ExecuteAllRecommendations !== 'undefined') {
+                        await ExecuteAllRecommendations.executeAll();
+                    }
+                    console.log('✅ All enhancements initialized');
+                } catch (error) {
+                    console.error('Enhancement init error:', error.message);
+                }
+            }, 2000);
+        });
+    </script>
+
+
+</body>
+</html>

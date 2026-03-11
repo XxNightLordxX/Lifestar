@@ -1,0 +1,35 @@
+{
+  "name": "lifestar-ambulance-scheduling",
+  "version": "3.0.0",
+  "description": "Ambulance crew scheduling system with role-based access control, shift management, and crew assignment",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node server/index.js",
+    "test": "echo &quot;Run E2E tests in browser at /index.html > Developer Tools&quot; && exit 0"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "better-sqlite3": "^12.6.2",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.6",
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1",
+    "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.3",
+    "playwright": "^1.58.2"
+  },
+  "devDependencies": {
+    "eslint": "^8.57.1",
+    "puppeteer": "^24.37.5"
+  },
+  "keywords": [
+    "ambulance",
+    "scheduling",
+    "ems",
+    "crew-management"
+  ],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs"
+}

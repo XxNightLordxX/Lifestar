@@ -1,0 +1,46 @@
+# Dependencies
+node_modules/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Database files
+*.db
+*.db-shm
+*.db-wal
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Build outputs
+dist/
+build/
+
+# Test files
+coverage/
+.nyc_output/
+test-screenshots/
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.backup
+
+# Development tools
+.eslintcache
+.aci/
