@@ -18,142 +18,61 @@
 // DATA VALIDATION HELPERS
 // ========================================
 
+// DATA VALIDATION HELPERS
+// ========================================
+//
+// NOTE: The full validation implementations now live in core-validation.js as
+// SchemaValidator. DataValidators below is a thin delegation layer kept only
+// for backward compatibility. New code should use SchemaValidator directly.
+// This removes the duplicate logic that previously existed between these files.
+
 const DataValidators = {
-    /**
-     * Validate schedule data structure
-     */
     validateSchedule(schedule) {
+        if (typeof SchemaValidator !== 'undefined') return SchemaValidator.validateSchedule(schedule);
         const errors = [];
-
-        if (!schedule) {
-            errors.push('Schedule is required');
-            return { isValid: false, errors };
-        }
-
-        if (!schedule.name || schedule.name.trim() === '') {
-            errors.push('Schedule name is required');
-        }
-
-        if (!schedule.month || schedule.month < 1 || schedule.month > 12) {
-            errors.push('Valid month (1-12) is required');
-        }
-
-        if (!schedule.year || schedule.year < 2020 || schedule.year > 2100) {
-            errors.push('Valid year (2020-2100) is required');
-        }
-
+        if (!schedule) return { isValid: false, errors: ['Schedule is required'] };
+        if (!schedule.name || !schedule.name.trim()) errors.push('Schedule name is required');
+        if (!schedule.month || schedule.month < 1 || schedule.month > 12) errors.push('Valid month (1-12) is required');
+        if (!schedule.year || schedule.year < 2020 || schedule.year > 2100) errors.push('Valid year (2020-2100) is required');
         return { isValid: errors.length === 0, errors };
     },
-
-    /**
-     * Validate employee data structure
-     */
     validateEmployee(employee) {
+        if (typeof SchemaValidator !== 'undefined') return SchemaValidator.validateEmployee(employee);
         const errors = [];
-
-        if (!employee) {
-            errors.push('Employee data is required');
-            return { isValid: false, errors };
-        }
-
-        if (!employee.name || employee.name.trim() === '') {
-            errors.push('Employee name is required');
-        }
-
+        if (!employee) return { isValid: false, errors: ['Employee data is required'] };
+        if (!employee.name || !employee.name.trim()) errors.push('Employee name is required');
         const validRoles = ['paramedic', 'emt', 'boss', 'admin', 'dispatcher', 'super_admin'];
-        if (!employee.role || !validRoles.includes(employee.role)) {
-            errors.push('Valid role is required');
-        }
-
-        if (!employee.certification || !['ALS', 'BLS'].includes(employee.certification)) {
-            errors.push('Valid certification (ALS/BLS) is required');
-        }
-
+        if (!employee.role || !validRoles.includes(employee.role)) errors.push('Valid role is required');
         return { isValid: errors.length === 0, errors };
     },
-
-    /**
-     * Validate shift data structure
-     */
     validateShift(shift) {
+        if (typeof SchemaValidator !== 'undefined') return SchemaValidator.validateShift(shift);
         const errors = [];
-
-        if (!shift) {
-            errors.push('Shift data is required');
-            return { isValid: false, errors };
-        }
-
-        if (!shift.date) {
-            errors.push('Shift date is required');
-        }
-
-        const validTypes = ['day', 'night', 'weekend', 'holiday', 'on_call'];
-        if (!shift.type || !validTypes.includes(shift.type)) {
-            errors.push('Valid shift type is required');
-        }
-
-        if (!shift.startTime) {
-            errors.push('Start time is required');
-        }
-
-        if (!shift.endTime) {
-            errors.push('End time is required');
-        }
-
+        if (!shift) return { isValid: false, errors: ['Shift data is required'] };
+        if (!shift.date) errors.push('Shift date is required');
+        if (!shift.startTime) errors.push('Start time is required');
+        if (!shift.endTime) errors.push('End time is required');
         return { isValid: errors.length === 0, errors };
     },
-
-    /**
-     * Validate crew data structure
-     */
     validateCrew(crew) {
+        if (typeof SchemaValidator !== 'undefined') return SchemaValidator.validateCrew(crew);
         const errors = [];
-
-        if (!crew) {
-            errors.push('Crew data is required');
-            return { isValid: false, errors };
-        }
-
-        if (!crew.name || crew.name.trim() === '') {
-            errors.push('Crew name is required');
-        }
-
-        if (!crew.type || !['ALS', 'BLS'].includes(crew.type)) {
-            errors.push('Valid crew type (ALS/BLS) is required');
-        }
-
+        if (!crew) return { isValid: false, errors: ['Crew data is required'] };
+        if (!crew.name || !crew.name.trim()) errors.push('Crew name is required');
+        if (!crew.type || !['ALS', 'BLS'].includes(crew.type)) errors.push('Valid crew type (ALS/BLS) is required');
         return { isValid: errors.length === 0, errors };
     },
-
-    /**
-     * Validate email
-     */
     isEmail(email) {
-        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+        return typeof ValidationUtils !== 'undefined' ? ValidationUtils.isEmail(email) : /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
     },
-
-    /**
-     * Validate phone number
-     */
     isPhone(phone) {
-        return /^[\d\-+()]{10,}$/.test(phone);
+        return typeof ValidationUtils !== 'undefined' ? ValidationUtils.isPhone(phone) : /^[\d\-+()]{10,}$/.test(phone);
     },
-
-    /**
-     * Validate string length
-     */
-    isLength(str, min, max) {
-        if (!str) return false;
-        return str.length >= min && str.length <= max;
-    },
-
-    /**
-     * Validate required fields
-     */
-    required(value) {
+    isRequired(value) {
         return value !== null && value !== undefined && value !== '';
     }
 };
+
 
 // ========================================
 // SHIFT & SCHEDULE CALCULATIONS

@@ -185,20 +185,30 @@ const PasswordHasher = {
     },
 
     /**
-     * Fallback hash for environments without Web Crypto
+     * Fallback when Web Crypto is unavailable.
+     *
+     * The previous implementation used a 32-bit djb2 hash, which produces only
+     * ~4 billion possible outputs — small enough to brute-force in seconds on
+     * any modern computer and therefore completely unsuitable as a password
+     * hash. Rather than silently store an insecure hash, we now refuse to hash
+     * at all in this environment and surface a clear error.
+     *
+     * Web Crypto (window.crypto.subtle) has been supported in every major
+     * browser since 2015, so hitting this path in practice means something is
+     * very wrong with the execution environment, and the user should know.
+     *
      * @private
+     * @throws {Error} Always — do not call this directly.
      */
     _fallbackHash(password, salt) {
-        if (!salt) salt = this.generateSalt();
-        let hash = 0;
-        const str = salt + password;
-        for (let i = 0; i < str.length; i++) {
-            const char = str.charCodeAt(i);
-            hash = ((hash << 5) - hash) + char;
-            hash = hash & hash; // Convert to 32bit integer
+        const message =
+            '[PasswordHasher] Web Crypto API (window.crypto.subtle) is not available. ' +
+            'Password hashing requires a secure browser. ' +
+            'Please upgrade to a modern browser (Chrome 37+, Firefox 34+, Safari 11+, Edge 12+).';
+        if (typeof Logger !== 'undefined') {
+            Logger.error(message);
         }
-        const hashHex = Math.abs(hash).toString(16).padStart(64, '0');
-        return salt + ':' + hashHex;
+        throw new Error(message);
     }
 };
 

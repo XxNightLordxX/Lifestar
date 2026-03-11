@@ -281,8 +281,12 @@ async function handleFirstLogin(e) {
 }
 
 /** @function logout */
-function logout() {
+async function logout() {
     try {
+        // Call server API logout if in server mode (clears httpOnly cookie)
+        if (typeof ServerBridge !== 'undefined' && ServerBridge.isServerMode) {
+            await ServerBridge.fetch('POST', '/auth/logout');
+        }
         addSystemLog('User logged out: ' + (currentUser ? currentUser.username : 'Unknown'));
         currentUser = null;
         localStorage.removeItem('lifestarCurrentUser');

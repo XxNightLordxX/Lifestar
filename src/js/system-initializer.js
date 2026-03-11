@@ -69,47 +69,47 @@ const system = new SystemInitializer();
 
 // Register all modules in priority order
 system.register('Constants', () => {
-    if(typeof require !== 'undefined') require('./constants');
+    // core-constants.js provides all constants (consolidated from constants.js)
     Logger.debug('  ✓ Constants loaded');
 }, 1);
 
 system.register('Security - Password Hashing', () => {
-    if(typeof require !== 'undefined') require('./password-hashing-util');
+    // PasswordHasher now lives in core-security.js (file archived)
     Logger.debug('  ✓ Password hashing ready');
 }, 2);
 
 system.register('Security - CSRF Protection', () => {
-    if(typeof require !== 'undefined') require('./csrf-protection');
+    // CSRFProtection now lives in core-security.js (file archived)
     Logger.debug('  ✓ CSRF protection ready');
 }, 2);
 
 system.register('Security - Session Timeout', () => {
-    if(typeof require !== 'undefined') require('./session-timeout');
+    // SessionManager now lives in core-security.js (file archived)
     Logger.debug('  ✓ Session timeout ready');
 }, 2);
 
 system.register('Helper Functions', () => {
-    if(typeof require !== 'undefined') require('./helper-functions');
+    // helpers now live in core-helpers.js (file archived)
     Logger.debug('  ✓ Helper functions loaded');
 }, 3);
 
 system.register('Production Monitoring', () => {
-    if(typeof require !== 'undefined') require('./production-monitoring');
+    // production-monitoring merged into core-performance.js
     Logger.debug('  ✓ Production monitoring active');
 }, 4);
 
 system.register('Error Tracking', () => {
-    if(typeof require !== 'undefined') require('./error-tracker');
+    // error-tracker functionality integrated into Logger in core-utils.js
     Logger.debug('  ✓ Error tracking active');
 }, 4);
 
 system.register('Production Logging', () => {
-    if(typeof require !== 'undefined') require('./production-logging');
+    // production-logging merged into core-utils.js
     Logger.debug('  ✓ Production logging active');
 }, 4);
 
 system.register('Backup System', () => {
-    if(typeof require !== 'undefined') require('./backup-system');
+    // backup-system merged into core-performance.js
     Logger.debug('  ✓ Backup system ready');
 }, 5);
 
@@ -142,6 +142,27 @@ system.register('Service Worker', () => {
 }, 7);
 
 // Auto-initialize
+
+// Register new modules
+system.register('Incident Reports', () => {
+    if (typeof IncidentReports !== 'undefined') {
+        Logger.debug('  ✓ IncidentReports ready');
+    }
+}, 8);
+
+system.register('Export Utils', () => {
+    if (typeof ExportUtils !== 'undefined') {
+        Logger.debug('  ✓ ExportUtils ready');
+    }
+}, 8);
+
+system.register('Theme Manager', () => {
+    if (typeof ThemeManager !== 'undefined') {
+        ThemeManager.init();
+        Logger.debug('  ✓ ThemeManager ready');
+    }
+}, 3);
+
 system.initAll().then(result => {
     Logger.debug('\n[System] All modules initialized: ' + result.success + '/' + (result.success + result.failed));
 }).catch(error => {

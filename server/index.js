@@ -20,6 +20,12 @@
 require('dotenv').config();
 
 // ============================================
+// STARTUP VALIDATION — must happen before anything else
+// ============================================
+const { validateEnv, SERVER, SECURITY } = require('./config');
+validateEnv(); // throws in production if JWT_SECRET / COOKIE_SECRET are missing
+
+// ============================================
 // DEPENDENCIES
 // ============================================
 const express = require('express');
@@ -253,6 +259,11 @@ const scheduleRoutes = require('./routes/schedules');
 const locationRoutes = require('./routes/locations');
 const timeoffRoutes = require('./routes/timeoff');
 const logRoutes = require('./routes/logs');
+const incidentRoutes  = require('./routes/incidents');
+const swapRoutes      = require('./routes/swaps');
+const analyticsRoutes = require('./routes/analytics');
+const trainingRoutes  = require('./routes/training');
+const callinRoutes    = require('./routes/callins');
 
 // Mount routes
 app.use('/api/auth', authRoutes);
@@ -261,6 +272,11 @@ app.use('/api/schedules', scheduleRoutes);
 app.use('/api/locations', locationRoutes);
 app.use('/api/timeoff', timeoffRoutes);
 app.use('/api/logs', logRoutes);
+app.use('/api/incidents', incidentRoutes);
+app.use('/api/swaps',     swapRoutes);
+app.use('/api/analytics', analyticsRoutes);
+app.use('/api/training',  trainingRoutes);
+app.use('/api/callins',   callinRoutes);
 
 // ============================================
 // HEALTH CHECK ENDPOINT

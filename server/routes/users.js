@@ -16,42 +16,23 @@ const bcrypt = require('bcryptjs');
 const { getDb, addLog } = require('../db/database');
 const { authenticate, authorize } = require('../middleware/auth');
 const rateLimit = require('express-rate-limit');
+const { SECURITY, AUTH, RATE_LIMIT, HTTP_STATUS } = require('../config');
 
 const router = express.Router();
 
-// ============================================
-// CONSTANTS
-// ============================================
-const CONSTANTS = {
-    // Validation rules
-    USERNAME_MIN_LENGTH: 3,
-    USERNAME_MAX_LENGTH: 50,
-    PASSWORD_MIN_LENGTH: 8,
-    PASSWORD_MAX_LENGTH: 128,
-    FULLNAME_MIN_LENGTH: 2,
-    FULLNAME_MAX_LENGTH: 100,
-    PHONE_MAX_LENGTH: 20,
-    
-    // Security
-    BCRYPT_ROUNDS: 12,
-    MAX_USERS_PER_PAGE: 100,
-    
-    // Valid roles
-    VALID_ROLES: ['super', 'boss', 'paramedic', 'emt'],
-    
-    // HTTP Status codes
-    HTTP_STATUS: {
-        OK: 200,
-        CREATED: 201,
-        BAD_REQUEST: 400,
-        UNAUTHORIZED: 401,
-        FORBIDDEN: 403,
-        NOT_FOUND: 404,
-        CONFLICT: 409,
-        TOO_MANY_REQUESTS: 429,
-        SERVER_ERROR: 500
-    }
-};
+// Named aliases so the rest of the file reads naturally without changing
+// every single reference — and so bcrypt rounds are now consistent with
+// auth.js and database.js (all read SECURITY.BCRYPT_ROUNDS = 12).
+const BCRYPT_ROUNDS     = SECURITY.BCRYPT_ROUNDS;
+const VALID_ROLES       = AUTH.VALID_ROLES;
+const USERNAME_MIN      = AUTH.USERNAME_MIN_LENGTH;
+const USERNAME_MAX      = AUTH.USERNAME_MAX_LENGTH;
+const PASSWORD_MIN      = AUTH.PASSWORD_MIN_LENGTH;
+const PASSWORD_MAX      = AUTH.PASSWORD_MAX_LENGTH;
+const FULLNAME_MIN      = 2;
+const FULLNAME_MAX      = 100;
+const PHONE_MAX         = 20;
+const MAX_USERS_PER_PAGE = 100;
 
 // ============================================
 // RATE LIMITING
@@ -90,12 +71,12 @@ function validateUsername(username) {
     
     const trimmed = username.trim();
     
-    if (trimmed.length < CONSTANTS.USERNAME_MIN_LENGTH) {
-        errors.push(`Username must be at least ${CONSTANTS.USERNAME_MIN_LENGTH} characters`);
+    if (trimmed.length < USERNAME_MIN) {
+        errors.push(`Username must be at least ${USERNAME_MIN} characters`);
     }
     
-    if (trimmed.length > CONSTANTS.USERNAME_MAX_LENGTH) {
-        errors.push(`Username must be at most ${CONSTANTS.USERNAME_MAX_LENGTH} characters`);
+    if (trimmed.length > USERNAME_MAX) {
+        errors.push(`Username must be at most ${USERNAME_MAX} characters`);
     }
     
     // Only allow alphanumeric and underscore
@@ -129,12 +110,12 @@ function validatePassword(password) {
         return { valid: false, errors };
     }
     
-    if (password.length < CONSTANTS.PASSWORD_MIN_LENGTH) {
-        errors.push(`Password must be at least ${CONSTANTS.PASSWORD_MIN_LENGTH} characters`);
+    if (password.length < PASSWORD_MIN) {
+        errors.push(`Password must be at least ${PASSWORD_MIN} characters`);
     }
     
-    if (password.length > CONSTANTS.PASSWORD_MAX_LENGTH) {
-        errors.push(`Password must be at most ${CONSTANTS.PASSWORD_MAX_LENGTH} characters`);
+    if (password.length > PASSWORD_MAX) {
+        errors.push(`Password must be at most ${PASSWORD_MAX} characters`);
     }
     
     // Check for at least one uppercase, lowercase, number
@@ -171,12 +152,12 @@ function validateFullName(fullName) {
     
     const trimmed = fullName.trim();
     
-    if (trimmed.length < CONSTANTS.FULLNAME_MIN_LENGTH) {
-        errors.push(`Full name must be at least ${CONSTANTS.FULLNAME_MIN_LENGTH} characters`);
+    if (trimmed.length < FULLNAME_MIN) {
+        errors.push(`Full name must be at least ${FULLNAME_MIN} characters`);
     }
     
-    if (trimmed.length > CONSTANTS.FULLNAME_MAX_LENGTH) {
-        errors.push(`Full name must be at most ${CONSTANTS.FULLNAME_MAX_LENGTH} characters`);
+    if (trimmed.length > FULLNAME_MAX) {
+        errors.push(`Full name must be at most ${FULLNAME_MAX} characters`);
     }
     
     // Only allow letters, spaces, hyphens, and apostrophes
@@ -204,7 +185,7 @@ function validatePhone(phone) {
     const errors = [];
     const cleaned = phone.replace(/[\s\-\(\)]/g, '');
     
-    if (cleaned.length > CONSTANTS.PHONE_MAX_LENGTH) {
+    if (cleaned.length > PHONE_MAX) {
         errors.push('Phone number is too long');
     }
     
@@ -234,8 +215,8 @@ function validateRole(role) {
     
     const trimmed = role.trim().toLowerCase();
     
-    if (!CONSTANTS.VALID_ROLES.includes(trimmed)) {
-        errors.push(`Invalid role. Must be one of: ${CONSTANTS.VALID_ROLES.join(', ')}`);
+    if (!VALID_ROLES.includes(trimmed)) {
+        errors.push(`Invalid role. Must be one of: ${VALID_ROLES.join(', ')}`);
     }
     
     return {
@@ -307,7 +288,7 @@ router.get('/', authenticate, authorize('super', 'boss'), async (req, res) => {
     try {
         const db = getDb();
         const page = parseInt(req.query.page) || 1;
-        const limit = Math.min(parseInt(req.query.limit) || CONSTANTS.MAX_USERS_PER_PAGE, CONSTANTS.MAX_USERS_PER_PAGE);
+        const limit = Math.min(parseInt(req.query.limit) || MAX_USERS_PER_PAGE, MAX_USERS_PER_PAGE);
         const offset = (page - 1) * limit;
         const includeInactive = req.query.includeInactive === 'true';
         const roleFilter = req.query.role;
@@ -321,7 +302,7 @@ router.get('/', authenticate, authorize('super', 'boss'), async (req, res) => {
             conditions.push('active = 1');
         }
         
-        if (roleFilter && CONSTANTS.VALID_ROLES.includes(roleFilter.toLowerCase())) {
+        if (roleFilter && VALID_ROLES.includes(roleFilter.toLowerCase())) {
             conditions.push('role = ?');
             params.push(roleFilter.toLowerCase());
         }
@@ -354,7 +335,7 @@ router.get('/', authenticate, authorize('super', 'boss'), async (req, res) => {
         });
     } catch (err) {
         console.error('[users/list] Error:', err.message);
-        res.status(CONSTANTS.HTTP_STATUS.SERVER_ERROR).json({ 
+        res.status(HTTP_STATUS.SERVER_ERROR).json({ 
             error: 'Failed to retrieve users',
             code: 'USERS_LIST_ERROR'
         });
@@ -369,7 +350,7 @@ router.get('/:id', authenticate, authorize('super', 'boss'), async (req, res) =>
     try {
         const idValidation = validateUserId(req.params.id);
         if (!idValidation.valid) {
-            return res.status(CONSTANTS.HTTP_STATUS.BAD_REQUEST).json({ 
+            return res.status(HTTP_STATUS.BAD_REQUEST).json({ 
                 error: idValidation.errors[0],
                 code: 'INVALID_USER_ID'
             });
@@ -379,7 +360,7 @@ router.get('/:id', authenticate, authorize('super', 'boss'), async (req, res) =>
         const user = db.prepare('SELECT id, username, fullName, role, phone, locationId, hoursWorked, bonusHours, active, createdAt, updatedAt FROM users WHERE id = ?').get(idValidation.value);
         
         if (!user) {
-            return res.status(CONSTANTS.HTTP_STATUS.NOT_FOUND).json({ 
+            return res.status(HTTP_STATUS.NOT_FOUND).json({ 
                 error: 'User not found',
                 code: 'USER_NOT_FOUND'
             });
@@ -388,7 +369,7 @@ router.get('/:id', authenticate, authorize('super', 'boss'), async (req, res) =>
         res.json({ user: sanitizeUser(user) });
     } catch (err) {
         console.error('[users/get] Error:', err.message);
-        res.status(CONSTANTS.HTTP_STATUS.SERVER_ERROR).json({ 
+        res.status(HTTP_STATUS.SERVER_ERROR).json({ 
             error: 'Failed to retrieve user',
             code: 'USER_GET_ERROR'
         });
@@ -420,7 +401,7 @@ router.post('/', authenticate, authorize('super'), createLimiter, async (req, re
         ];
         
         if (allErrors.length > 0) {
-            return res.status(CONSTANTS.HTTP_STATUS.BAD_REQUEST).json({ 
+            return res.status(HTTP_STATUS.BAD_REQUEST).json({ 
                 error: 'Validation failed',
                 details: allErrors,
                 code: 'VALIDATION_ERROR'
@@ -432,14 +413,14 @@ router.post('/', authenticate, authorize('super'), createLimiter, async (req, re
         // Check for existing username
         const existing = db.prepare('SELECT id FROM users WHERE username = ?').get(usernameValidation.value);
         if (existing) {
-            return res.status(CONSTANTS.HTTP_STATUS.CONFLICT).json({ 
+            return res.status(HTTP_STATUS.CONFLICT).json({ 
                 error: 'Username already exists',
                 code: 'USERNAME_EXISTS'
             });
         }
         
         // Hash password with secure rounds
-        const hashedPassword = await bcrypt.hash(password, CONSTANTS.BCRYPT_ROUNDS);
+        const hashedPassword = await bcrypt.hash(password, BCRYPT_ROUNDS);
         
         // Insert user with transaction for data integrity
         const insertStmt = db.prepare(`
@@ -462,7 +443,7 @@ router.post('/', authenticate, authorize('super'), createLimiter, async (req, re
         // Fetch the created user
         const newUser = db.prepare('SELECT id, username, fullName, role, phone, locationId, hoursWorked, bonusHours, active, createdAt FROM users WHERE id = ?').get(result.lastInsertRowid);
         
-        res.status(CONSTANTS.HTTP_STATUS.CREATED).json({ 
+        res.status(HTTP_STATUS.CREATED).json({ 
             user: sanitizeUser(newUser),
             message: 'User created successfully'
         });
@@ -471,13 +452,13 @@ router.post('/', authenticate, authorize('super'), createLimiter, async (req, re
         
         // Handle specific database errors
         if (err.code === 'SQLITE_CONSTRAINT') {
-            return res.status(CONSTANTS.HTTP_STATUS.CONFLICT).json({ 
+            return res.status(HTTP_STATUS.CONFLICT).json({ 
                 error: 'User already exists',
                 code: 'USER_EXISTS'
             });
         }
         
-        res.status(CONSTANTS.HTTP_STATUS.SERVER_ERROR).json({ 
+        res.status(HTTP_STATUS.SERVER_ERROR).json({ 
             error: 'Failed to create user',
             code: 'USER_CREATE_ERROR'
         });
@@ -492,7 +473,7 @@ router.put('/:id', authenticate, authorize('super'), updateLimiter, async (req, 
     try {
         const idValidation = validateUserId(req.params.id);
         if (!idValidation.valid) {
-            return res.status(CONSTANTS.HTTP_STATUS.BAD_REQUEST).json({ 
+            return res.status(HTTP_STATUS.BAD_REQUEST).json({ 
                 error: idValidation.errors[0],
                 code: 'INVALID_USER_ID'
             });
@@ -505,7 +486,7 @@ router.put('/:id', authenticate, authorize('super'), updateLimiter, async (req, 
         const user = db.prepare('SELECT * FROM users WHERE id = ?').get(id);
         
         if (!user) {
-            return res.status(CONSTANTS.HTTP_STATUS.NOT_FOUND).json({ 
+            return res.status(HTTP_STATUS.NOT_FOUND).json({ 
                 error: 'User not found',
                 code: 'USER_NOT_FOUND'
             });
@@ -523,7 +504,7 @@ router.put('/:id', authenticate, authorize('super'), updateLimiter, async (req, 
                 // Check for duplicate username
                 const dup = db.prepare('SELECT id FROM users WHERE username = ? AND id != ?').get(usernameValidation.value, id);
                 if (dup) {
-                    return res.status(CONSTANTS.HTTP_STATUS.CONFLICT).json({ 
+                    return res.status(HTTP_STATUS.CONFLICT).json({ 
                         error: 'Username already exists',
                         code: 'USERNAME_EXISTS'
                     });
@@ -537,7 +518,7 @@ router.put('/:id', authenticate, authorize('super'), updateLimiter, async (req, 
             if (!passwordValidation.valid) {
                 errors.push(...passwordValidation.errors);
             } else {
-                updates.password = await bcrypt.hash(password, CONSTANTS.BCRYPT_ROUNDS);
+                updates.password = await bcrypt.hash(password, BCRYPT_ROUNDS);
             }
         }
         
@@ -586,7 +567,7 @@ router.put('/:id', authenticate, authorize('super'), updateLimiter, async (req, 
         }
         
         if (errors.length > 0) {
-            return res.status(CONSTANTS.HTTP_STATUS.BAD_REQUEST).json({ 
+            return res.status(HTTP_STATUS.BAD_REQUEST).json({ 
                 error: 'Validation failed',
                 details: errors,
                 code: 'VALIDATION_ERROR'
@@ -595,7 +576,7 @@ router.put('/:id', authenticate, authorize('super'), updateLimiter, async (req, 
         
         // Only update if there are changes
         if (Object.keys(updates).length === 0) {
-            return res.status(CONSTANTS.HTTP_STATUS.BAD_REQUEST).json({ 
+            return res.status(HTTP_STATUS.BAD_REQUEST).json({ 
                 error: 'No valid updates provided',
                 code: 'NO_UPDATES'
             });
@@ -622,7 +603,7 @@ router.put('/:id', authenticate, authorize('super'), updateLimiter, async (req, 
         });
     } catch (err) {
         console.error('[users/update] Error:', err.message);
-        res.status(CONSTANTS.HTTP_STATUS.SERVER_ERROR).json({ 
+        res.status(HTTP_STATUS.SERVER_ERROR).json({ 
             error: 'Failed to update user',
             code: 'USER_UPDATE_ERROR'
         });
@@ -637,7 +618,7 @@ router.patch('/:id/status', authenticate, authorize('super'), async (req, res) =
     try {
         const idValidation = validateUserId(req.params.id);
         if (!idValidation.valid) {
-            return res.status(CONSTANTS.HTTP_STATUS.BAD_REQUEST).json({ 
+            return res.status(HTTP_STATUS.BAD_REQUEST).json({ 
                 error: idValidation.errors[0],
                 code: 'INVALID_USER_ID'
             });
@@ -647,7 +628,7 @@ router.patch('/:id/status', authenticate, authorize('super'), async (req, res) =
         const { active } = req.body;
         
         if (typeof active !== 'boolean') {
-            return res.status(CONSTANTS.HTTP_STATUS.BAD_REQUEST).json({ 
+            return res.status(HTTP_STATUS.BAD_REQUEST).json({ 
                 error: 'Active status must be a boolean',
                 code: 'INVALID_STATUS'
             });
@@ -657,7 +638,7 @@ router.patch('/:id/status', authenticate, authorize('super'), async (req, res) =
         const user = db.prepare('SELECT * FROM users WHERE id = ?').get(id);
         
         if (!user) {
-            return res.status(CONSTANTS.HTTP_STATUS.NOT_FOUND).json({ 
+            return res.status(HTTP_STATUS.NOT_FOUND).json({ 
                 error: 'User not found',
                 code: 'USER_NOT_FOUND'
             });
@@ -665,7 +646,7 @@ router.patch('/:id/status', authenticate, authorize('super'), async (req, res) =
         
         // Prevent deactivating yourself
         if (id === req.user.id && !active) {
-            return res.status(CONSTANTS.HTTP_STATUS.BAD_REQUEST).json({ 
+            return res.status(HTTP_STATUS.BAD_REQUEST).json({ 
                 error: 'Cannot deactivate your own account',
                 code: 'SELF_DEACTIVATION'
             });
@@ -682,7 +663,7 @@ router.patch('/:id/status', authenticate, authorize('super'), async (req, res) =
         });
     } catch (err) {
         console.error('[users/status] Error:', err.message);
-        res.status(CONSTANTS.HTTP_STATUS.SERVER_ERROR).json({ 
+        res.status(HTTP_STATUS.SERVER_ERROR).json({ 
             error: 'Failed to update user status',
             code: 'USER_STATUS_ERROR'
         });
@@ -697,7 +678,7 @@ router.delete('/:id', authenticate, authorize('super'), async (req, res) => {
     try {
         const idValidation = validateUserId(req.params.id);
         if (!idValidation.valid) {
-            return res.status(CONSTANTS.HTTP_STATUS.BAD_REQUEST).json({ 
+            return res.status(HTTP_STATUS.BAD_REQUEST).json({ 
                 error: idValidation.errors[0],
                 code: 'INVALID_USER_ID'
             });
@@ -708,7 +689,7 @@ router.delete('/:id', authenticate, authorize('super'), async (req, res) => {
         const user = db.prepare('SELECT * FROM users WHERE id = ?').get(id);
         
         if (!user) {
-            return res.status(CONSTANTS.HTTP_STATUS.NOT_FOUND).json({ 
+            return res.status(HTTP_STATUS.NOT_FOUND).json({ 
                 error: 'User not found',
                 code: 'USER_NOT_FOUND'
             });
@@ -716,7 +697,7 @@ router.delete('/:id', authenticate, authorize('super'), async (req, res) => {
         
         // Prevent deleting yourself
         if (id === req.user.id) {
-            return res.status(CONSTANTS.HTTP_STATUS.BAD_REQUEST).json({ 
+            return res.status(HTTP_STATUS.BAD_REQUEST).json({ 
                 error: 'Cannot delete your own account',
                 code: 'SELF_DELETE'
             });
@@ -733,7 +714,7 @@ router.delete('/:id', authenticate, authorize('super'), async (req, res) => {
         });
     } catch (err) {
         console.error('[users/delete] Error:', err.message);
-        res.status(CONSTANTS.HTTP_STATUS.SERVER_ERROR).json({ 
+        res.status(HTTP_STATUS.SERVER_ERROR).json({ 
             error: 'Failed to deactivate user',
             code: 'USER_DELETE_ERROR'
         });
@@ -748,7 +729,7 @@ router.post('/:id/reset-password', authenticate, authorize('super'), updateLimit
     try {
         const idValidation = validateUserId(req.params.id);
         if (!idValidation.valid) {
-            return res.status(CONSTANTS.HTTP_STATUS.BAD_REQUEST).json({ 
+            return res.status(HTTP_STATUS.BAD_REQUEST).json({ 
                 error: idValidation.errors[0],
                 code: 'INVALID_USER_ID'
             });
@@ -759,7 +740,7 @@ router.post('/:id/reset-password', authenticate, authorize('super'), updateLimit
         
         const passwordValidation = validatePassword(newPassword);
         if (!passwordValidation.valid) {
-            return res.status(CONSTANTS.HTTP_STATUS.BAD_REQUEST).json({ 
+            return res.status(HTTP_STATUS.BAD_REQUEST).json({ 
                 error: 'Validation failed',
                 details: passwordValidation.errors,
                 code: 'VALIDATION_ERROR'
@@ -770,13 +751,13 @@ router.post('/:id/reset-password', authenticate, authorize('super'), updateLimit
         const user = db.prepare('SELECT * FROM users WHERE id = ?').get(id);
         
         if (!user) {
-            return res.status(CONSTANTS.HTTP_STATUS.NOT_FOUND).json({ 
+            return res.status(HTTP_STATUS.NOT_FOUND).json({ 
                 error: 'User not found',
                 code: 'USER_NOT_FOUND'
             });
         }
         
-        const hashedPassword = await bcrypt.hash(newPassword, CONSTANTS.BCRYPT_ROUNDS);
+        const hashedPassword = await bcrypt.hash(newPassword, BCRYPT_ROUNDS);
         
         db.prepare("UPDATE users SET password = ?, updatedAt = datetime('now') WHERE id = ?").run(hashedPassword, id);
         
@@ -785,7 +766,7 @@ router.post('/:id/reset-password', authenticate, authorize('super'), updateLimit
         res.json({ message: 'Password reset successfully' });
     } catch (err) {
         console.error('[users/reset-password] Error:', err.message);
-        res.status(CONSTANTS.HTTP_STATUS.SERVER_ERROR).json({ 
+        res.status(HTTP_STATUS.SERVER_ERROR).json({ 
             error: 'Failed to reset password',
             code: 'PASSWORD_RESET_ERROR'
         });
@@ -800,7 +781,7 @@ router.patch('/:id/hours', authenticate, authorize('super', 'boss'), updateLimit
     try {
         const idValidation = validateUserId(req.params.id);
         if (!idValidation.valid) {
-            return res.status(CONSTANTS.HTTP_STATUS.BAD_REQUEST).json({
+            return res.status(HTTP_STATUS.BAD_REQUEST).json({
                 error: idValidation.errors[0],
                 code: 'INVALID_USER_ID'
             });
@@ -831,7 +812,7 @@ router.patch('/:id/hours', authenticate, authorize('super', 'boss'), updateLimit
         }
 
         if (errors.length > 0) {
-            return res.status(CONSTANTS.HTTP_STATUS.BAD_REQUEST).json({
+            return res.status(HTTP_STATUS.BAD_REQUEST).json({
                 error: 'Validation failed',
                 details: errors,
                 code: 'VALIDATION_ERROR'
@@ -839,7 +820,7 @@ router.patch('/:id/hours', authenticate, authorize('super', 'boss'), updateLimit
         }
 
         if (Object.keys(updates).length === 0) {
-            return res.status(CONSTANTS.HTTP_STATUS.BAD_REQUEST).json({
+            return res.status(HTTP_STATUS.BAD_REQUEST).json({
                 error: 'Provide hoursWorked and/or bonusHours to update',
                 code: 'NO_UPDATES'
             });
@@ -849,7 +830,7 @@ router.patch('/:id/hours', authenticate, authorize('super', 'boss'), updateLimit
         const user = db.prepare('SELECT * FROM users WHERE id = ?').get(id);
 
         if (!user) {
-            return res.status(CONSTANTS.HTTP_STATUS.NOT_FOUND).json({
+            return res.status(HTTP_STATUS.NOT_FOUND).json({
                 error: 'User not found',
                 code: 'USER_NOT_FOUND'
             });
@@ -870,7 +851,7 @@ router.patch('/:id/hours', authenticate, authorize('super', 'boss'), updateLimit
         });
     } catch (err) {
         console.error('[users/hours] Error:', err.message);
-        res.status(CONSTANTS.HTTP_STATUS.SERVER_ERROR).json({
+        res.status(HTTP_STATUS.SERVER_ERROR).json({
             error: 'Failed to update hours',
             code: 'USER_HOURS_ERROR'
         });

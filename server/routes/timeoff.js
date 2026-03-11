@@ -12,6 +12,7 @@
  */
 
 const express = require('express');
+const { HTTP_STATUS: CFG_HTTP } = require('../config');
 const { getDb, addLog } = require('../db/database');
 const { authenticate, authorize } = require('../middleware/auth');
 const rateLimit = require('express-rate-limit');

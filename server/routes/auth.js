@@ -15,29 +15,20 @@ const bcrypt = require('bcryptjs');
 const { getDb, addLog } = require('../db/database');
 const { generateToken, authenticate, setTokenCookie, clearTokenCookie } = require('../middleware/auth');
 const rateLimit = require('express-rate-limit');
-const { ipKeyGenerator } = rateLimit;
+const { SECURITY, AUTH, RATE_LIMIT, HTTP_STATUS } = require('../config');
 
 const router = express.Router();
 
-// ============================================
-// CONSTANTS
-// ============================================
-const CONSTANTS = {
-    // Validation rules
-    USERNAME_MIN_LENGTH: 3,
-    USERNAME_MAX_LENGTH: 50,
-    PASSWORD_MIN_LENGTH: 8,
-    PASSWORD_MAX_LENGTH: 128,
-    
-    // Rate limiting
-    LOGIN_WINDOW_MS: 15 * 60 * 1000, // 15 minutes
-    LOGIN_MAX_ATTEMPTS: 5,
-    
-    // Security
-    BCRYPT_ROUNDS: 10,
-    MAX_LOGIN_ATTEMPTS: 5,
-    LOCKOUT_DURATION_MS: 15 * 60 * 1000 // 15 minutes
-};
+// Pull named values from centralised config so this file has no local CONSTANTS.
+// This eliminates the previous inconsistency where auth.js used BCRYPT_ROUNDS=10
+// while users.js used 12 — both now read the same value from config.js.
+const BCRYPT_ROUNDS      = SECURITY.BCRYPT_ROUNDS;
+const USERNAME_MIN       = AUTH.USERNAME_MIN_LENGTH;
+const USERNAME_MAX       = AUTH.USERNAME_MAX_LENGTH;
+const PASSWORD_MIN       = AUTH.PASSWORD_MIN_LENGTH;
+const PASSWORD_MAX       = AUTH.PASSWORD_MAX_LENGTH;
+const MAX_LOGIN_ATTEMPTS = AUTH.MAX_LOGIN_ATTEMPTS;
+const LOCKOUT_DURATION   = AUTH.LOCKOUT_DURATION_MS;
 
 // ============================================
 // RATE LIMITING
@@ -45,19 +36,20 @@ const CONSTANTS = {
 
 // Strict rate limiter for login attempts
 const loginLimiter = rateLimit({
-    windowMs: CONSTANTS.LOGIN_WINDOW_MS,
-    max: CONSTANTS.LOGIN_MAX_ATTEMPTS,
+    windowMs: RATE_LIMIT.LOGIN_WINDOW_MS,
+    max: RATE_LIMIT.LOGIN_MAX_ATTEMPTS,
     message: { 
         error: 'Too many login attempts', 
         message: 'Please try again later',
-        retryAfter: CONSTANTS.LOGIN_WINDOW_MS / 1000
+        retryAfter: RATE_LIMIT.LOGIN_WINDOW_MS / 1000
     },
     standardHeaders: true,
     legacyHeaders: false,
     // Use normalized IP + username as key to prevent distributed attacks
     keyGenerator: (req) => {
         const username = req.body?.username || 'unknown';
-        return `${ipKeyGenerator(req)}:${username}`;
+        const ip = req.ip || req.headers["x-forwarded-for"]?.split(",")[0]?.trim() || "unknown";
+        return `${ip}:${username}`;
     }
 });
 
@@ -87,12 +79,12 @@ function validateUsername(username) {
     
     const trimmed = username.trim();
     
-    if (trimmed.length < CONSTANTS.USERNAME_MIN_LENGTH) {
-        errors.push(`Username must be at least ${CONSTANTS.USERNAME_MIN_LENGTH} characters`);
+    if (trimmed.length < USERNAME_MIN) {
+        errors.push(`Username must be at least ${USERNAME_MIN} characters`);
     }
     
-    if (trimmed.length > CONSTANTS.USERNAME_MAX_LENGTH) {
-        errors.push(`Username must be at most ${CONSTANTS.USERNAME_MAX_LENGTH} characters`);
+    if (trimmed.length > USERNAME_MAX) {
+        errors.push(`Username must be at most ${USERNAME_MAX} characters`);
     }
     
     // Only allow alphanumeric and underscore
@@ -126,12 +118,12 @@ function validatePassword(password) {
         return { valid: false, errors, value: '' };
     }
     
-    if (password.length < CONSTANTS.PASSWORD_MIN_LENGTH) {
-        errors.push(`Password must be at least ${CONSTANTS.PASSWORD_MIN_LENGTH} characters`);
+    if (password.length < PASSWORD_MIN) {
+        errors.push(`Password must be at least ${PASSWORD_MIN} characters`);
     }
     
-    if (password.length > CONSTANTS.PASSWORD_MAX_LENGTH) {
-        errors.push(`Password must be at most ${CONSTANTS.PASSWORD_MAX_LENGTH} characters`);
+    if (password.length > PASSWORD_MAX) {
+        errors.push(`Password must be at most ${PASSWORD_MAX} characters`);
     }
     
     return {
@@ -168,12 +160,12 @@ function checkAccountLock(username) {
     const attempts = loginAttempts.get(username);
     if (!attempts) return { locked: false, attempts: 0 };
     
-    if (attempts.count >= CONSTANTS.MAX_LOGIN_ATTEMPTS) {
+    if (attempts.count >= MAX_LOGIN_ATTEMPTS) {
         const timeSinceLock = Date.now() - attempts.lastAttempt;
-        if (timeSinceLock < CONSTANTS.LOCKOUT_DURATION_MS) {
+        if (timeSinceLock < LOCKOUT_DURATION) {
             return {
                 locked: true,
-                remainingTime: CONSTANTS.LOCKOUT_DURATION_MS - timeSinceLock
+                remainingTime: LOCKOUT_DURATION - timeSinceLock
             };
         }
         // Lock expired, reset
@@ -281,7 +273,7 @@ router.post('/login', loginLimiter, async (req, res) => {
             return res.status(401).json({ 
                 error: 'Invalid credentials',
                 message: 'Username or password is incorrect',
-                attemptsRemaining: CONSTANTS.MAX_LOGIN_ATTEMPTS - (loginAttempts.get(usernameResult.value)?.count || 0)
+                attemptsRemaining: MAX_LOGIN_ATTEMPTS - (loginAttempts.get(usernameResult.value)?.count || 0)
             });
         }
         
@@ -482,7 +474,7 @@ router.post('/change-password', authenticate, authLimiter, async (req, res) => {
         }
         
         // Hash new password
-        const hashedPassword = await bcrypt.hash(newPassword, CONSTANTS.BCRYPT_ROUNDS);
+        const hashedPassword = await bcrypt.hash(newPassword, BCRYPT_ROUNDS);
         
         // Update password
         db.prepare('UPDATE users SET password = ?, updatedAt = ? WHERE id = ?')
@@ -518,7 +510,7 @@ router.get('/status', (req, res) => {
 setInterval(() => {
     const now = Date.now();
     for (const [username, attempts] of loginAttempts.entries()) {
-        if (now - attempts.lastAttempt > CONSTANTS.LOCKOUT_DURATION_MS) {
+        if (now - attempts.lastAttempt > LOCKOUT_DURATION) {
             loginAttempts.delete(username);
         }
     }

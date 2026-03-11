@@ -16,11 +16,12 @@
 
 'use strict';
 
-const Database = require('better-sqlite3');
+const Database = require('./sqlite-compat');
 const bcrypt = require('bcryptjs');
 const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
+const { SECURITY: serverConfig } = require('../config');
 
 // ============================================
 // CONSTANTS
@@ -47,7 +48,7 @@ const CONSTANTS = {
     MAX_LOG_ENTRIES: 10000,
     
     // Security
-    BCRYPT_ROUNDS: 10,
+    BCRYPT_ROUNDS: serverConfig ? serverConfig.BCRYPT_ROUNDS : 12, // reads from config.js
     MAX_PASSWORD_LENGTH: 128,
     
     // Backup
@@ -972,6 +973,84 @@ function initializeDatabase() {
         )
     `);
 
+
+    // Incident reports
+    conn.exec(`
+        CREATE TABLE IF NOT EXISTS incidents (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            description TEXT DEFAULT '',
+            type TEXT DEFAULT 'other' CHECK(type IN ('patient-care','vehicle','workplace','equipment','other')),
+            priority TEXT DEFAULT 'medium' CHECK(priority IN ('low','medium','high','critical')),
+            status TEXT DEFAULT 'open' CHECK(status IN ('open','under-review','resolved','closed')),
+            reportedBy INTEGER,
+            assignedTo INTEGER,
+            locationId INTEGER,
+            resolvedAt TEXT,
+            resolvedNotes TEXT DEFAULT '',
+            createdAt TEXT DEFAULT (datetime('now')),
+            updatedAt TEXT DEFAULT (datetime('now')),
+            FOREIGN KEY (reportedBy) REFERENCES users(id) ON DELETE SET NULL,
+            FOREIGN KEY (assignedTo) REFERENCES users(id) ON DELETE SET NULL,
+            FOREIGN KEY (locationId) REFERENCES locations(id) ON DELETE SET NULL
+        )
+    `);
+
+    // Shift swap requests
+    conn.exec(`
+        CREATE TABLE IF NOT EXISTS shift_swaps (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            requesterId INTEGER NOT NULL,
+            targetId INTEGER,
+            crewId INTEGER,
+            offerDate TEXT NOT NULL,
+            wantDate TEXT,
+            notes TEXT DEFAULT '',
+            status TEXT DEFAULT 'open' CHECK(status IN ('open','matched','approved','denied','cancelled')),
+            reviewedBy INTEGER,
+            reviewedAt TEXT,
+            createdAt TEXT DEFAULT (datetime('now')),
+            updatedAt TEXT DEFAULT (datetime('now')),
+            FOREIGN KEY (requesterId) REFERENCES users(id) ON DELETE CASCADE,
+            FOREIGN KEY (targetId) REFERENCES users(id) ON DELETE SET NULL,
+            FOREIGN KEY (crewId) REFERENCES crews(id) ON DELETE SET NULL,
+            FOREIGN KEY (reviewedBy) REFERENCES users(id) ON DELETE SET NULL
+        )
+    `);
+
+    // Training records
+    conn.exec(`
+        CREATE TABLE IF NOT EXISTS training_records (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            userId INTEGER NOT NULL,
+            courseTitle TEXT NOT NULL,
+            completedAt TEXT NOT NULL,
+            expiresAt TEXT,
+            certificationNumber TEXT DEFAULT '',
+            hours REAL DEFAULT 0,
+            notes TEXT DEFAULT '',
+            createdAt TEXT DEFAULT (datetime('now')),
+            FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE
+        )
+    `);
+
+    // Emergency call-ins
+    conn.exec(`
+        CREATE TABLE IF NOT EXISTS emergency_callins (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            userId INTEGER NOT NULL,
+            crewId INTEGER,
+            reason TEXT DEFAULT '',
+            calledInAt TEXT NOT NULL,
+            replacedBy INTEGER,
+            status TEXT DEFAULT 'open' CHECK(status IN ('open','covered','uncovered')),
+            createdAt TEXT DEFAULT (datetime('now')),
+            FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE,
+            FOREIGN KEY (crewId) REFERENCES crews(id) ON DELETE SET NULL,
+            FOREIGN KEY (replacedBy) REFERENCES users(id) ON DELETE SET NULL
+        )
+    `);
+
     // Create indexes for better query performance
     createIndexes(conn);
 
@@ -1027,7 +1106,26 @@ function createIndexes(conn) {
         'CREATE INDEX IF NOT EXISTS idx_audit_action ON audit_log(action)',
         'CREATE INDEX IF NOT EXISTS idx_audit_table ON audit_log(tableName)',
         'CREATE INDEX IF NOT EXISTS idx_audit_record ON audit_log(recordId)',
-        'CREATE INDEX IF NOT EXISTS idx_audit_user ON audit_log(userId)'
+        'CREATE INDEX IF NOT EXISTS idx_audit_user ON audit_log(userId)',
+
+        // Incidents indexes
+        'CREATE INDEX IF NOT EXISTS idx_incidents_type ON incidents(type)',
+        'CREATE INDEX IF NOT EXISTS idx_incidents_status ON incidents(status)',
+        'CREATE INDEX IF NOT EXISTS idx_incidents_priority ON incidents(priority)',
+        'CREATE INDEX IF NOT EXISTS idx_incidents_reporter ON incidents(reportedBy)',
+
+        // Shift swaps indexes
+        'CREATE INDEX IF NOT EXISTS idx_swaps_requester ON shift_swaps(requesterId)',
+        'CREATE INDEX IF NOT EXISTS idx_swaps_target ON shift_swaps(targetId)',
+        'CREATE INDEX IF NOT EXISTS idx_swaps_status ON shift_swaps(status)',
+
+        // Training indexes
+        'CREATE INDEX IF NOT EXISTS idx_training_user ON training_records(userId)',
+        'CREATE INDEX IF NOT EXISTS idx_training_expires ON training_records(expiresAt)',
+
+        // Emergency call-in indexes
+        'CREATE INDEX IF NOT EXISTS idx_callins_user ON emergency_callins(userId)',
+        'CREATE INDEX IF NOT EXISTS idx_callins_status ON emergency_callins(status)'
     ];
 
     for (const indexSql of indexes) {
