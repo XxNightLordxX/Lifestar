@@ -289,6 +289,7 @@ function sanitizeTimeOffRequest(request) {
         status: request.status || 'pending',
         reviewedBy: request.reviewedBy || null,
         reviewerName: request.reviewerName || null,
+        reviewNotes: request.reviewNotes || '',
         createdAt: request.createdAt,
         updatedAt: request.updatedAt || null
     };
@@ -333,26 +334,35 @@ router.get('/', authenticate, async (req, res) => {
             LEFT JOIN users r ON t.reviewedBy = r.id
             WHERE 1=1
         `;
+        // countSql mirrors the same WHERE conditions but without the JOIN overhead
+        let countSql = `SELECT COUNT(*) as total FROM timeoff_requests t WHERE 1=1`;
         const params = [];
+        const countParams = [];
         
         // Non-admin users can only see their own requests
         if (req.user.role === 'paramedic' || req.user.role === 'emt') {
             sql += ' AND t.userId = ?';
+            countSql += ' AND t.userId = ?';
             params.push(req.user.id);
+            countParams.push(req.user.id);
         } else if (userId) {
             const userIdValidation = validateUserId(userId);
             if (userIdValidation.valid) {
                 sql += ' AND t.userId = ?';
+                countSql += ' AND t.userId = ?';
                 params.push(userIdValidation.value);
+                countParams.push(userIdValidation.value);
             }
         }
         
-        // Status filter
+        // Status filter — allow all valid statuses including 'pending'
         if (status) {
             const statusValidation = validateStatus(status);
-            if (statusValidation.valid && statusValidation.value !== 'pending') {
+            if (statusValidation.valid && statusValidation.value) {
                 sql += ' AND t.status = ?';
+                countSql += ' AND t.status = ?';
                 params.push(statusValidation.value);
+                countParams.push(statusValidation.value);
             }
         }
         
@@ -361,7 +371,9 @@ router.get('/', authenticate, async (req, res) => {
             const startDateValidation = validateDate(startDate, 'Start date filter');
             if (startDateValidation.valid) {
                 sql += ' AND t.endDate >= ?';
+                countSql += ' AND t.endDate >= ?';
                 params.push(startDateValidation.value);
+                countParams.push(startDateValidation.value);
             }
         }
         
@@ -369,7 +381,9 @@ router.get('/', authenticate, async (req, res) => {
             const endDateValidation = validateDate(endDate, 'End date filter');
             if (endDateValidation.valid) {
                 sql += ' AND t.startDate <= ?';
+                countSql += ' AND t.startDate <= ?';
                 params.push(endDateValidation.value);
+                countParams.push(endDateValidation.value);
             }
         }
         
@@ -377,7 +391,9 @@ router.get('/', authenticate, async (req, res) => {
         if (search && typeof search === 'string') {
             const searchSanitized = sanitizeString(search, 100);
             sql += ' AND t.reason LIKE ?';
+            countSql += ' AND t.reason LIKE ?';
             params.push(`%${searchSanitized}%`);
+            countParams.push(`%${searchSanitized}%`);
         }
         
         // Add pagination
@@ -390,20 +406,8 @@ router.get('/', authenticate, async (req, res) => {
         
         const requests = db.prepare(sql).all(...params);
         
-        // Get total count for pagination
-        let countSql = `
-            SELECT COUNT(*) as total 
-            FROM timeoff_requests t 
-            WHERE 1=1
-        `;
-        const countParams = params.slice(0, params.length - 2);
-        
-        // Rebuild count query conditions
-        if (req.user.role === 'paramedic' || req.user.role === 'emt') {
-            countSql += ' AND t.userId = ?';
-        }
-        
-        const { total } = db.prepare(countSql).get(req.user.role === 'paramedic' || req.user.role === 'emt' ? [req.user.id] : []);
+        // Count uses the same conditions (no limit/offset)
+        const { total } = db.prepare(countSql).get(...countParams);
         
         res.json({
             requests: requests.map(sanitizeTimeOffRequest),
@@ -680,7 +684,7 @@ router.put('/:id', authenticate, updateLimiter, async (req, res) => {
             });
         }
         
-        const { id } = idValidation;
+        const id = idValidation.value;
         const { status, startDate, endDate, reason } = req.body;
         
         const db = getDb();
@@ -820,7 +824,7 @@ router.delete('/:id', authenticate, async (req, res) => {
             });
         }
         
-        const { id } = idValidation;
+        const id = idValidation.value;
         const db = getDb();
         const request = db.prepare('SELECT * FROM timeoff_requests WHERE id = ?').get(id);
         

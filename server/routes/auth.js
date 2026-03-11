@@ -287,6 +287,10 @@ router.post('/login', loginLimiter, async (req, res) => {
         // Clear failed attempts on successful login
         clearLoginAttempts(usernameResult.value);
         
+        // Update last login timestamp
+        db.prepare("UPDATE users SET lastLoginAt = datetime('now'), failedLoginAttempts = 0 WHERE id = ?")
+            .run(user.id);
+        
         // Generate token
         const token = generateToken(user);
         setTokenCookie(res, token);

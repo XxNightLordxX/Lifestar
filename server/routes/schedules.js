@@ -437,6 +437,9 @@ function sanitizeCrew(crew) {
         shiftType: crew.shiftType || 'Day',
         date: crew.date || '',
         crewType: crew.crewType || '',
+        startTime: crew.startTime || null,
+        endTime: crew.endTime || null,
+        notes: crew.notes || '',
         createdAt: crew.createdAt,
         updatedAt: crew.updatedAt || null
     };
@@ -455,16 +458,20 @@ router.get('/', authenticate, async (req, res) => {
         const db = getDb();
         const { status, locationId, month, year, page, limit, search } = req.query;
         
-        // Build query with filters
+        // Build query with filters - track params for both main query and count
         let sql = 'SELECT * FROM schedules WHERE 1=1';
+        let countSql = 'SELECT COUNT(*) as total FROM schedules WHERE 1=1';
         const params = [];
+        const countParams = [];
         
         // Validate and apply status filter
         if (status) {
             const statusValidation = validateStatus(status);
             if (statusValidation.valid && statusValidation.value) {
                 sql += ' AND status = ?';
+                countSql += ' AND status = ?';
                 params.push(statusValidation.value);
+                countParams.push(statusValidation.value);
             }
         }
         
@@ -473,7 +480,9 @@ router.get('/', authenticate, async (req, res) => {
             const locValidation = validateLocationId(locationId);
             if (locValidation.valid && locValidation.value) {
                 sql += ' AND locationId = ?';
+                countSql += ' AND locationId = ?';
                 params.push(locValidation.value);
+                countParams.push(locValidation.value);
             }
         }
         
@@ -482,7 +491,9 @@ router.get('/', authenticate, async (req, res) => {
             const monthValidation = validateMonth(month);
             if (monthValidation.valid && monthValidation.value) {
                 sql += ' AND month = ?';
+                countSql += ' AND month = ?';
                 params.push(monthValidation.value);
+                countParams.push(monthValidation.value);
             }
         }
         
@@ -491,7 +502,9 @@ router.get('/', authenticate, async (req, res) => {
             const yearValidation = validateYear(year);
             if (yearValidation.valid && yearValidation.value) {
                 sql += ' AND year = ?';
+                countSql += ' AND year = ?';
                 params.push(yearValidation.value);
+                countParams.push(yearValidation.value);
             }
         }
         
@@ -499,7 +512,9 @@ router.get('/', authenticate, async (req, res) => {
         if (search && typeof search === 'string') {
             const searchSanitized = sanitizeString(search, 100);
             sql += ' AND (name LIKE ? OR description LIKE ?)';
+            countSql += ' AND (name LIKE ? OR description LIKE ?)';
             params.push(`%${searchSanitized}%`, `%${searchSanitized}%`);
+            countParams.push(`%${searchSanitized}%`, `%${searchSanitized}%`);
         }
         
         // Add pagination
@@ -512,16 +527,8 @@ router.get('/', authenticate, async (req, res) => {
         
         const schedules = db.prepare(sql).all(...params);
         
-        // Get total count for pagination
-        let countSql = 'SELECT COUNT(*) as total FROM schedules WHERE 1=1';
-        const countParams = params.slice(0, params.length - 2);
-        
-        // Rebuild count params (exclude limit and offset)
-        const countParamsFiltered = [];
-        if (status && validateStatus(status).valid) countParamsFiltered.push(validateStatus(status).value);
-        // Note: This is simplified - in production, track params more carefully
-        
-        const { total } = db.prepare(countSql).get(...countParamsFiltered);
+        // Count uses identical conditions but no limit/offset
+        const { total } = db.prepare(countSql).get(...countParams);
         
         // Attach crews to each schedule
         const crewStmt = db.prepare('SELECT * FROM crews WHERE scheduleId = ? ORDER BY date, rig');
@@ -667,7 +674,7 @@ router.put('/:id', authenticate, authorize('super', 'boss'), updateLimiter, asyn
             });
         }
         
-        const { id } = idValidation;
+        const id = idValidation.value;
         const { name, month, year, description, status, locationId, totalHours } = req.body;
         
         const db = getDb();
@@ -806,7 +813,7 @@ router.delete('/:id', authenticate, authorize('super', 'boss'), async (req, res)
             });
         }
         
-        const { id } = idValidation;
+        const id = idValidation.value;
         const db = getDb();
         const schedule = db.prepare('SELECT * FROM schedules WHERE id = ?').get(id);
         
@@ -857,7 +864,7 @@ router.post('/:id/duplicate', authenticate, authorize('super', 'boss'), createLi
             });
         }
         
-        const { id } = idValidation;
+        const id = idValidation.value;
         const { name } = req.body;
         
         const db = getDb();
@@ -1175,7 +1182,7 @@ router.put('/crews/:id', authenticate, authorize('super', 'boss'), crewLimiter, 
             });
         }
         
-        const { id } = idValidation;
+        const id = idValidation.value;
         const { rig, paramedic, emt, shiftType, date, crewType } = req.body;
         
         const db = getDb();
@@ -1239,7 +1246,7 @@ router.delete('/crews/:id', authenticate, authorize('super', 'boss'), async (req
             });
         }
         
-        const { id } = idValidation;
+        const id = idValidation.value;
         const db = getDb();
         const crew = db.prepare('SELECT * FROM crews WHERE id = ?').get(id);
         
@@ -1302,6 +1309,158 @@ router.delete('/:id/crews', authenticate, authorize('super', 'boss'), async (req
         res.status(CONSTANTS.HTTP_STATUS.SERVER_ERROR).json({
             error: 'Failed to clear crews',
             code: 'CREWS_CLEAR_ERROR'
+        });
+    }
+});
+
+// ============================================
+// CREW TEMPLATES ROUTES
+// ============================================
+
+/**
+ * GET /api/schedules/templates
+ * List all crew templates
+ */
+router.get('/templates', authenticate, async (req, res) => {
+    try {
+        const db = getDb();
+        const templates = db.prepare('SELECT * FROM crew_templates ORDER BY name').all();
+        res.json({ templates, total: templates.length });
+    } catch (err) {
+        console.error('[templates/list] Error:', err.message);
+        res.status(CONSTANTS.HTTP_STATUS.SERVER_ERROR).json({
+            error: 'Failed to retrieve crew templates',
+            code: 'TEMPLATES_LIST_ERROR'
+        });
+    }
+});
+
+/**
+ * POST /api/schedules/templates
+ * Create a new crew template (boss/super only)
+ */
+router.post('/templates', authenticate, authorize('super', 'boss'), async (req, res) => {
+    try {
+        const { name, rig, paramedic, emt, shiftType, crewType } = req.body;
+
+        if (!name || typeof name !== 'string' || name.trim().length === 0) {
+            return res.status(CONSTANTS.HTTP_STATUS.BAD_REQUEST).json({
+                error: 'Template name is required',
+                code: 'VALIDATION_ERROR'
+            });
+        }
+
+        const shiftValidation = validateShiftType(shiftType);
+        const crewValidation = validateCrewType(crewType);
+
+        const db = getDb();
+        const result = db.prepare(`
+            INSERT INTO crew_templates (name, rig, paramedic, emt, shiftType, crewType, createdAt)
+            VALUES (?, ?, ?, ?, ?, ?, datetime('now'))
+        `).run(
+            name.trim().substring(0, 100),
+            validateRig(rig).value,
+            validateCrewName(paramedic).value,
+            validateCrewName(emt).value,
+            shiftValidation.value || 'Day',
+            crewValidation.value || 'ALS'
+        );
+
+        const template = db.prepare('SELECT * FROM crew_templates WHERE id = ?').get(result.lastInsertRowid);
+        res.status(CONSTANTS.HTTP_STATUS.CREATED).json({ template, message: 'Template created successfully' });
+    } catch (err) {
+        console.error('[templates/create] Error:', err.message);
+        res.status(CONSTANTS.HTTP_STATUS.SERVER_ERROR).json({
+            error: 'Failed to create crew template',
+            code: 'TEMPLATE_CREATE_ERROR'
+        });
+    }
+});
+
+/**
+ * PUT /api/schedules/templates/:id
+ * Update a crew template (boss/super only)
+ */
+router.put('/templates/:id', authenticate, authorize('super', 'boss'), async (req, res) => {
+    try {
+        const templateId = parseInt(req.params.id, 10);
+        if (isNaN(templateId) || templateId < 1) {
+            return res.status(CONSTANTS.HTTP_STATUS.BAD_REQUEST).json({
+                error: 'Invalid template ID',
+                code: 'INVALID_TEMPLATE_ID'
+            });
+        }
+
+        const db = getDb();
+        const template = db.prepare('SELECT * FROM crew_templates WHERE id = ?').get(templateId);
+        if (!template) {
+            return res.status(CONSTANTS.HTTP_STATUS.NOT_FOUND).json({
+                error: 'Template not found',
+                code: 'TEMPLATE_NOT_FOUND'
+            });
+        }
+
+        const { name, rig, paramedic, emt, shiftType, crewType } = req.body;
+        const updates = {};
+        if (name !== undefined) updates.name = String(name).trim().substring(0, 100);
+        if (rig !== undefined) updates.rig = validateRig(rig).value;
+        if (paramedic !== undefined) updates.paramedic = validateCrewName(paramedic).value;
+        if (emt !== undefined) updates.emt = validateCrewName(emt).value;
+        if (shiftType !== undefined) updates.shiftType = validateShiftType(shiftType).value || 'Day';
+        if (crewType !== undefined) updates.crewType = validateCrewType(crewType).value || 'ALS';
+
+        if (Object.keys(updates).length === 0) {
+            return res.status(CONSTANTS.HTTP_STATUS.BAD_REQUEST).json({
+                error: 'No valid updates provided',
+                code: 'NO_UPDATES'
+            });
+        }
+
+        const setClauses = Object.keys(updates).map(k => `${k} = ?`);
+        setClauses.push("updatedAt = datetime('now')");
+        db.prepare(`UPDATE crew_templates SET ${setClauses.join(', ')} WHERE id = ?`)
+            .run(...Object.values(updates), templateId);
+
+        const updated = db.prepare('SELECT * FROM crew_templates WHERE id = ?').get(templateId);
+        res.json({ template: updated, message: 'Template updated successfully' });
+    } catch (err) {
+        console.error('[templates/update] Error:', err.message);
+        res.status(CONSTANTS.HTTP_STATUS.SERVER_ERROR).json({
+            error: 'Failed to update crew template',
+            code: 'TEMPLATE_UPDATE_ERROR'
+        });
+    }
+});
+
+/**
+ * DELETE /api/schedules/templates/:id
+ * Delete a crew template (super only)
+ */
+router.delete('/templates/:id', authenticate, authorize('super'), async (req, res) => {
+    try {
+        const templateId = parseInt(req.params.id, 10);
+        if (isNaN(templateId) || templateId < 1) {
+            return res.status(CONSTANTS.HTTP_STATUS.BAD_REQUEST).json({
+                error: 'Invalid template ID',
+                code: 'INVALID_TEMPLATE_ID'
+            });
+        }
+
+        const db = getDb();
+        const result = db.prepare('DELETE FROM crew_templates WHERE id = ?').run(templateId);
+        if (result.changes === 0) {
+            return res.status(CONSTANTS.HTTP_STATUS.NOT_FOUND).json({
+                error: 'Template not found',
+                code: 'TEMPLATE_NOT_FOUND'
+            });
+        }
+
+        res.json({ message: 'Template deleted successfully', code: 'TEMPLATE_DELETED' });
+    } catch (err) {
+        console.error('[templates/delete] Error:', err.message);
+        res.status(CONSTANTS.HTTP_STATUS.SERVER_ERROR).json({
+            error: 'Failed to delete crew template',
+            code: 'TEMPLATE_DELETE_ERROR'
         });
     }
 });

@@ -31,8 +31,8 @@ const CONSTANTS = {
     // Export limits
     MAX_EXPORT_ROWS: 10000,
     
-    // Valid log types
-    VALID_LOG_TYPES: ['info', 'warning', 'error', 'audit', 'security'],
+    // Valid log levels (must match database CHECK constraint)
+    VALID_LOG_TYPES: ['debug', 'info', 'warn', 'error', 'critical'],
     
     // HTTP Status codes
     HTTP_STATUS: {
@@ -206,7 +206,7 @@ function sanitizeLog(log) {
     return {
         id: log.id,
         message: log.message || '',
-        type: log.type || 'info',
+        level: log.level || 'info',
         userId: log.userId || null,
         username: log.username || null,
         ipAddress: log.ipAddress || null,
@@ -260,7 +260,7 @@ router.get('/', authenticate, authorize('super'), logsLimiter, async (req, res) 
         if (type) {
             const typeValidation = validateLogType(type);
             if (typeValidation.valid && typeValidation.value) {
-                sql += ' AND type = ?';
+                sql += ' AND level = ?';
                 params.push(typeValidation.value);
             }
         }
@@ -344,7 +344,7 @@ router.get('/export', authenticate, authorize('super'), exportLimiter, async (re
         if (type) {
             const typeValidation = validateLogType(type);
             if (typeValidation.valid && typeValidation.value) {
-                sql += ' AND type = ?';
+                sql += ' AND level = ?';
                 params.push(typeValidation.value);
             }
         }
@@ -373,7 +373,7 @@ router.get('/export', authenticate, authorize('super'), exportLimiter, async (re
         
         // Export format
         if (format === 'csv') {
-            const header = 'id,message,type,userId,username,ipAddress,createdAt\n';
+            const header = 'id,message,level,userId,username,ipAddress,createdAt\n';
             const rows = logs.map(log => 
                 `"${log.id}","${(log.message || '').replace(/"/g, '""')}","${log.type || ''}","${log.userId || ''}","${log.username || ''}","${log.ipAddress || ''}","${log.createdAt || ''}"`
             ).join('\n');
@@ -431,11 +431,11 @@ router.get('/stats', authenticate, authorize('super'), async (req, res) => {
         const stats = db.prepare(`
             SELECT 
                 COUNT(*) as total,
-                SUM(CASE WHEN type = 'info' THEN 1 ELSE 0 END) as info,
-                SUM(CASE WHEN type = 'warning' THEN 1 ELSE 0 END) as warning,
-                SUM(CASE WHEN type = 'error' THEN 1 ELSE 0 END) as error,
-                SUM(CASE WHEN type = 'audit' THEN 1 ELSE 0 END) as audit,
-                SUM(CASE WHEN type = 'security' THEN 1 ELSE 0 END) as security
+                SUM(CASE WHEN level = 'info' THEN 1 ELSE 0 END) as info,
+                SUM(CASE WHEN level = 'warn' THEN 1 ELSE 0 END) as warn,
+                SUM(CASE WHEN level = 'error' THEN 1 ELSE 0 END) as error,
+                SUM(CASE WHEN level = 'debug' THEN 1 ELSE 0 END) as debug,
+                SUM(CASE WHEN level = 'critical' THEN 1 ELSE 0 END) as critical
             FROM system_logs
             WHERE 1=1 ${dateCondition}
         `).get(...params);

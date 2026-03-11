@@ -525,7 +525,7 @@ router.put('/:id', authenticate, authorize('super'), updateLimiter, async (req, 
             });
         }
         
-        const { id } = idValidation;
+        const id = idValidation.value;
         const { name, code, address, city, state, zip, phone, active } = req.body;
         
         const db = getDb();
@@ -674,7 +674,7 @@ router.delete('/:id', authenticate, authorize('super'), async (req, res) => {
             });
         }
         
-        const { id } = idValidation;
+        const id = idValidation.value;
         const db = getDb();
         const location = db.prepare('SELECT * FROM locations WHERE id = ?').get(id);
         

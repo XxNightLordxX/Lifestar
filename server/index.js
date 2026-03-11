@@ -105,8 +105,9 @@ const cspDirectives = {
     objectSrc: ["'none'"],
     frameSrc: ["'none'"],
     frameAncestors: ["'none'"],
-    upgradeInsecureRequests: CONSTANTS.NODE_ENV === 'production' ? [] : null
-}.filter(Boolean);
+    // Only enforce HTTPS upgrade in production
+    ...(CONSTANTS.NODE_ENV === 'production' ? { upgradeInsecureRequests: [] } : {})
+};
 
 app.use(helmet({
     contentSecurityPolicy: {

@@ -498,7 +498,7 @@ router.put('/:id', authenticate, authorize('super'), updateLimiter, async (req, 
             });
         }
         
-        const { id } = idValidation;
+        const id = idValidation.value;
         const { username, password, fullName, role, phone, locationId, active } = req.body;
         
         const db = getDb();
@@ -643,7 +643,7 @@ router.patch('/:id/status', authenticate, authorize('super'), async (req, res) =
             });
         }
         
-        const { id } = idValidation;
+        const id = idValidation.value;
         const { active } = req.body;
         
         if (typeof active !== 'boolean') {
@@ -703,7 +703,7 @@ router.delete('/:id', authenticate, authorize('super'), async (req, res) => {
             });
         }
         
-        const { id } = idValidation;
+        const id = idValidation.value;
         const db = getDb();
         const user = db.prepare('SELECT * FROM users WHERE id = ?').get(id);
         
@@ -754,7 +754,7 @@ router.post('/:id/reset-password', authenticate, authorize('super'), updateLimit
             });
         }
         
-        const { id } = idValidation;
+        const id = idValidation.value;
         const { newPassword } = req.body;
         
         const passwordValidation = validatePassword(newPassword);
@@ -788,6 +788,91 @@ router.post('/:id/reset-password', authenticate, authorize('super'), updateLimit
         res.status(CONSTANTS.HTTP_STATUS.SERVER_ERROR).json({ 
             error: 'Failed to reset password',
             code: 'PASSWORD_RESET_ERROR'
+        });
+    }
+});
+
+/**
+ * PATCH /api/users/:id/hours
+ * Update a user's hoursWorked and/or bonusHours (boss/super only)
+ */
+router.patch('/:id/hours', authenticate, authorize('super', 'boss'), updateLimiter, async (req, res) => {
+    try {
+        const idValidation = validateUserId(req.params.id);
+        if (!idValidation.valid) {
+            return res.status(CONSTANTS.HTTP_STATUS.BAD_REQUEST).json({
+                error: idValidation.errors[0],
+                code: 'INVALID_USER_ID'
+            });
+        }
+
+        const id = idValidation.value;
+        const { hoursWorked, bonusHours } = req.body;
+
+        const updates = {};
+        const errors = [];
+
+        if (hoursWorked !== undefined) {
+            const h = parseFloat(hoursWorked);
+            if (isNaN(h) || h < 0) {
+                errors.push('hoursWorked must be a non-negative number');
+            } else {
+                updates.hoursWorked = h;
+            }
+        }
+
+        if (bonusHours !== undefined) {
+            const b = parseFloat(bonusHours);
+            if (isNaN(b)) {
+                errors.push('bonusHours must be a number');
+            } else {
+                updates.bonusHours = b;
+            }
+        }
+
+        if (errors.length > 0) {
+            return res.status(CONSTANTS.HTTP_STATUS.BAD_REQUEST).json({
+                error: 'Validation failed',
+                details: errors,
+                code: 'VALIDATION_ERROR'
+            });
+        }
+
+        if (Object.keys(updates).length === 0) {
+            return res.status(CONSTANTS.HTTP_STATUS.BAD_REQUEST).json({
+                error: 'Provide hoursWorked and/or bonusHours to update',
+                code: 'NO_UPDATES'
+            });
+        }
+
+        const db = getDb();
+        const user = db.prepare('SELECT * FROM users WHERE id = ?').get(id);
+
+        if (!user) {
+            return res.status(CONSTANTS.HTTP_STATUS.NOT_FOUND).json({
+                error: 'User not found',
+                code: 'USER_NOT_FOUND'
+            });
+        }
+
+        const setClauses = Object.keys(updates).map(k => `${k} = ?`);
+        setClauses.push("updatedAt = datetime('now')");
+        db.prepare(`UPDATE users SET ${setClauses.join(', ')} WHERE id = ?`)
+            .run(...Object.values(updates), id);
+
+        await addLog(`Hours updated for user: ${user.username} (${JSON.stringify(updates)})`, req.user.id, req.user.username);
+
+        const updated = db.prepare('SELECT id, username, fullName, role, phone, locationId, hoursWorked, bonusHours, active, updatedAt FROM users WHERE id = ?').get(id);
+
+        res.json({
+            user: sanitizeUser(updated),
+            message: 'Hours updated successfully'
+        });
+    } catch (err) {
+        console.error('[users/hours] Error:', err.message);
+        res.status(CONSTANTS.HTTP_STATUS.SERVER_ERROR).json({
+            error: 'Failed to update hours',
+            code: 'USER_HOURS_ERROR'
         });
     }
 });
