@@ -265,17 +265,33 @@ function generateEditorCalendar() {
         const grid = document.getElementById('editorCalendarGrid');
         const monthYear = document.getElementById('editorMonthYear');
 
-        // Parse month/year from schedule name (e.g., "January 2025")
+        // Use the schedule's actual month/year fields, not the name string
         const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
                            'July', 'August', 'September', 'October', 'November', 'December'];
-        const monthIndex = monthNames.findIndex(m => currentEditingSchedule.name.includes(m));
 
-        const yearMatch = currentEditingSchedule.name.match(/\d{4}/);
-        const year = yearMatch ? parseInt(yearMatch[0]) : new Date().getFullYear();
-        const month = monthIndex >= 0 ? monthIndex : new Date().getMonth();
+        // Primary: use schedule.month + schedule.year fields
+        let month, year;
+        if (currentEditingSchedule.month && currentEditingSchedule.year) {
+            month = monthNames.findIndex(m => m === currentEditingSchedule.month);
+            year = parseInt(currentEditingSchedule.year);
+            if (month === -1) {
+                // month might be a number string like "3"
+                month = parseInt(currentEditingSchedule.month) - 1;
+            }
+        } else {
+            // Fallback: try parsing from name
+            month = monthNames.findIndex(m => (currentEditingSchedule.name || '').includes(m));
+            const yearMatch = (currentEditingSchedule.name || '').match(/\d{4}/);
+            year = yearMatch ? parseInt(yearMatch[0]) : new Date().getFullYear();
+            if (month === -1) month = new Date().getMonth();
+        }
+
+        // Safety clamp
+        if (isNaN(year) || year < 2020 || year > 2035) year = new Date().getFullYear();
+        if (isNaN(month) || month < 0 || month > 11) month = new Date().getMonth();
 
         // Update month/year display
-        monthYear.textContent = `${monthNames[month]} ${year}`;
+        if (monthYear) monthYear.textContent = `${monthNames[month]} ${year}`;
 
         // Clear grid
         grid.textContent = '';
@@ -494,7 +510,7 @@ function showCreateCrewModal(dateStr) {
         const crewTypeInput = document.getElementById('crewType');
         if(crewTypeInput) crewTypeInput.value = '';
 
-        // Populate employee dropdowns
+        // Populate employee dropdowns using safe DOM construction (not innerHTML/textContent with HTML strings)
         const paramedicSelect = document.getElementById('crewParamedic');
         const emtSelect = document.getElementById('crewEMT');
 
@@ -502,25 +518,31 @@ function showCreateCrewModal(dateStr) {
         const emts = users.filter(u => u.role === 'emt');
 
         if(paramedicSelect) {
-            // Use safe HTML generation to prevent XSS
-            paramedicSelect.textContent = safeCreateOptions(
-                paramedics.map(p => ({...p, fullName: p.fullName || p.username})),
-                'id',
-                'fullName',
-                '',
-                'Select Paramedic'
-            );
+            paramedicSelect.innerHTML = '';
+            const placeholder = document.createElement('option');
+            placeholder.value = '';
+            placeholder.textContent = 'Select Paramedic';
+            paramedicSelect.appendChild(placeholder);
+            paramedics.forEach(p => {
+                const opt = document.createElement('option');
+                opt.value = p.id;
+                opt.textContent = (p.fullName || p.username) + ' (' + (parseInt(p.hoursWorked)||0) + 'h)';
+                paramedicSelect.appendChild(opt);
+            });
         }
 
         if(emtSelect) {
-            // Use safe HTML generation to prevent XSS
-            emtSelect.textContent = safeCreateOptions(
-                emts.map(e => ({...e, fullName: e.fullName || e.username})),
-                'id',
-                'fullName',
-                '',
-                'Select EMT'
-            );
+            emtSelect.innerHTML = '';
+            const placeholder = document.createElement('option');
+            placeholder.value = '';
+            placeholder.textContent = 'Select EMT';
+            emtSelect.appendChild(placeholder);
+            emts.forEach(e => {
+                const opt = document.createElement('option');
+                opt.value = e.id;
+                opt.textContent = (e.fullName || e.username) + ' (' + (parseInt(e.hoursWorked)||0) + 'h)';
+                emtSelect.appendChild(opt);
+            });
         }
 
         showModal('createCrewModal');
@@ -628,8 +650,8 @@ function saveCrew() {
         currentEditingSchedule.crews.push(crew);
 
         // Update employee hours
-        if(paramedicId) updateEmployeeHours(paramedicId, crew.hours);
-        if(emtId) updateEmployeeHours(emtId, crew.hours);
+        if(paramedicId) updateEmployeeHours(paramedicId);
+        if(emtId) updateEmployeeHours(emtId);
 
         // Save and refresh
         saveSchedules();
@@ -649,17 +671,27 @@ function saveCrew() {
     }
 }
 
-/** @function updateEmployeeHours */
-function updateEmployeeHours(userId, hours) {
+/** @function updateEmployeeHours - Recalculates total hours from ALL schedules (not additive) */
+function updateEmployeeHours(userId) {
     const user = users.find(u => String(u.id) === String(userId));
-    if(user) {
-        user.hoursWorked = (user.hoursWorked || 0) + hours;
+    if (!user) return;
 
-        // Check for overtime alert (cross-schedule total hours)
-        const totalHours = calculateTotalHoursCrossSchedule(userId);
-        if (totalHours > 160) {
-            showAlert(`Warning: ${sanitizeHTML(user.fullName || user.username)} has exceeded 160 hours this month (${totalHours} total)`, 'warning');
-        }
+    // Recalculate hours from scratch across all non-archived schedules
+    let total = 0;
+    (schedules || []).forEach(s => {
+        if (s.status === 'archived') return;
+        (s.crews || []).forEach(c => {
+            if (String(c.paramedicId) === String(userId) || String(c.emtId) === String(userId)) {
+                total += c.hours || (c.shiftType && c.shiftType.includes('24hr') ? 24 : 12);
+            }
+        });
+    });
+
+    user.hoursWorked = total;
+
+    // Overtime warning
+    if (total > 160 && featureStates && featureStates.overtimeAlerts) {
+        showAlert(`⚠️ ${sanitizeHTML(user.fullName || user.username)} has ${total} hours this period (exceeds 160h limit)`, 'warning');
     }
 }
 
@@ -1302,8 +1334,8 @@ function addCrewToSchedule(crew) {
     }
     currentEditingSchedule.crews.push(crew);
     
-    if (crew.paramedicId) updateEmployeeHours(crew.paramedicId, crew.hours);
-    if (crew.emtId) updateEmployeeHours(crew.emtId, crew.hours);
+    if (crew.paramedicId) updateEmployeeHours(crew.paramedicId);
+    if (crew.emtId) updateEmployeeHours(crew.emtId);
     
     saveSchedules();
     saveUsers();
@@ -1351,7 +1383,7 @@ function applyShiftTemplate() {
 /** @function isEmployeeAssignedOnDate */
 function isEmployeeAssignedOnDate(employeeId, date) {
     return currentEditingSchedule.crews?.some(
-        c => c.date === date && (String(c.paramedicId) === String(employeeId) || String(c.emtId) === String(employeeId));
+        c => c.date === date && (String(c.paramedicId) === String(employeeId) || String(c.emtId) === String(employeeId))
     );
 }
 
@@ -1377,7 +1409,7 @@ function isEmployeeAssignedCrossSchedule(employeeId, date, excludeScheduleId) {
         }
 
         const isAssigned = schedule.crews.some(
-            c => c.date === date && (String(c.paramedicId) === String(employeeId) || String(c.emtId) === String(employeeId));
+            c => c.date === date && (String(c.paramedicId) === String(employeeId) || String(c.emtId) === String(employeeId))
         );
 
         if (isAssigned) {

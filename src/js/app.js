@@ -510,7 +510,7 @@ function loadUsersTable() {
         tbody.textContent = '';
 
         users.forEach(user => {
-            const locName = '—';
+            let locName = '—';
             if (user.locationId && typeof MultiLocation !== 'undefined') {
                 const loc = MultiLocation.getLocationById(user.locationId);
                 if (loc) locName = loc.code;
@@ -731,7 +731,8 @@ function editUser(userId) {
         if(user) {
             editingUserId = userId;
             (document.getElementById('newUserUsername') || {value: ''}).value = user.username;
-            (document.getElementById('newUserPassword') || {value: ''}).value = user.password;
+            // SECURITY: Never populate hashed password - leave blank; only update if new value entered
+            (document.getElementById('newUserPassword') || {value: ''}).value = '';
             (document.getElementById('newUserFullName') || {value: ''}).value = user.fullName;
             (document.getElementById('newUserRole') || {value: ''}).value = user.role;
             (document.getElementById('newUserPhone') || {value: ''}).value = user.phone;
@@ -744,6 +745,9 @@ function editUser(userId) {
             if(modalTitle) modalTitle.textContent = 'Edit User';
             const submitBtn = document.querySelector('#addUserModal button[type="submit"]');
             if(submitBtn) submitBtn.textContent = 'Save Changes';
+            // Show password hint
+            const pwField = document.getElementById('newUserPassword');
+            if(pwField) pwField.placeholder = 'Leave blank to keep current password';
             showModal('addUserModal');
         }
     } catch (error) {
@@ -753,7 +757,24 @@ function editUser(userId) {
 
 /** @function deleteUser */
 function deleteUser(userId) {
-    if(confirm('Are you sure you want to delete this user?')) {
+    const userToDelete = users.find(u => u.id === userId);
+    if (!userToDelete) return;
+
+    // Count active schedule assignments for this user
+    let assignmentCount = 0;
+    (schedules || []).forEach(s => {
+        (s.crews || []).forEach(c => {
+            if (String(c.paramedicId) === String(userId) || String(c.emtId) === String(userId)) {
+                assignmentCount++;
+            }
+        });
+    });
+
+    const warningMsg = assignmentCount > 0
+        ? `This user has ${assignmentCount} shift assignment(s) in existing schedules.\nThose shifts will show "Unassigned".\n\nAre you sure you want to delete "${userToDelete.fullName || userToDelete.username}"?`
+        : `Are you sure you want to delete "${userToDelete.fullName || userToDelete.username}"?`;
+
+    if(confirm(warningMsg)) {
         const userIndex = users.findIndex(u => u.id === userId);
         if(userIndex > -1) {
             const username = users[userIndex].username;
@@ -1333,8 +1354,9 @@ function createScheduleCard(schedule) {
             </div>
             <div class="schedule-actions">
                 <button class="btn btn-sm btn-primary" onclick="viewSchedule(${parseInt(schedule.id)})">View</button>
-                <button class="btn btn-sm btn-warning" onclick="editSchedule(${parseInt(schedule.id)})">Edit</button>
+                ${schedule.status === 'draft' ? `<button class="btn btn-sm btn-warning" onclick="editSchedule(${parseInt(schedule.id)})">Edit</button>` : ''}
                 ${schedule.status === 'draft' ? `<button class="btn btn-sm btn-success" onclick="publishSchedule(${parseInt(schedule.id)})">Publish</button>` : ''}
+                <button class="btn btn-sm btn-info" onclick="duplicateSchedule(${parseInt(schedule.id)})" title="Copy to another month">📋 Copy</button>
                 <button class="btn btn-sm btn-danger" onclick="deleteSchedule(${parseInt(schedule.id)})">Delete</button>
             </div>
         `;
@@ -1401,35 +1423,45 @@ function handleCreateSchedule(e) {
     }
 }
 
-/** @function viewSchedule */
-function viewSchedule(scheduleId) {
-    const schedule = schedules.find(s => s.id === scheduleId);
-    if(schedule) {
-        openScheduleEditor(scheduleId);
-    }
-}
-
-/** @function editSchedule */
-function editSchedule(scheduleId) {
-    const schedule = schedules.find(s => s.id === scheduleId);
-    if(schedule) {
-        openScheduleEditor(scheduleId);
-    }
-}
-
 /** @function publishSchedule */
 function publishSchedule(scheduleId) {
-    if(confirm('Are you sure you want to publish this schedule? Once published, it cannot be edited.')) {
+    if(confirm('Are you sure you want to publish this schedule?\n\nPublished schedules become visible to staff and are locked from structural changes.')) {
         const schedule = schedules.find(s => s.id === scheduleId);
         if(schedule) {
             schedule.status = 'published';
             schedule.publishedAt = new Date().toISOString();
             saveData();
             loadDraftSchedules();
+            loadPublishedSchedules();
             updateSidebarBadges();
-            showAlert('Schedule published successfully', 'success');
+            showAlert('Schedule published successfully! Staff can now view their shifts.', 'success');
             addSystemLog('Schedule published: ' + schedule.name);
         }
+    }
+}
+
+/** @function viewSchedule */
+function viewSchedule(scheduleId) {
+    const schedule = schedules.find(s => String(s.id) === String(scheduleId));
+    if(schedule) {
+        if(schedule.status === 'published') {
+            // Open in read-only view mode for published schedules
+            openScheduleEditor(scheduleId, true);
+        } else {
+            openScheduleEditor(scheduleId, false);
+        }
+    }
+}
+
+/** @function editSchedule */
+function editSchedule(scheduleId) {
+    const schedule = schedules.find(s => String(s.id) === String(scheduleId));
+    if(schedule) {
+        if(schedule.status === 'published') {
+            showAlert('Published schedules are locked. Archive and restore as draft to make changes.', 'warning');
+            return;
+        }
+        openScheduleEditor(scheduleId, false);
     }
 }
 
@@ -1627,7 +1659,7 @@ function showAlert(message, type, alertId) {
         toast.textContent = (icons[type] || 'ℹ️') + ' ' + message;
 
         // Create container if needed
-        const container = document.getElementById('toastContainer');
+        let container = document.getElementById('toastContainer');
         if(!container) {
             container = document.createElement('div');
             container.id = 'toastContainer';
@@ -1833,10 +1865,10 @@ function loadSampleData() {
         users = [
             { id: 1, username: 'super', password: 'super123', fullName: 'Super Administrator', role: 'super', phone: '555-0001', hoursWorked: 0, bonusHours: 0, createdAt: new Date().toISOString() },
             { id: 2, username: 'boss', password: 'boss123', fullName: 'Station Manager', role: 'boss', phone: '555-0002', hoursWorked: 0, bonusHours: 0, createdAt: new Date().toISOString() },
-            { id: 3, username: 'paramedic1', password: '***REMOVED***', fullName: 'Sarah Medic', role: USER_ROLES.PARAMEDIC, phone: '555-0003', hoursWorked: 0, bonusHours: 0, createdAt: new Date().toISOString() },
-            { id: 4, username: 'paramedic2'password: '***REMOVED***'3', fullName: 'Mike Medic', role: USER_ROLES.PARAMEDIC, phone: '555-0004', hoursWorked: 0, bonusHours: 0, createdAt: new Date().toISOString() },
-            { id: 5, usernapassword: '***REMOVED***'*': 'emt123', fullName: 'Tom EMT', role: USER_ROLES.EMT, phone: '555-0005', hoursWorked: 0, bonusHours: 0, createdAt: new Date().toISOString() },
-            { id: 6, usernapassword: '***REMOVED***'*': 'emt123', fullName: 'Lisa EMT', role: USER_ROLES.EMT, phone: '555-0006', hoursWorked: 0, bonusHours: 0, createdAt: new Date().toISOString() }
+            { id: 3, username: 'paramedic1', password: 'paramedic123', fullName: 'Sarah Medic', role: USER_ROLES.PARAMEDIC, phone: '555-0003', hoursWorked: 0, bonusHours: 0, createdAt: new Date().toISOString() },
+            { id: 4, username: 'paramedic2', password: 'paramedic123', fullName: 'Mike Medic', role: USER_ROLES.PARAMEDIC, phone: '555-0004', hoursWorked: 0, bonusHours: 0, createdAt: new Date().toISOString() },
+            { id: 5, username: 'emt1', password: 'emt123', fullName: 'Tom EMT', role: USER_ROLES.EMT, phone: '555-0005', hoursWorked: 0, bonusHours: 0, createdAt: new Date().toISOString() },
+            { id: 6, username: 'emt2', password: 'emt123', fullName: 'Lisa EMT', role: USER_ROLES.EMT, phone: '555-0006', hoursWorked: 0, bonusHours: 0, createdAt: new Date().toISOString() }
         ];
 
         saveData();
@@ -1891,21 +1923,30 @@ let selectedScheduleForCalendar = null;
 function loadCalendar() {
     try {
         const scheduleSelect = document.getElementById('calendarScheduleSelect');
+        if (!scheduleSelect) return;
 
-        // Populate schedule select if empty
-        if(scheduleSelect.options.length === 1) {
-            const publishedSchedules = (schedules || []).filter(s => s.status === 'published');
-            publishedSchedules.forEach(schedule => {
-                const option = document.createElement('option');
-                option.value = schedule.id;
-                option.textContent = schedule.name;
-                scheduleSelect.appendChild(option);
-            });
+        // Always rebuild the schedule options list (schedules may have changed)
+        const previousValue = scheduleSelect.value;
+        const publishedSchedules = (schedules || []).filter(s => s.status === 'published');
+
+        scheduleSelect.innerHTML = '<option value="">-- Select Schedule --</option>';
+        publishedSchedules.forEach(schedule => {
+            const option = document.createElement('option');
+            option.value = schedule.id;
+            option.textContent = schedule.name;
+            scheduleSelect.appendChild(option);
+        });
+
+        // Restore previous selection if still valid
+        if (previousValue && publishedSchedules.find(s => String(s.id) === previousValue)) {
+            scheduleSelect.value = previousValue;
+        } else if (publishedSchedules.length > 0) {
+            scheduleSelect.value = publishedSchedules[0].id;
         }
 
         // Get selected schedule
         const scheduleId = scheduleSelect.value;
-        selectedScheduleForCalendar = schedules.find(s => String(s.id) === String(scheduleId));
+        selectedScheduleForCalendar = schedules.find(s => String(s.id) === String(scheduleId)) || null;
 
         generateCalendar();
     } catch (error) {
@@ -2347,22 +2388,25 @@ function loadMySchedule() {
         const scheduleList = document.getElementById('myScheduleList');
         scheduleList.textContent = '';
 
-        // Get all published schedules and find user's shifts
+        // Get all published schedules and find user's shifts by ID (not fragile name match)
         const publishedSchedules = (schedules || []).filter(s => s.status === 'published');
         let myShifts = [];
 
         publishedSchedules.forEach(schedule => {
             if(schedule.crews) {
                 schedule.crews.forEach(crew => {
-                    if(crew.paramedic === (currentUser.fullName || currentUser.username) ||
-                        crew.emt === (currentUser.fullName || currentUser.username)) {
+                    const isParamedic = String(crew.paramedicId) === String(currentUser.id);
+                    const isEmt = String(crew.emtId) === String(currentUser.id);
+                    if(isParamedic || isEmt) {
                         myShifts.push({
                             scheduleName: schedule.name,
                             date: crew.date,
                             shiftType: crew.shiftType,
                             rig: crew.rig,
-                            partner: crew.paramedic === (currentUser.fullName || currentUser.username) ? crew.emt : crew.paramedic,
-                            type: crew.type || crew.shiftType || 'Shift'
+                            partner: isParamedic ? (crew.emt || 'TBD') : (crew.paramedic || 'TBD'),
+                            partnerRole: isParamedic ? 'EMT' : 'Paramedic',
+                            type: crew.type || 'ALS',
+                            hours: crew.hours || 12
                         });
                     }
                 });
@@ -2370,37 +2414,39 @@ function loadMySchedule() {
         });
 
         // Show/hide empty message
-        document.getElementById('noMyScheduleMessage').style.display = myShifts.length > 0 ? 'none' : 'block';
+        const noMsg = document.getElementById('noMyScheduleMessage');
+        if (noMsg) noMsg.style.display = myShifts.length > 0 ? 'none' : 'block';
 
         // Sort shifts by date
         myShifts.sort((a, b) => new Date(a.date) - new Date(b.date));
 
+        // Upcoming next shift banner
+        const now = new Date();
+        const nextShift = myShifts.find(s => new Date(s.date) >= now);
+        if (nextShift) {
+            const daysUntil = Math.ceil((new Date(nextShift.date) - now) / 86400000);
+            const banner = document.createElement('div');
+            banner.style.cssText = 'background:linear-gradient(135deg,var(--lifestar-red),#c0392b);color:#fff;padding:14px 18px;border-radius:10px;margin-bottom:16px;font-weight:600;display:flex;align-items:center;gap:10px;';
+            banner.innerHTML = `<span style="font-size:1.4em">🚑</span> Your next shift: <strong>${nextShift.date}</strong> — ${nextShift.rig} (${nextShift.shiftType}) &nbsp;·&nbsp; ${daysUntil === 0 ? '<span style="color:#ffd700">TODAY</span>' : daysUntil === 1 ? 'Tomorrow' : `in ${daysUntil} days`}`;
+            scheduleList.appendChild(banner);
+        }
+
         // Render shifts
         myShifts.forEach(shift => {
             const shiftCard = document.createElement('div');
-            shiftCard.className = 'schedule-item';
+            const isPast = new Date(shift.date) < now;
+            shiftCard.className = 'schedule-item' + (isPast ? ' opacity-50' : '');
+            shiftCard.style.opacity = isPast ? '0.6' : '1';
             shiftCard.innerHTML = `
                 <div class="schedule-header">
-                    <div class="schedule-title">${shift.scheduleName}</div>
-                    <div class="schedule-status published">${shift.type}</div>
+                    <div class="schedule-title">${sanitizeHTML(shift.scheduleName)}</div>
+                    <div class="schedule-status published">${sanitizeHTML(shift.type)}</div>
                 </div>
                 <div class="schedule-info">
-                    <div class="schedule-info-item">
-                        <span class="schedule-info-item-icon">📅</span>
-                        ${shift.date}
-                    </div>
-                    <div class="schedule-info-item">
-                        <span class="schedule-info-item-icon">🕐</span>
-                        ${shift.shiftType}
-                    </div>
-                    <div class="schedule-info-item">
-                        <span class="schedule-info-item-icon">🚑</span>
-                        ${shift.rig}
-                    </div>
-                    <div class="schedule-info-item">
-                        <span class="schedule-info-item-icon">👥</span>
-                        Partner: ${shift.partner}
-                    </div>
+                    <div class="schedule-info-item"><span class="schedule-info-item-icon">📅</span>${sanitizeHTML(shift.date)}</div>
+                    <div class="schedule-info-item"><span class="schedule-info-item-icon">⏱️</span>${sanitizeHTML(shift.shiftType)} (${sanitizeHTML(String(shift.hours))}h)</div>
+                    <div class="schedule-info-item"><span class="schedule-info-item-icon">🚑</span>Rig ${sanitizeHTML(shift.rig)}</div>
+                    <div class="schedule-info-item"><span class="schedule-info-item-icon">👥</span>${sanitizeHTML(shift.partnerRole)}: ${sanitizeHTML(shift.partner)}</div>
                 </div>
             `;
             scheduleList.appendChild(shiftCard);
@@ -2494,60 +2540,62 @@ function loadEmtMySchedule() {
         const scheduleList = document.getElementById('emtMyScheduleList');
         scheduleList.textContent = '';
 
-        // Get all published schedules and find user's shifts
+        // Match shifts by user ID (not fragile fullName string)
         const publishedSchedules = (schedules || []).filter(s => s.status === 'published');
         let myShifts = [];
 
         publishedSchedules.forEach(schedule => {
             if(schedule.crews) {
                 schedule.crews.forEach(crew => {
-                    if(crew.paramedic === (currentUser.fullName || currentUser.username) ||
-                        crew.emt === (currentUser.fullName || currentUser.username)) {
+                    const isParamedic = String(crew.paramedicId) === String(currentUser.id);
+                    const isEmt = String(crew.emtId) === String(currentUser.id);
+                    if(isParamedic || isEmt) {
                         myShifts.push({
                             scheduleName: schedule.name,
                             date: crew.date,
                             shiftType: crew.shiftType,
                             rig: crew.rig,
-                            partner: crew.paramedic === (currentUser.fullName || currentUser.username) ? crew.emt : crew.paramedic,
-                            type: crew.type || crew.shiftType || 'Shift'
+                            partner: isParamedic ? (crew.emt || 'TBD') : (crew.paramedic || 'TBD'),
+                            partnerRole: isParamedic ? 'EMT' : 'Paramedic',
+                            type: crew.type || 'BLS',
+                            hours: crew.hours || 12
                         });
                     }
                 });
             }
         });
 
-        // Show/hide empty message
-        document.getElementById('emtNoMyScheduleMessage').style.display = myShifts.length > 0 ? 'none' : 'block';
+        const noMsg = document.getElementById('emtNoMyScheduleMessage');
+        if (noMsg) noMsg.style.display = myShifts.length > 0 ? 'none' : 'block';
 
-        // Sort shifts by date
         myShifts.sort((a, b) => new Date(a.date) - new Date(b.date));
 
-        // Render shifts
+        // Upcoming next shift banner
+        const now = new Date();
+        const nextShift = myShifts.find(s => new Date(s.date) >= now);
+        if (nextShift) {
+            const daysUntil = Math.ceil((new Date(nextShift.date) - now) / 86400000);
+            const banner = document.createElement('div');
+            banner.style.cssText = 'background:linear-gradient(135deg,var(--lifestar-light-blue,#3498db),#2980b9);color:#fff;padding:14px 18px;border-radius:10px;margin-bottom:16px;font-weight:600;display:flex;align-items:center;gap:10px;';
+            banner.innerHTML = `<span style="font-size:1.4em">🚑</span> Your next shift: <strong>${nextShift.date}</strong> — ${nextShift.rig} (${nextShift.shiftType}) &nbsp;·&nbsp; ${daysUntil === 0 ? '<span style="color:#ffd700">TODAY</span>' : daysUntil === 1 ? 'Tomorrow' : `in ${daysUntil} days`}`;
+            scheduleList.appendChild(banner);
+        }
+
         myShifts.forEach(shift => {
+            const isPast = new Date(shift.date) < now;
             const shiftCard = document.createElement('div');
             shiftCard.className = 'schedule-item';
+            shiftCard.style.opacity = isPast ? '0.6' : '1';
             shiftCard.innerHTML = `
                 <div class="schedule-header">
-                    <div class="schedule-title">${shift.scheduleName}</div>
-                    <div class="schedule-status published">${shift.type}</div>
+                    <div class="schedule-title">${sanitizeHTML(shift.scheduleName)}</div>
+                    <div class="schedule-status published">${sanitizeHTML(shift.type)}</div>
                 </div>
                 <div class="schedule-info">
-                    <div class="schedule-info-item">
-                        <span class="schedule-info-item-icon">📅</span>
-                        ${shift.date}
-                    </div>
-                    <div class="schedule-info-item">
-                        <span class="schedule-info-item-icon">🕐</span>
-                        ${shift.shiftType}
-                    </div>
-                    <div class="schedule-info-item">
-                        <span class="schedule-info-item-icon">🚑</span>
-                        ${shift.rig}
-                    </div>
-                    <div class="schedule-info-item">
-                        <span class="schedule-info-item-icon">👥</span>
-                        Partner: ${shift.partner}
-                    </div>
+                    <div class="schedule-info-item"><span class="schedule-info-item-icon">📅</span>${sanitizeHTML(shift.date)}</div>
+                    <div class="schedule-info-item"><span class="schedule-info-item-icon">⏱️</span>${sanitizeHTML(shift.shiftType)} (${sanitizeHTML(String(shift.hours))}h)</div>
+                    <div class="schedule-info-item"><span class="schedule-info-item-icon">🚑</span>Rig ${sanitizeHTML(shift.rig)}</div>
+                    <div class="schedule-info-item"><span class="schedule-info-item-icon">👥</span>${sanitizeHTML(shift.partnerRole)}: ${sanitizeHTML(shift.partner)}</div>
                 </div>
             `;
             scheduleList.appendChild(shiftCard);
@@ -2585,13 +2633,47 @@ function submitTimeoffRequest(type) {
         const endDateId = type === USER_ROLES.PARAMEDIC ? 'timeoffEndDate' : 'emtTimeoffEndDate';
         const reasonId = type === USER_ROLES.PARAMEDIC ? 'timeoffReason' : 'emtTimeoffReason';
 
-        const startDate = (document.getElementById(startDateId) || {value: ''}).value;
-        const endDate = (document.getElementById(endDateId) || {value: ''}).value;
-        const reason = (document.getElementById(reasonId) || {value: ''}).value;
+        const startDate = (document.getElementById(startDateId) || {value: ''}).value.trim();
+        const endDate = (document.getElementById(endDateId) || {value: ''}).value.trim();
+        const reason = (document.getElementById(reasonId) || {value: ''}).value.trim();
 
-        // Validate dates
-        if(new Date(startDate) > new Date(endDate)) {
-            showAlert('End date must be after start date', 'danger');
+        // Required field validation
+        if (!startDate) {
+            showAlert('Please select a start date', 'warning');
+            return;
+        }
+        if (!endDate) {
+            showAlert('Please select an end date', 'warning');
+            return;
+        }
+        if (!reason) {
+            showAlert('Please provide a reason for your time-off request', 'warning');
+            return;
+        }
+
+        // Logic validation
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+
+        if (start < today) {
+            showAlert('Start date cannot be in the past', 'warning');
+            return;
+        }
+        if (end < start) {
+            showAlert('End date must be on or after start date', 'danger');
+            return;
+        }
+
+        // Check for duplicate pending request
+        const existing = timeoffRequests.find(r =>
+            String(r.staffId) === String(currentUser.id) &&
+            r.status === 'pending' &&
+            r.startDate === startDate
+        );
+        if (existing) {
+            showAlert('You already have a pending request for this date', 'warning');
             return;
         }
 
@@ -2606,7 +2688,6 @@ function submitTimeoffRequest(type) {
             createdAt: new Date().toISOString()
         };
 
-        // Add to requests
         timeoffRequests.push(request);
         saveTimeoffRequests();
 
@@ -2615,8 +2696,8 @@ function submitTimeoffRequest(type) {
         (document.getElementById(endDateId) || {value: ''}).value = '';
         (document.getElementById(reasonId) || {value: ''}).value = '';
 
-        showAlert('Time-off request submitted successfully', 'success');
-        addSystemLog('Time-off request submitted by: ' + currentUser.username);
+        showAlert('Time-off request submitted! Your manager will review it shortly.', 'success');
+        addSystemLog('Time-off request submitted by: ' + currentUser.username + ' (' + startDate + ' to ' + endDate + ')');
     } catch (error) {
         Logger.error('[submitTimeoffRequest] Error:', error.message || error);
     }
@@ -2807,28 +2888,37 @@ function swapCrewStaff(crewId) {
         document.getElementById('crewModalTitle').textContent = 'Swap Staff';
         document.getElementById('createCrewForm').dataset.editingId = crewId;
 
-        // Populate dropdowns
+        // Populate dropdowns safely using DOM construction
         if(typeof showCreateCrewModal === 'function') {
             const paramedicSelect = document.getElementById('crewParamedic');
             const emtSelect = document.getElementById('crewEMT');
             const paramedics = users.filter(u => u.role === USER_ROLES.PARAMEDIC);
             const emts = users.filter(u => u.role === USER_ROLES.EMT);
 
-            // Use safe HTML generation to prevent XSS
-            paramedicSelect.textContent = safeCreateOptions(
-                paramedics.map(p => ({...p, fullName: p.fullName || p.username})),
-                'id',
-                'fullName',
-                crew.paramedicId,
-                'Select Paramedic'
-            );
-            emtSelect.textContent = safeCreateOptions(
-                emts.map(e => ({...e, fullName: e.fullName || e.username})),
-                'id',
-                'fullName',
-                crew.emtId,
-                'Select EMT'
-            );
+            if (paramedicSelect) {
+                paramedicSelect.innerHTML = '';
+                const ph = document.createElement('option'); ph.value = ''; ph.textContent = 'Select Paramedic';
+                paramedicSelect.appendChild(ph);
+                paramedics.forEach(p => {
+                    const opt = document.createElement('option');
+                    opt.value = p.id;
+                    opt.textContent = p.fullName || p.username;
+                    if (String(p.id) === String(crew.paramedicId)) opt.selected = true;
+                    paramedicSelect.appendChild(opt);
+                });
+            }
+            if (emtSelect) {
+                emtSelect.innerHTML = '';
+                const ph = document.createElement('option'); ph.value = ''; ph.textContent = 'Select EMT';
+                emtSelect.appendChild(ph);
+                emts.forEach(e => {
+                    const opt = document.createElement('option');
+                    opt.value = e.id;
+                    opt.textContent = e.fullName || e.username;
+                    if (String(e.id) === String(crew.emtId)) opt.selected = true;
+                    emtSelect.appendChild(opt);
+                });
+            }
         }
 
         showModal('createCrewModal');
