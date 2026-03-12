@@ -111,7 +111,7 @@ function submitIncidentReport(type) {
 
         // Clear form
         ['dateId', 'typeId', 'severityId', 'descId'].forEach(id => {
-            const el = document.getElementById(eval(id));
+            const el = document.getElementById(id);
             if (el) el.value = '';
         });
 
@@ -638,3 +638,63 @@ window.updateOverviewStats = function() {
 };
 
 Logger.debug('✅ fixes-and-features.js loaded — missing functions restored, new features active');
+
+// ============================================
+// CONSOLIDATED FROM bug-fixes.js
+// (merged here to reduce script count)
+// ============================================
+
+/** Lazy-load large datasets into a container using requestAnimationFrame batching */
+function lazyLoadData(containerId, items, renderItem, batchSize) {
+    batchSize = batchSize || 20;
+    try {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+        container.textContent = '';
+        let currentIndex = 0;
+        const loadBatch = function() {
+            const fragment = document.createDocumentFragment();
+            const endIndex = Math.min(currentIndex + batchSize, items.length);
+            for (let i = currentIndex; i < endIndex; i++) {
+                const item = renderItem(items[i]);
+                if (item) fragment.appendChild(item);
+            }
+            container.appendChild(fragment);
+            currentIndex = endIndex;
+            if (currentIndex < items.length) requestAnimationFrame(loadBatch);
+        };
+        loadBatch();
+    } catch (e) {
+        if (typeof Logger !== 'undefined') Logger.error('[lazyLoadData]', e);
+    }
+}
+
+/** Announce a message to screen readers via a live region */
+function announceToScreenReader(message) {
+    try {
+        let el = document.getElementById('screenReaderAnnouncer');
+        if (!el) {
+            el = document.createElement('div');
+            el.id = 'screenReaderAnnouncer';
+            el.setAttribute('aria-live', 'polite');
+            el.setAttribute('aria-atomic', 'true');
+            el.style.cssText = 'position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;';
+            document.body.appendChild(el);
+        }
+        el.textContent = '';
+        setTimeout(function() { el.textContent = message; }, 100);
+    } catch (e) { /* silently fail */ }
+}
+
+/** Wrap a function with an error boundary that calls fallback(error) on failure */
+function withErrorBoundary(fn, fallback) {
+    return function() {
+        try {
+            return fn.apply(this, arguments);
+        } catch (error) {
+            if (typeof Logger !== 'undefined') Logger.error('[withErrorBoundary]', error);
+            if (typeof fallback === 'function') return fallback(error);
+            return null;
+        }
+    };
+}

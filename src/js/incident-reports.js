@@ -98,7 +98,7 @@
         return true;
     }
 
-    function deleteReport(id) {
+    function _deleteReportData(id) {
         const reports = loadReports().filter(r => r.id != id);
         saveReports(reports);
     }
@@ -307,9 +307,9 @@
 
     function deleteReport(id) {
         if (!confirm('Delete this incident report? This cannot be undone.')) return;
-        deleteReport(id);
+        _deleteReportData(id);
         closeDetail();
-        if (typeof showToast === 'function') showToast('Report deleted', 'info');
+        if (typeof showAlert === 'function') showAlert('Report deleted', 'info');
         if (document.getElementById('incidentsList')) renderReportList('incidentsList');
         if (document.getElementById('bossIncidentsList')) renderReportList('bossIncidentsList');
     }

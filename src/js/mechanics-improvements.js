@@ -507,7 +507,8 @@ function performGlobalSearch(query) {
     });
 
     // Search time-off requests
-    timeOffRequests?.forEach(request => {
+    const _reqList = (typeof timeoffRequests !== 'undefined' ? timeoffRequests : (typeof timeOffRequests !== 'undefined' ? timeOffRequests : []));
+    _reqList.forEach(request => {
         const user = users.find(u => String(u.id) === String(request.staffId));
         if(user && user.fullName.toLowerCase().includes(query)) {
             results.push({

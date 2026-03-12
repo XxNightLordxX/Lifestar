@@ -675,23 +675,10 @@ const TableUtils = {
     }
 };
 
-// Global function aliases for backward compatibility
-function showModal(modalId) {
-    return ModalManager.show(modalId);
-}
-
-function closeModal(modalId) {
-    return ModalManager.close(modalId);
-}
-
-function openModal(modalId) {
-    return ModalManager.show(modalId);
-}
-
-function showAlert(message, type = 'info', alertId = null) {
-    return AlertManager.show(message, type, { id: alertId });
-}
-
+// NOTE: showModal, closeModal, openModal, showAlert are defined in app.js with richer
+// implementations (staff dropdown population, inline alertId mode). Those load after
+// this file and take precedence. ModalManager / AlertManager are still available
+// directly for any code that needs the full manager API.
 function showLoading(elementId, message = null) {
     return LoadingManager.show(elementId, message);
 }

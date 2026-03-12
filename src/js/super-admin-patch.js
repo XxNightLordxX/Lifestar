@@ -112,7 +112,7 @@
                 const id = (select.id || '').toLowerCase();
                 const label = select.previousElementSibling ? (select.previousElementSibling.textContent || '').toLowerCase() : '';
 
-                const staffToAdd = null;
+                let staffToAdd = null;
                 if(id.includes('paramedic') || label.includes('paramedic')) {
                     staffToAdd = paramedics;
                 } else if(id.includes('emt') || label.includes('emt')) {

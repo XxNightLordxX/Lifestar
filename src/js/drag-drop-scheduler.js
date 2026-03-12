@@ -190,7 +190,8 @@ function addEmployeeToDay(dayCell, employee) {
     }
 
     // Check time-off requests
-    const timeOffRequest = timeOffRequests.find(t =>
+    const _timeOffList = (typeof timeoffRequests !== 'undefined' ? timeoffRequests : (typeof timeOffRequests !== 'undefined' ? timeOffRequests : []));
+    const timeOffRequest = _timeOffList.find(t =>
         String(t.staffId) === String(employee.id) &&
         t.status === 'approved' &&
         date >= t.startDate && date <= t.endDate
@@ -202,7 +203,8 @@ function addEmployeeToDay(dayCell, employee) {
     }
 
     // Check absences
-    const absence = absences.find(a =>
+    const _absenceList = (typeof absences !== 'undefined' ? absences : (typeof window.absences !== 'undefined' ? window.absences : []));
+    const absence = _absenceList.find(a =>
         String(a.staffId) === String(employee.id) &&
         a.date === date &&
         (a.type === 'full-absence' || a.type === 'partial-coverage')

@@ -754,7 +754,16 @@ const safeQueryOne = (selector) => DOMUtils.queryOne(selector);
 const safeSetText = (el, text) => DOMUtils.setText(el, text);
 const safeSetHTML = (el, html) => DOMUtils.setHTML(el, html);
 const toggleVisibility = (el, show) => DOMUtils.toggle(el, show);
-const safeJSONParse = (json, fallback = null) => StorageUtils.get(json) || fallback;
+const safeJSONParse = (json, fallback = null) => {
+    if (json === null || json === undefined) return fallback;
+    // If passed a non-string (already parsed), return as-is
+    if (typeof json !== 'string') return json || fallback;
+    try {
+        return JSON.parse(json);
+    } catch (e) {
+        return fallback;
+    }
+};
 const safeJSONStringify = (data, fallback = '{}') => JSON.stringify(data);
 const getStorageItem = (key, fallback = null) => StorageUtils.get(key, fallback);
 const setStorageItem = (key, value) => StorageUtils.set(key, value);

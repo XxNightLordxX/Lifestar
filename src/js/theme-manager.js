@@ -18,7 +18,7 @@
 (function() {
     'use strict';
 
-    const STORAGE_KEY = 'lifestarTheme';
+    const STORAGE_KEY = 'lifestar_theme'; // Unified with dark-mode-toggle.js
     const THEMES = { LIGHT: 'light', DARK: 'dark' };
 
     // ============================================
@@ -347,7 +347,10 @@
 
     function init() {
         injectDarkModeCSS();
-        applyTheme(getPreferredTheme());
+        // If dark-mode-toggle.js (DarkMode) already applied the theme, don't override it
+        if (typeof DarkMode === 'undefined' || !document.documentElement.getAttribute('data-theme')) {
+            applyTheme(getPreferredTheme());
+        }
 
         // Inject toggle button into common header containers when they exist
         setTimeout(function() {

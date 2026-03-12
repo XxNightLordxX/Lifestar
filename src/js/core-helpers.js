@@ -535,11 +535,9 @@ const MissingFunctionsPatch = {
 // GLOBAL FUNCTION ALIASES
 // ========================================
 
-// Validation functions
-const validateScheduleData = (schedule) => DataValidators.validateSchedule(schedule);
-const validateEmployeeData = (employee) => DataValidators.validateEmployee(employee);
-const validateShiftData = (shift) => DataValidators.validateShift(shift);
-const validateCrewData = (crew) => DataValidators.validateCrew(crew);
+// NOTE: validateScheduleData, validateEmployeeData, validateShiftData, validateCrewData
+// are defined as functions in core-validation.js (which loads after this file).
+// DataValidators delegates to SchemaValidator in core-validation.js.
 
 // Calculation functions
 const calculateShiftHours = (start, end) => ShiftCalculations.calculateHours(start, end);

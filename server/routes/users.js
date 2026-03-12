@@ -532,11 +532,16 @@ router.put('/:id', authenticate, authorize('super'), updateLimiter, async (req, 
         }
         
         if (role !== undefined) {
-            const roleValidation = validateRole(role);
-            if (!roleValidation.valid) {
-                errors.push(...roleValidation.errors);
+            // Prevent a super admin from changing their own role (would lock themselves out)
+            if (String(req.user.id) === String(id) && user.role === 'super') {
+                errors.push('Super administrators cannot change their own role');
             } else {
-                updates.role = roleValidation.value;
+                const roleValidation = validateRole(role);
+                if (!roleValidation.valid) {
+                    errors.push(...roleValidation.errors);
+                } else {
+                    updates.role = roleValidation.value;
+                }
             }
         }
         

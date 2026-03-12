@@ -112,12 +112,15 @@ function calculateEmployeePayroll(employeeId, startDate, endDate) {
         const scheduleDate = new Date(schedule.date);
         if (scheduleDate < startDate || scheduleDate > endDate) return;
         
-        // Find crew assignments for this schedule
-        schedule.crewAssignments?.forEach(assignment => {
-            if (assignment.employeeId === employeeId) {
+        // Find crew assignments for this schedule (real field: schedule.crews)
+        const crewList = schedule.crews || schedule.crewAssignments || [];
+        crewList.forEach(crew => {
+            const isParamedic = String(crew.paramedicId) === String(employeeId);
+            const isEmt = String(crew.emtId) === String(employeeId);
+            if (isParamedic || isEmt) {
                 const shift = {
-                    type: assignment.shiftType || 'Day',
-                    date: schedule.date
+                    type: crew.type || crew.shiftType || 'Day',
+                    date: crew.date || schedule.date
                 };
                 
                 const payDetails = calculateShiftPay(shift, employeeId);
@@ -128,7 +131,7 @@ function calculateEmployeePayroll(employeeId, startDate, endDate) {
                 totalOvertimePay += payDetails.overtimePay;
                 
                 shiftDetails.push({
-                    date: schedule.date,
+                    date: shift.date,
                     scheduleName: schedule.name,
                     ...payDetails
                 });
@@ -538,13 +541,13 @@ function deletePayrollReport(reportId) {
  * @param {string} endDate - End date
  */
 function viewEmployeePayrollDetails(employeeId, startDate, endDate) {
-    const payroll = calculateEmployeePayroll(;
+    const payroll = calculateEmployeePayroll(
         employeeId,
         new Date(startDate),
         new Date(endDate)
     );
     
-    const modalContent = `;
+    const modalContent = `
         <h3>Payroll Details for ${sanitizeHTML(payroll.employeeName)}</h3>
         <p><strong>Period:</strong> ${startDate} to ${endDate}</p>
         

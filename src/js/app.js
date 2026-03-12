@@ -10,6 +10,7 @@ let currentUser = null;
 let schedules = [];
 let users = [];
 let systemLogs = [];
+let notifications = [];
 let editingUserId = null;
 
 // ========================================
@@ -2427,7 +2428,11 @@ function loadMySchedule() {
             const daysUntil = Math.ceil((new Date(nextShift.date) - now) / 86400000);
             const banner = document.createElement('div');
             banner.style.cssText = 'background:linear-gradient(135deg,var(--lifestar-red),#c0392b);color:#fff;padding:14px 18px;border-radius:10px;margin-bottom:16px;font-weight:600;display:flex;align-items:center;gap:10px;';
-            banner.innerHTML = `<span style="font-size:1.4em">🚑</span> Your next shift: <strong>${nextShift.date}</strong> — ${nextShift.rig} (${nextShift.shiftType}) &nbsp;·&nbsp; ${daysUntil === 0 ? '<span style="color:#ffd700">TODAY</span>' : daysUntil === 1 ? 'Tomorrow' : `in ${daysUntil} days`}`;
+            const safeRig = sanitizeHTML ? sanitizeHTML(nextShift.rig || '') : (nextShift.rig || '');
+            const safeType = sanitizeHTML ? sanitizeHTML(nextShift.shiftType || '') : (nextShift.shiftType || '');
+            const safeDate = sanitizeHTML ? sanitizeHTML(nextShift.date || '') : (nextShift.date || '');
+            const countdownLabel = daysUntil === 0 ? '<span style="color:#ffd700">TODAY</span>' : daysUntil === 1 ? 'Tomorrow' : `in ${daysUntil} days`;
+            banner.innerHTML = `<span style="font-size:1.4em">🚑</span> Your next shift: <strong>${safeDate}</strong> — ${safeRig} (${safeType}) &nbsp;·&nbsp; ${countdownLabel}`;
             scheduleList.appendChild(banner);
         }
 
@@ -2577,7 +2582,11 @@ function loadEmtMySchedule() {
             const daysUntil = Math.ceil((new Date(nextShift.date) - now) / 86400000);
             const banner = document.createElement('div');
             banner.style.cssText = 'background:linear-gradient(135deg,var(--lifestar-light-blue,#3498db),#2980b9);color:#fff;padding:14px 18px;border-radius:10px;margin-bottom:16px;font-weight:600;display:flex;align-items:center;gap:10px;';
-            banner.innerHTML = `<span style="font-size:1.4em">🚑</span> Your next shift: <strong>${nextShift.date}</strong> — ${nextShift.rig} (${nextShift.shiftType}) &nbsp;·&nbsp; ${daysUntil === 0 ? '<span style="color:#ffd700">TODAY</span>' : daysUntil === 1 ? 'Tomorrow' : `in ${daysUntil} days`}`;
+            const safeRig = sanitizeHTML ? sanitizeHTML(nextShift.rig || '') : (nextShift.rig || '');
+            const safeType = sanitizeHTML ? sanitizeHTML(nextShift.shiftType || '') : (nextShift.shiftType || '');
+            const safeDate = sanitizeHTML ? sanitizeHTML(nextShift.date || '') : (nextShift.date || '');
+            const countdownLabel = daysUntil === 0 ? '<span style="color:#ffd700">TODAY</span>' : daysUntil === 1 ? 'Tomorrow' : `in ${daysUntil} days`;
+            banner.innerHTML = `<span style="font-size:1.4em">🚑</span> Your next shift: <strong>${safeDate}</strong> — ${safeRig} (${safeType}) &nbsp;·&nbsp; ${countdownLabel}`;
             scheduleList.appendChild(banner);
         }
 
