@@ -18,6 +18,10 @@ let editingUserId = null;
 // ========================================
 
 document.addEventListener('DOMContentLoaded', function() {
+    // Load real data FROM STORAGE FIRST — must happen before loadSampleData
+    // so sample users/schedules only fill gaps and never overwrite real data
+    try { loadData(); } catch(e) { Logger.error('loadData error:', e); }
+
     try { loadFeatureStates(); } catch(e) { Logger.error('loadFeatureStates error:', e); }
     try { loadSampleData(); } catch(e) { Logger.error('loadSampleData error:', e); }
     try { initializeSystem(); } catch(e) { Logger.error('initializeSystem error:', e); }
@@ -51,15 +55,24 @@ function initializeSystem() {
         document.getElementById('loginPage').classList.remove('hidden');
         document.getElementById('loginPage').style.display = 'flex';
 
-        // Load data FIRST before checking session
-        loadData();
+        // Data was already loaded before this function runs (see DOMContentLoaded order)
 
-        // Check for existing session
+        // Check for existing session — re-fetch from users array to get fresh data
         const savedUser = localStorage.getItem('lifestarCurrentUser');
         if(savedUser) {
-            currentUser = safeJSONParse(savedUser, null);
-            if(currentUser) {
-                showDashboard();
+            const sessionUser = safeJSONParse(savedUser, null);
+            if(sessionUser && sessionUser.id) {
+                // Always re-read from the users array to get the latest role/status/password
+                const freshUser = users.find(u => String(u.id) === String(sessionUser.id));
+                if(freshUser && freshUser.active !== false) {
+                    currentUser = freshUser;
+                    // Update stored session with fresh data
+                    localStorage.setItem('lifestarCurrentUser', JSON.stringify(freshUser));
+                    showDashboard();
+                } else {
+                    // User deactivated or not found — clear session
+                    localStorage.removeItem('lifestarCurrentUser');
+                }
             }
         }
     } catch (error) {
@@ -166,7 +179,7 @@ function validateCSRFToken(token, sessionId) {
 async function handleLogin(e) {
     try {
         e.preventDefault();
-        const username = (document.getElementById('username') || {value: ''}).value.trim();
+        const username = (document.getElementById('username') || {value: ''}).value.trim().toLowerCase();
         const password = (document.getElementById('password') || {value: ''}).value;
 
         if(!username || !password) {
@@ -174,41 +187,55 @@ async function handleLogin(e) {
             return;
         }
 
-        // Find user by username
-        const user = users.find(u => u.username === username);
+        // Find user by username (case-insensitive)
+        const user = users.find(u => (u.username || '').toLowerCase() === username);
 
-        if(user) {
-            // Check password - supports both hashed and plain text (migration)
-            let passwordMatch = false;
-            if(typeof PasswordHasher !== 'undefined' && PasswordHasher.isHashed(user.password)) {
-                passwordMatch = await PasswordHasher.verifyPassword(password, user.password);
-            } else {
-                // Legacy plain text comparison + auto-migrate to hashed
-                passwordMatch = (user.password === password);
-                if(passwordMatch && typeof PasswordHasher !== 'undefined') {
-                    // Auto-migrate: hash the password for future logins
-                    try {
-                        user.password = await PasswordHasher.hashPassword(password);
-                        saveData();
-                        Logger.info('[handleLogin] Password migrated to hash for:', username);
-                    } catch (hashErr) {
-                        Logger.warn('[handleLogin] Could not migrate password:', hashErr);
-                    }
+        if(!user) {
+            setLoginLoading && setLoginLoading(false);
+            showAlert('Invalid username or password', 'danger', 'loginAlert');
+            return;
+        }
+
+        // Reject deactivated accounts
+        if(user.active === false) {
+            setLoginLoading && setLoginLoading(false);
+            showAlert('This account has been deactivated. Please contact your administrator.', 'danger', 'loginAlert');
+            return;
+        }
+
+        // Check password - supports both hashed and plain text (migration)
+        let passwordMatch = false;
+        if(typeof PasswordHasher !== 'undefined' && PasswordHasher.isHashed(user.password)) {
+            passwordMatch = await PasswordHasher.verifyPassword(password, user.password);
+        } else {
+            // Legacy plain text comparison + auto-migrate to hashed
+            passwordMatch = (user.password === password);
+            if(passwordMatch && typeof PasswordHasher !== 'undefined') {
+                try {
+                    user.password = await PasswordHasher.hashPassword(password);
+                    saveData();
+                    Logger.info('[handleLogin] Password migrated to hash for:', username);
+                } catch (hashErr) {
+                    Logger.warn('[handleLogin] Could not hash password, keeping plain text:', hashErr.message);
+                    // Don't fail login — just keep plain text
+                    passwordMatch = true;
                 }
             }
+        }
 
-            if(passwordMatch) {
-                currentUser = user;
-                localStorage.setItem('lifestarCurrentUser', JSON.stringify(user));
-                addSystemLog('User logged in: ' + user.username);
-                showDashboard();
-            } else {
-                showAlert('Invalid username or password', 'danger', 'loginAlert');
-            }
+        if(passwordMatch) {
+            currentUser = user;
+            // Store fresh user object (may have migrated password)
+            localStorage.setItem('lifestarCurrentUser', JSON.stringify(user));
+            addSystemLog('User logged in: ' + user.username);
+            setLoginLoading && setLoginLoading(false);
+            showDashboard();
         } else {
+            setLoginLoading && setLoginLoading(false);
             showAlert('Invalid username or password', 'danger', 'loginAlert');
         }
     } catch (error) {
+        setLoginLoading && setLoginLoading(false);
         Logger.error('[handleLogin] Error:', error.message || error);
         showAlert('Login error. Please try again.', 'danger', 'loginAlert');
     }

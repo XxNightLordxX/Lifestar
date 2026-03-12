@@ -698,3 +698,226 @@ function withErrorBoundary(fn, fallback) {
         }
     };
 }
+
+// ============================================
+// MISSING MODAL OPENER FUNCTIONS
+// All modals exist in index.html but their
+// JS opener functions were never defined.
+// ============================================
+
+function showCreateCrewTemplateModal() {
+    showModal('createCrewTemplateModal');
+}
+
+function showAddTrainingModal() {
+    showModal('addTrainingModal');
+}
+
+function showAwardBonusModal() {
+    showModal('awardBonusModal');
+}
+
+function showRecordCallinModal() {
+    showModal('recordCallinModal');
+}
+
+function showNewCallinModal() {
+    showModal('recordCallinModal'); // Same modal
+}
+
+function showMarkAbsenceModal() {
+    showModal('markAbsenceModal');
+}
+
+function showCreateOncallRotationModal() {
+    showModal('createOncallRotationModal');
+}
+
+function showAddNoteModal() {
+    showModal('addNoteModal');
+}
+
+function showCreateTemplateModal() {
+    showModal('createTemplateModal');
+}
+
+// ============================================
+// MISSING FEATURE FUNCTIONS
+// ============================================
+
+/** Change availability calendar month */
+let _availabilityYear = new Date().getFullYear();
+let _availabilityMonth = new Date().getMonth();
+
+function changeAvailabilityMonth(delta) {
+    _availabilityMonth += delta;
+    if (_availabilityMonth > 11) { _availabilityMonth = 0; _availabilityYear++; }
+    if (_availabilityMonth < 0)  { _availabilityMonth = 11; _availabilityYear--; }
+
+    const label = document.getElementById('availabilityMonthYear');
+    const months = ['January','February','March','April','May','June',
+                    'July','August','September','October','November','December'];
+    if (label) label.textContent = months[_availabilityMonth] + ' ' + _availabilityYear;
+
+    if (typeof loadSuperAvailability === 'function') loadSuperAvailability();
+    else if (typeof renderAvailabilityCalendar === 'function') renderAvailabilityCalendar();
+}
+
+/** Load shift history for a staff member (boss view) */
+function loadShiftHistory() {
+    const staffFilter = document.getElementById('historyStaffFilter');
+    const monthFilter = document.getElementById('historyMonthFilter');
+    const container   = document.getElementById('shiftHistoryList') || document.getElementById('bossShiftHistory');
+    if (!container) return;
+
+    const staffId  = staffFilter ? staffFilter.value : '';
+    const month    = monthFilter ? monthFilter.value : '';
+    const allCrews = [];
+
+    (schedules || []).forEach(sched => {
+        (sched.crews || []).forEach(crew => {
+            if (staffId && String(crew.paramedicId) !== String(staffId) && String(crew.emtId) !== String(staffId)) return;
+            if (month && !(crew.date || '').startsWith(month)) return;
+            allCrews.push({ ...crew, scheduleName: sched.name });
+        });
+    });
+
+    if (allCrews.length === 0) {
+        container.innerHTML = '<p class="empty-state">No shift history found.</p>';
+        return;
+    }
+
+    const esc = s => { const d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; };
+    container.innerHTML = allCrews.sort((a,b) => (b.date||'').localeCompare(a.date||'')).map(c => {
+        const staffMember = (users || []).find(u => String(u.id) === String(c.paramedicId) || String(u.id) === String(c.emtId));
+        return `<div class="shift-history-row" style="padding:10px;border-bottom:1px solid #eee;display:flex;justify-content:space-between;">
+            <span><strong>${esc(c.date)}</strong> — ${esc(c.rig || 'No Rig')} (${esc(c.type || c.shiftType || 'Shift')})</span>
+            <span>${esc(c.scheduleName)}</span>
+        </div>`;
+    }).join('');
+}
+
+/** Generate monthly summary report */
+function generateMonthlySummaryReport() {
+    const container = document.getElementById('monthlySummaryReport') || document.getElementById('analyticsSummary');
+    if (!container) { showAlert('Report area not found', 'warning'); return; }
+
+    const totalShifts  = (schedules || []).reduce((n, s) => n + (s.crews || []).length, 0);
+    const published    = (schedules || []).filter(s => s.status === 'published').length;
+    const drafts       = (schedules || []).filter(s => s.status === 'draft').length;
+    const activeStaff  = (users    || []).filter(u => u.active !== false && (u.role === 'paramedic' || u.role === 'emt')).length;
+
+    container.innerHTML = `
+        <div style="background:#fff;border-radius:12px;padding:24px;border:1px solid #e0e0e0;">
+            <h3 style="margin:0 0 16px;">📊 Monthly Summary Report</h3>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;">
+                <div style="background:#f8f9fa;padding:16px;border-radius:8px;text-align:center;">
+                    <div style="font-size:2em;font-weight:700;color:var(--lifestar-red);">${totalShifts}</div>
+                    <div style="font-size:13px;color:#666;">Total Shifts</div>
+                </div>
+                <div style="background:#f8f9fa;padding:16px;border-radius:8px;text-align:center;">
+                    <div style="font-size:2em;font-weight:700;color:#28a745;">${published}</div>
+                    <div style="font-size:13px;color:#666;">Published</div>
+                </div>
+                <div style="background:#f8f9fa;padding:16px;border-radius:8px;text-align:center;">
+                    <div style="font-size:2em;font-weight:700;color:#ffc107;">${drafts}</div>
+                    <div style="font-size:13px;color:#666;">Drafts</div>
+                </div>
+                <div style="background:#f8f9fa;padding:16px;border-radius:8px;text-align:center;">
+                    <div style="font-size:2em;font-weight:700;color:#17a2b8;">${activeStaff}</div>
+                    <div style="font-size:13px;color:#666;">Active Staff</div>
+                </div>
+            </div>
+            <p style="margin:16px 0 0;font-size:13px;color:#888;">Generated ${new Date().toLocaleDateString()}</p>
+        </div>`;
+
+    showAlert('Report generated successfully', 'success');
+}
+
+// ============================================
+// LOGIN UX ENHANCEMENTS
+// ============================================
+
+/** Toggle password visibility on login form */
+function togglePasswordVisibility() {
+    const pwd = document.getElementById('password');
+    const btn = document.getElementById('togglePassword');
+    if (!pwd) return;
+    if (pwd.type === 'password') {
+        pwd.type = 'text';
+        if (btn) btn.textContent = '🙈';
+    } else {
+        pwd.type = 'password';
+        if (btn) btn.textContent = '👁';
+    }
+}
+
+/** Show/hide login spinner */
+function setLoginLoading(loading) {
+    const btnText    = document.getElementById('loginBtnText');
+    const spinner    = document.getElementById('loginSpinner');
+    const loginBtn   = document.getElementById('loginBtn');
+    if (btnText)  btnText.style.display  = loading ? 'none'   : '';
+    if (spinner)  spinner.style.display  = loading ? ''       : 'none';
+    if (loginBtn) loginBtn.disabled      = loading;
+}
+
+// Inject loading state into handleLogin
+(function patchLoginLoading() {
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('loginForm');
+        if (!form) return;
+        form.addEventListener('submit', function() {
+            setLoginLoading(true);
+            // Auto-reset in case of error (handleLogin will call showAlert which resets)
+            setTimeout(() => setLoginLoading(false), 4000);
+        }, { capture: true });
+    });
+})();
+
+// ============================================
+// REAL-TIME CLOCK for dashboards
+// ============================================
+(function initDashboardClocks() {
+    function updateClocks() {
+        const now  = new Date();
+        const time = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        const date = now.toLocaleDateString([], { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        document.querySelectorAll('.dashboard-clock-time').forEach(el => { el.textContent = time; });
+        document.querySelectorAll('.dashboard-clock-date').forEach(el => { el.textContent = date; });
+    }
+    document.addEventListener('DOMContentLoaded', function() {
+        updateClocks();
+        setInterval(updateClocks, 1000);
+    });
+})();
+
+// ============================================
+// REMEMBER ME — auto-fill username
+// ============================================
+(function initRememberMe() {
+    document.addEventListener('DOMContentLoaded', function() {
+        const usernameField  = document.getElementById('username');
+        const rememberBox    = document.getElementById('rememberMe');
+        const savedUsername  = localStorage.getItem('lifestarRememberUsername');
+
+        if (savedUsername && usernameField) {
+            usernameField.value = savedUsername;
+            if (rememberBox) rememberBox.checked = true;
+        }
+
+        // Save/clear on login form submit
+        const loginForm = document.getElementById('loginForm');
+        if (loginForm) {
+            loginForm.addEventListener('submit', function() {
+                const un   = document.getElementById('username');
+                const rem  = document.getElementById('rememberMe');
+                if (rem && rem.checked && un && un.value) {
+                    localStorage.setItem('lifestarRememberUsername', un.value.trim());
+                } else {
+                    localStorage.removeItem('lifestarRememberUsername');
+                }
+            });
+        }
+    });
+})();

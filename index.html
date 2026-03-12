@@ -45,10 +45,24 @@
                 </div>
                 <div class="form-group">
                     <label for="password" data-i18n="auth.password">Password</label>
-                    <input type="password" id="password" placeholder="Enter password" data-i18n-placeholder="auth.password" required>
+                    <div style="position:relative;">
+                        <input type="password" id="password" placeholder="Enter password" data-i18n-placeholder="auth.password" required style="padding-right:44px;">
+                        <button type="button" id="togglePassword" onclick="togglePasswordVisibility()" title="Show/hide password"
+                            style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:18px;padding:0;color:#666;">👁</button>
+                    </div>
                 </div>
-                <button type="submit" class="btn btn-primary" data-i18n="auth.login">Login</button>
+                <div class="form-group" style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+                    <input type="checkbox" id="rememberMe" style="width:auto;margin:0;">
+                    <label for="rememberMe" style="margin:0;font-weight:normal;font-size:14px;cursor:pointer;">Remember me</label>
+                </div>
+                <button type="submit" id="loginBtn" class="btn btn-primary" data-i18n="auth.login" style="width:100%;position:relative;">
+                    <span id="loginBtnText">Login</span>
+                    <span id="loginSpinner" style="display:none;">⏳ Signing in...</span>
+                </button>
             </form>
+            <div style="margin-top:16px;padding:12px;background:#f8f9fa;border-radius:8px;font-size:13px;color:#666;text-align:center;">
+                <strong>Default credentials:</strong> super / super123 · boss / boss123
+            </div>
         </div>
     </div>
 
@@ -109,6 +123,10 @@
                 </div>
                 <div class="sidebar-title">Super Admin</div>
                 <div class="sidebar-user-info" id="superUserName">Super Admin</div>
+                <div style="font-size:11px;color:rgba(255,255,255,0.7);margin-top:4px;text-align:center;">
+                    <div class="dashboard-clock-time" style="font-weight:600;letter-spacing:1px;"></div>
+                    <div class="dashboard-clock-date" style="font-size:10px;opacity:0.8;"></div>
+                </div>
             </div>
             <div class="sidebar-nav">
                 <div class="nav-section">
@@ -945,6 +963,10 @@
                 </div>
                 <div class="sidebar-title">Boss Dashboard</div>
                 <div class="sidebar-user-info" id="bossUserName">Boss</div>
+                <div style="font-size:11px;color:rgba(255,255,255,0.7);margin-top:4px;text-align:center;">
+                    <div class="dashboard-clock-time" style="font-weight:600;letter-spacing:1px;"></div>
+                    <div class="dashboard-clock-date" style="font-size:10px;opacity:0.8;"></div>
+                </div>
             </div>
             <div class="sidebar-nav">
                 <div class="nav-section">
