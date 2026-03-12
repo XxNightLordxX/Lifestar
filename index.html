@@ -8,6 +8,16 @@
     <link rel="stylesheet" href="src/css/styles.bundle.min.css">
     <link rel="stylesheet" href="src/css/accessibility.css">
     <link rel="stylesheet" href="src/css/dark-mode.css">
+    <style>
+        /* Pulse animation for unsaved changes indicator */
+        @keyframes pulse {
+            0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(59,130,246,.5); }
+            50% { opacity: .9; box-shadow: 0 0 0 6px rgba(59,130,246,0); }
+        }
+        /* Permission editor enhancements */
+        .perm-user-row:hover { background: rgba(59,130,246,.08) !important; }
+        .perm-check:focus { outline: 2px solid #3b82f6; outline-offset: 2px; }
+    </style>
     <link rel="icon" href="assets/Lifestar.png" type="image/png">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#dc3545">
