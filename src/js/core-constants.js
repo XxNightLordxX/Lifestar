@@ -88,7 +88,7 @@ const SHIFT_CONSTANTS = Object.freeze({
     DEFAULT_END: '20:00',
     NIGHT_START: '20:00',
     NIGHT_END: '08:00'
-}));
+});
 
 // ========================================
 // USER ROLES

@@ -172,8 +172,8 @@ function calculateAllPayroll(startDate, endDate) {
     const storedUsers = safeJSONParse(localStorage.getItem('lifestarUsers')) || safeJSONParse(localStorage.getItem('users')) || [];
     const employees = (storedUsers || []).filter(u => u.role === 'paramedic' || u.role === 'emt');
     
-    return employees.map(employee =>; 
-        calculateEmployeePayroll(employee.id, startDate, endDate);
+    return employees.map(employee =>
+        calculateEmployeePayroll(employee.id, startDate, endDate)
     );
 }
 

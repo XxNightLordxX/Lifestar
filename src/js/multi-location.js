@@ -17,7 +17,7 @@ const MultiLocation = (function() {
     const ACTIVE_LOCATION_KEY = 'lifestarActiveLocation';
 
     // Default locations
-    const DEFAULT_LOCATIONS = [;
+    const DEFAULT_LOCATIONS = [
         { id: 1, name: 'Station 1 - Main', code: 'STN1', address: '100 Main Street', city: 'Hartford', state: 'CT', zip: '06101', phone: '555-0100', active: true, createdAt: new Date().toISOString() },
         { id: 2, name: 'Station 2 - North', code: 'STN2', address: '200 North Avenue', city: 'Windsor', state: 'CT', zip: '06095', phone: '555-0200', active: true, createdAt: new Date().toISOString() },
         { id: 3, name: 'Station 3 - South', code: 'STN3', address: '300 South Road', city: 'Wethersfield', state: 'CT', zip: '06109', phone: '555-0300', active: true, createdAt: new Date().toISOString() }
