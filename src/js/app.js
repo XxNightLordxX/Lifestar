@@ -372,6 +372,8 @@ async function logout() {
         Logger.error('[logout] Error:', error.message || error);
     }
 }
+// Make patchable by server-bridge.js
+window.handleLogout = logout;
 
 /** @function showLoginPage */
 function showLoginPage() {
@@ -1843,19 +1845,49 @@ function exportAllData() {
 }
 
 /** @function confirmResetSystem */
-function confirmResetSystem() {
+async function confirmResetSystem() {
     try {
-        if(confirm('Are you ABSOLUTELY SURE you want to reset the entire system?')) {
-            if(confirm('This will delete ALL data including users, schedules, and logs. This action cannot be undone!')) {
-                localStorage.clear();
-                showAlert('System reset. Please refresh the page.', 'warning');
-                setTimeout(() => {
-                    location.reload();
-                }, 2000);
-            }
+        if(!confirm('⚠️ RESET SYSTEM: This will delete ALL schedules, staff, logs, and custom data.\n\nThe default super admin and boss accounts will be preserved.\n\nAre you absolutely sure?')) return;
+        if(!confirm('FINAL CONFIRMATION: This action cannot be undone. Proceed with system reset?')) return;
+
+        // If in server mode, use the API reset (preserves default accounts on server)
+        if(typeof ServerBridge !== 'undefined' && ServerBridge.isServerMode) {
+            showAlert('Resetting system…', 'warning');
+            try {
+                const r = await ServerBridge.fetch('POST', '/admin/reset');
+                if(r.ok) {
+                    // Clear all local storage too
+                    const keysToKeep = ['lifestar_theme'];
+                    const preserved = {};
+                    keysToKeep.forEach(k => { const v = localStorage.getItem(k); if(v) preserved[k] = v; });
+                    localStorage.clear();
+                    keysToKeep.forEach(k => { if(preserved[k]) localStorage.setItem(k, preserved[k]); });
+                    showAlert('System reset complete. Reloading…', 'success');
+                    setTimeout(() => location.reload(), 1500);
+                    return;
+                }
+            } catch(_) {}
         }
+
+        // localStorage-only fallback: clear everything EXCEPT preserve the default accounts
+        const keysToKeep = ['lifestar_theme'];
+        const preserved = {};
+        keysToKeep.forEach(k => { const v = localStorage.getItem(k); if(v) preserved[k] = v; });
+        localStorage.clear();
+        keysToKeep.forEach(k => { if(preserved[k]) localStorage.setItem(k, preserved[k]); });
+
+        // Re-seed default users immediately so login works right away
+        const defaultUsers = [
+            { id: 1, username: 'super', password: 'super123', fullName: 'Super Administrator', role: 'super', phone: '555-0001', hoursWorked: 0, bonusHours: 0, active: true, createdAt: new Date().toISOString() },
+            { id: 2, username: 'boss',  password: 'boss123',  fullName: 'Station Manager',     role: 'boss',  phone: '555-0002', hoursWorked: 0, bonusHours: 0, active: true, createdAt: new Date().toISOString() },
+        ];
+        localStorage.setItem('lifestarUsers', JSON.stringify(defaultUsers));
+
+        showAlert('System reset complete. Default accounts (super/boss) preserved. Reloading…', 'success');
+        setTimeout(() => location.reload(), 1800);
     } catch (error) {
         Logger.error('[confirmResetSystem] Error:', error.message || error);
+        showAlert('Reset failed. Please try again.', 'danger');
     }
 }
 

@@ -277,7 +277,7 @@
                 </div>
             </div>
             <div class="sidebar-footer">
-                <button class="btn btn-danger btn-sm" onclick="logout()" style="width: 100%;">Logout</button>
+                <button class="btn btn-danger btn-sm" onclick="window.handleLogout()" style="width: 100%;">Logout</button>
             </div>
         </div>
 
@@ -1084,7 +1084,7 @@
                 </div>
             </div>
             <div class="sidebar-footer">
-                <button class="btn btn-danger btn-sm" onclick="logout()" style="width: 100%;">Logout</button>
+                <button class="btn btn-danger btn-sm" onclick="window.handleLogout()" style="width: 100%;">Logout</button>
             </div>
         </div>
 
@@ -1964,7 +1964,7 @@
                 </div>
             </div>
             <div class="sidebar-footer">
-                <button class="btn btn-danger btn-sm" onclick="logout()" style="width: 100%;">Logout</button>
+                <button class="btn btn-danger btn-sm" onclick="window.handleLogout()" style="width: 100%;">Logout</button>
             </div>
         </div>
 
@@ -2255,7 +2255,7 @@
                 </div>
             </div>
             <div class="sidebar-footer">
-                <button class="btn btn-danger btn-sm" onclick="logout()" style="width: 100%;">Logout</button>
+                <button class="btn btn-danger btn-sm" onclick="window.handleLogout()" style="width: 100%;">Logout</button>
             </div>
         </div>
 
@@ -2548,8 +2548,9 @@
                         <input type="text" id="newUserUsername" class="form-input" required>
                     </div>
                     <div class="form-group">
-                        <label for="newUserPassword">Password</label>
-                        <input type="password" id="newUserPassword" class="form-input" required>
+                        <label for="newUserPassword">Password <span id="editPasswordNote" style="font-size:11px;opacity:.6">(leave blank to keep current)</span></label>
+                        <input type="password" id="newUserPassword" class="form-input" placeholder="Min 8 chars, uppercase, lowercase, number">
+                        <small style="color:#6b7280;font-size:11px">Must include uppercase, lowercase, and a number (e.g. Password1)</small>
                     </div>
                     <div class="form-group">
                         <label for="newUserFullName">Full Name</label>
@@ -3212,6 +3213,7 @@
     <script defer src="src/js/voice-commands.js"></script>
     <script defer src="src/js/multi-location.js"></script>
     <script defer src="src/js/super-admin-patch.js"></script>
+    <script defer src="src/js/permissions-manager.js"></script>
     <script defer src="src/js/quality-integration.js"></script>
     <script defer src="src/js/analytics-dashboard.js"></script>
     <script defer src="src/js/notifications-panel.js"></script>

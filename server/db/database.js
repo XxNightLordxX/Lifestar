@@ -1034,6 +1034,28 @@ function initializeDatabase() {
         )
     `);
 
+    // User permissions (per-user overrides and role-level overrides)
+    conn.exec(`
+        CREATE TABLE IF NOT EXISTS user_permissions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            userId INTEGER,
+            role TEXT,
+            permissionKey TEXT NOT NULL,
+            granted INTEGER DEFAULT 1,
+            grantedBy INTEGER,
+            createdAt TEXT DEFAULT (datetime('now')),
+            updatedAt TEXT DEFAULT (datetime('now')),
+            FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE,
+            FOREIGN KEY (grantedBy) REFERENCES users(id) ON DELETE SET NULL
+        )
+    `);
+
+    conn.exec(`
+        CREATE INDEX IF NOT EXISTS idx_permissions_user ON user_permissions(userId);
+        CREATE INDEX IF NOT EXISTS idx_permissions_role ON user_permissions(role);
+        CREATE INDEX IF NOT EXISTS idx_permissions_key ON user_permissions(permissionKey);
+    `);
+
     // Emergency call-ins
     conn.exec(`
         CREATE TABLE IF NOT EXISTS emergency_callins (

@@ -239,11 +239,12 @@ router.post('/login', loginLimiter, async (req, res) => {
             });
         }
         
-        // Database lookup
+        // Database lookup — COLLATE NOCASE for case-insensitive match so that
+        // typing "Super" or "BOSS" still logs in correctly.
         const db = getDb();
         const user = db.prepare(`
             SELECT * FROM users 
-            WHERE username = ? AND active = 1
+            WHERE username = ? COLLATE NOCASE AND active = 1
         `).get(usernameResult.value);
         
         // Always use the same response time to prevent timing attacks

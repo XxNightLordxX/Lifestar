@@ -278,8 +278,10 @@ app.use('/api/analytics', analyticsRoutes);
 app.use('/api/training',  trainingRoutes);
 app.use('/api/callins',   callinRoutes);
 
-// ============================================
-// HEALTH CHECK ENDPOINT
+const permissionsRoutes = require('./routes/permissions');
+const adminRoutes       = require('./routes/admin');
+app.use('/api/permissions', permissionsRoutes);
+app.use('/api/admin',       adminRoutes);
 // ============================================
 
 app.get('/api/health', (req, res) => {
