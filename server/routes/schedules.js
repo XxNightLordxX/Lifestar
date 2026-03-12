@@ -42,11 +42,11 @@ const CONSTANTS = {
     // Valid statuses
     VALID_STATUSES: ['draft', 'published', 'archived'],
     
-    // Valid shift types
-    VALID_SHIFT_TYPES: ['Day', 'Night', '24hr', '12hr-Day', '12hr-Night'],
+    // Valid shift types — must match database.js VALID_SHIFT_TYPES and frontend usage
+    VALID_SHIFT_TYPES: ['Day', 'Night', '24-Hour', '12-Hour', '24hr', '12hr-Day', '12hr-Night'],
     
-    // Valid crew types
-    VALID_CREW_TYPES: ['ALS', 'BLS', 'CC', 'ST', 'PR'],
+    // Valid crew types — must match database.js VALID_CREW_TYPES and frontend usage
+    VALID_CREW_TYPES: ['ALS', 'BLS', 'CCT', 'CC', 'ST', 'PR'],
     
     // Date validation
     MIN_YEAR: 2020,

@@ -219,11 +219,12 @@ router.post('/login', loginLimiter, async (req, res) => {
             });
         }
         
-        const passwordResult = validatePassword(password);
-        if (!passwordResult.valid) {
+        // At login we only validate that password is a non-empty string (not blank).
+        // Length/complexity rules apply when SETTING passwords, not when verifying them.
+        if (!password || typeof password !== 'string' || password.trim().length === 0) {
             return res.status(400).json({ 
                 error: 'Validation failed', 
-                details: passwordResult.errors 
+                details: ['Password is required'] 
             });
         }
         
@@ -261,7 +262,7 @@ router.post('/login', loginLimiter, async (req, res) => {
         }
         
         // Password verification
-        const validPassword = await bcrypt.compare(passwordResult.value, user.password);
+        const validPassword = await bcrypt.compare(password, user.password);
         
         if (!validPassword) {
             recordFailedAttempt(usernameResult.value);

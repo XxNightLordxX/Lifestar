@@ -57,21 +57,36 @@ function initializeSystem() {
 
         // Data was already loaded before this function runs (see DOMContentLoaded order)
 
-        // Check for existing session — re-fetch from users array to get fresh data
+        // Check for existing session — re-fetch from users array to get fresh data.
+        // IMPORTANT: In server mode the users array may be empty at this point because
+        // ServerBridge.init() runs concurrently and hasn't fetched from the API yet.
+        // We guard against that: if users is empty AND there is a saved session, we
+        // trust the session and leave it for server-bridge.js to validate via /auth/me.
+        // Only clear the session when we can positively confirm the user no longer exists
+        // (i.e. the users array is non-empty and the user is not in it).
         const savedUser = localStorage.getItem('lifestarCurrentUser');
         if(savedUser) {
             const sessionUser = safeJSONParse(savedUser, null);
             if(sessionUser && sessionUser.id) {
-                // Always re-read from the users array to get the latest role/status/password
-                const freshUser = users.find(u => String(u.id) === String(sessionUser.id));
-                if(freshUser && freshUser.active !== false) {
-                    currentUser = freshUser;
-                    // Update stored session with fresh data
-                    localStorage.setItem('lifestarCurrentUser', JSON.stringify(freshUser));
-                    showDashboard();
+                if (users.length > 0) {
+                    // Users loaded — validate against the array
+                    const freshUser = users.find(u => String(u.id) === String(sessionUser.id));
+                    if(freshUser && freshUser.active !== false) {
+                        currentUser = freshUser;
+                        // Update stored session with fresh data
+                        localStorage.setItem('lifestarCurrentUser', JSON.stringify(freshUser));
+                        showDashboard();
+                    } else {
+                        // User deactivated or not found — clear session
+                        localStorage.removeItem('lifestarCurrentUser');
+                    }
                 } else {
-                    // User deactivated or not found — clear session
-                    localStorage.removeItem('lifestarCurrentUser');
+                    // Users array empty — could be server mode where bridge hasn't
+                    // loaded yet. Trust the saved session; bridge will validate it via
+                    // /auth/me and either show the dashboard or leave it on login page.
+                    currentUser = sessionUser;
+                    // Do NOT call showDashboard() here — let bridge handle it after
+                    // it verifies the JWT and loads data.
                 }
             }
         }
@@ -83,18 +98,21 @@ function initializeSystem() {
 /** @function setupEventListeners */
 function setupEventListeners() {
     try {
-        // Login form - with null checks to prevent crashes
+        // Login form - use indirection (e => window.handleLogin(e)) so that
+        // server-bridge.js can patch window.handleLogin after DOMContentLoaded
+        // and the form will always call the CURRENT version, not the one that
+        // was in scope when this listener was registered.
         const loginForm = document.getElementById('loginForm');
-        if(loginForm) loginForm.addEventListener('submit', handleLogin);
+        if(loginForm) loginForm.addEventListener('submit', e => window.handleLogin(e));
 
         const firstLoginForm = document.getElementById('firstLoginForm');
-        if(firstLoginForm) firstLoginForm.addEventListener('submit', handleFirstLogin);
+        if(firstLoginForm) firstLoginForm.addEventListener('submit', e => window.handleFirstLogin(e));
 
         const createScheduleForm = document.getElementById('createScheduleForm');
-        if(createScheduleForm) createScheduleForm.addEventListener('submit', handleCreateSchedule);
+        if(createScheduleForm) createScheduleForm.addEventListener('submit', e => window.handleCreateSchedule(e));
 
         const addUserForm = document.getElementById('addUserForm');
-        if(addUserForm) addUserForm.addEventListener('submit', handleAddUser);
+        if(addUserForm) addUserForm.addEventListener('submit', e => window.handleAddUser(e));
     } catch (error) {
         Logger.error('[setupEventListeners] Error:', error.message || error);
     }
@@ -164,6 +182,19 @@ function _doSave() {
 // ========================================
 // LOGIN SYSTEM
 // ========================================
+
+// Expose patchable functions on window immediately after they are declared.
+// This is required because setupEventListeners() uses the pattern
+// `e => window.handleLogin(e)` so that server-bridge.js can replace these
+// functions at runtime (after DOMContentLoaded) and the form listeners will
+// always call the CURRENT version.  Without this block, window.handleXxx
+// would be undefined until the function declaration is hoisted — which JS
+// hoists to the same scope, but we assign explicitly here for clarity.
+(function exposeGlobals() {
+    // Assigned below after the functions are declared (hoisting means they
+    // are actually available now, but we reassign after each definition for
+    // clarity and so the bridge knows exactly which symbol to patch).
+})();
 
 /** @function generateCSRFToken */
 function generateCSRFToken(sessionId) {
@@ -240,6 +271,8 @@ async function handleLogin(e) {
         showAlert('Login error. Please try again.', 'danger', 'loginAlert');
     }
 }
+// Make patchable by server-bridge.js
+window.handleLogin = handleLogin;
 
 /** @function handleFirstLogin */
 async function handleFirstLogin(e) {
@@ -307,6 +340,8 @@ async function handleFirstLogin(e) {
         Logger.error('[handleFirstLogin] Error:', error.message || error);
     }
 }
+// Make patchable by server-bridge.js
+window.handleFirstLogin = handleFirstLogin;
 
 /** @function logout */
 async function logout() {
@@ -702,6 +737,8 @@ async function handleAddUser(e) {
         Logger.error('[handleAddUser] Error:', error.message || error);
     }
 }
+// Make patchable by server-bridge.js
+window.handleAddUser = handleAddUser;
 
 /** @function populateLocationDropdowns - Fills location selects from MultiLocation */
 function populateLocationDropdowns() {
@@ -1450,6 +1487,8 @@ function handleCreateSchedule(e) {
         Logger.error('[handleCreateSchedule] Error:', error.message || error);
     }
 }
+// Make patchable by server-bridge.js
+window.handleCreateSchedule = handleCreateSchedule;
 
 /** @function publishSchedule */
 function publishSchedule(scheduleId) {

@@ -107,6 +107,18 @@ const ServerBridge = (function () {
         const r = await apiFetch('GET', '/auth/me');
         if (r.ok && r.data.user) {
             _applyServerUser(r.data.user);
+
+            // Pull all server data before showing the dashboard so the UI
+            // has users/schedules/notifications ready immediately.
+            await refreshDataFromServer();
+
+            // Only auto-show the dashboard when the DOM is ready and the
+            // login page is actually visible (i.e. user was not already sent
+            // to a dashboard by initializeSystem).
+            const loginPage = document.getElementById('loginPage');
+            if (loginPage && !loginPage.classList.contains('hidden')) {
+                if (typeof showDashboard === 'function') showDashboard();
+            }
         }
     }
 
@@ -121,6 +133,7 @@ const ServerBridge = (function () {
             hoursWorked: serverUser.hoursWorked || 0,
             bonusHours:  serverUser.bonusHours  || 0,
             locationId:  serverUser.locationId  || null,
+            active:      serverUser.active !== false, // preserve active field
         };
         // Keep localStorage in sync so the rest of app.js is happy
         localStorage.setItem('lifestarCurrentUser', JSON.stringify(currentUser));

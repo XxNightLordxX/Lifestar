@@ -532,7 +532,7 @@ function checkXss(options = {}) {
 const schemas = {
     login: {
         username: { required: true, pattern: CONSTANTS.PATTERNS.username, patternMessage: 'Username must be 3-30 alphanumeric characters' },
-        password: { required: true, minLength: 8, maxLength: 128 }
+        password: { required: true, minLength: 1, maxLength: 128 }  // No minimum for login — just needs to be non-empty
     },
     
     register: {

@@ -85,11 +85,11 @@ const VALID_SCHEDULE_STATUSES = ['draft', 'published', 'archived'];
 // Valid time-off statuses
 const VALID_TIMEOFF_STATUSES = ['pending', 'approved', 'denied'];
 
-// Valid shift types
-const VALID_SHIFT_TYPES = ['Day', 'Night', '24-Hour', '12-Hour'];
+// Valid shift types — keep in sync with server/routes/schedules.js
+const VALID_SHIFT_TYPES = ['Day', 'Night', '24-Hour', '12-Hour', '24hr', '12hr-Day', '12hr-Night'];
 
-// Valid crew types
-const VALID_CREW_TYPES = ['ALS', 'BLS', 'CCT'];
+// Valid crew types — keep in sync with server/routes/schedules.js
+const VALID_CREW_TYPES = ['ALS', 'BLS', 'CCT', 'CC', 'ST', 'PR'];
 
 // ============================================
 // DATABASE CLASS
@@ -1153,12 +1153,12 @@ function seedDefaults(conn) {
             VALUES (?, ?, ?, ?, ?, ?)
         `);
         
-        insert.run('super', bcrypt.hashSync('Super123!', salt), 'Super Administrator', 'super', '555-0001', now);
-        insert.run('boss', bcrypt.hashSync('Boss123!', salt), 'Station Manager', 'boss', '555-0002', now);
-        insert.run('paramedic1', bcrypt.hashSync('Paramedic1!', salt), 'Sarah Medic', 'paramedic', '555-0003', now);
-        insert.run('paramedic2', bcrypt.hashSync('Paramedic2!', salt), 'Mike Medic', 'paramedic', '555-0004', now);
-        insert.run('emt1', bcrypt.hashSync('Emt1Pass!', salt), 'Tom EMT', 'emt', '555-0005', now);
-        insert.run('emt2', bcrypt.hashSync('Emt2Pass!', salt), 'Lisa EMT', 'emt', '555-0006', now);
+        insert.run('super', bcrypt.hashSync('super123', salt), 'Super Administrator', 'super', '555-0001', now);
+        insert.run('boss', bcrypt.hashSync('boss123', salt), 'Station Manager', 'boss', '555-0002', now);
+        insert.run('paramedic1', bcrypt.hashSync('paramedic123', salt), 'Sarah Medic', 'paramedic', '555-0003', now);
+        insert.run('paramedic2', bcrypt.hashSync('paramedic123', salt), 'Mike Medic', 'paramedic', '555-0004', now);
+        insert.run('emt1', bcrypt.hashSync('emt123', salt), 'Tom EMT', 'emt', '555-0005', now);
+        insert.run('emt2', bcrypt.hashSync('emt123', salt), 'Lisa EMT', 'emt', '555-0006', now);
         
         console.log('✅ Default users seeded (passwords hashed with bcrypt)');
     }

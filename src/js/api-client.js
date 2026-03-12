@@ -828,13 +828,13 @@ const ApiClient = (function() {
         return requestWithRetry('DELETE', `/users/${id}`, null, { cacheEnabled: false });
     }
 
-    function resetPassword(id) {
-        return requestWithRetry('POST', `/users/${id}/reset-password`, null, { cacheEnabled: false });
+    function resetPassword(id, newPassword) {
+        return requestWithRetry('POST', `/users/${id}/reset-password`, { newPassword }, { cacheEnabled: false });
     }
 
-    function toggleUserStatus(id) {
+    function toggleUserStatus(id, active) {
         clearCache('/users');
-        return requestWithRetry('PUT', `/users/${id}/toggle-status`, null, { cacheEnabled: false });
+        return requestWithRetry('PATCH', `/users/${id}/status`, { active }, { cacheEnabled: false });
     }
 
     // ============================================
