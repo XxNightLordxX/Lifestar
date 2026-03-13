@@ -150,9 +150,10 @@ class TokenStore {
 const tokenStore = new TokenStore();
 
 // Periodic cleanup (every 10 minutes)
-setInterval(() => {
+const _csrfCleanupInterval = setInterval(() => {
     tokenStore.cleanup();
 }, 10 * 60 * 1000);
+_csrfCleanupInterval.unref();
 
 // ============================================
 // HELPER FUNCTIONS
