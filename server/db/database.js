@@ -1136,10 +1136,8 @@ function createIndexes(conn) {
         'CREATE INDEX IF NOT EXISTS idx_audit_user ON audit_log(userId)',
 
         // Incidents indexes
-        'CREATE INDEX IF NOT EXISTS idx_incidents_type ON incidents(type)',
-        'CREATE INDEX IF NOT EXISTS idx_incidents_status ON incidents(status)',
-        'CREATE INDEX IF NOT EXISTS idx_incidents_priority ON incidents(priority)',
-        'CREATE INDEX IF NOT EXISTS idx_incidents_reporter ON incidents(reportedBy)',
+        'CREATE INDEX IF NOT EXISTS idx_incidents_type ON incident_reports(type)',
+        'CREATE INDEX IF NOT EXISTS idx_incidents_reporter ON incident_reports(reportedBy)',
 
         // Shift swaps indexes
         'CREATE INDEX IF NOT EXISTS idx_swaps_requester ON shift_swaps(requesterId)',
