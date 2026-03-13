@@ -769,8 +769,11 @@ router.post('/:id/reset-password', authenticate, authorize('super'), updateLimit
         
         const hashedPassword = await bcrypt.hash(newPassword, BCRYPT_ROUNDS);
         
-        db.prepare("UPDATE users SET password = ?, updatedAt = datetime('now') WHERE id = ?").run(hashedPassword, id);
-        
+        db.prepare("UPDATE users SET password = ?, passwordChangedAt = datetime('now'), updatedAt = datetime('now') WHERE id = ?").run(hashedPassword, id);
+
+        // Revoke all tokens so the user must re-login with the new password
+        await revokeAllUserTokens(id);
+
         await addLog(`Password reset for user: ${user.username}`, req.user.id, req.user.username);
         
         res.json({ message: 'Password reset successfully' });

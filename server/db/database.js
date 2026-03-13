@@ -871,7 +871,7 @@ function initializeDatabase() {
             startDate TEXT NOT NULL,
             endDate TEXT NOT NULL,
             reason TEXT DEFAULT '',
-            status TEXT DEFAULT 'pending' CHECK(status IN ('pending','approved','denied')),
+            status TEXT DEFAULT 'pending' CHECK(status IN ('pending','approved','denied','cancelled')),
             reviewedBy INTEGER,
             reviewedAt TEXT,
             reviewNotes TEXT DEFAULT '',
@@ -976,7 +976,7 @@ function initializeDatabase() {
 
     // Incident reports
     conn.exec(`
-        CREATE TABLE IF NOT EXISTS incidents (
+        CREATE TABLE IF NOT EXISTS incident_reports (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             title TEXT NOT NULL,
             description TEXT DEFAULT '',

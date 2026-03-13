@@ -495,8 +495,9 @@ router.post('/change-password', authenticate, authLimiter, async (req, res) => {
         const hashedPassword = await bcrypt.hash(newPassword, BCRYPT_ROUNDS);
         
         // Update password
-        db.prepare('UPDATE users SET password = ?, updatedAt = ? WHERE id = ?')
-            .run(hashedPassword, new Date().toISOString(), user.id);
+        const now = new Date().toISOString();
+        db.prepare('UPDATE users SET password = ?, passwordChangedAt = ?, updatedAt = ? WHERE id = ?')
+            .run(hashedPassword, now, now, user.id);
         
         // Revoke all existing tokens — forces re-login on all devices
         await revokeAllUserTokens(user.id);
