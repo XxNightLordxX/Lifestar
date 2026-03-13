@@ -185,7 +185,7 @@ function addEmployeeToDay(dayCell, employee) {
     );
 
     if(existingCrew) {
-        alert(`${employee.name} is already assigned to a crew on this day!`);
+        showAlert(`${employee.name} is already assigned to a crew on this day!`, 'warning');
         return;
     }
 
@@ -198,7 +198,7 @@ function addEmployeeToDay(dayCell, employee) {
     );
 
     if(timeOffRequest) {
-        alert(`${employee.name} has approved time off on this day!`);
+        showAlert(`${employee.name} has approved time off on this day!`, 'warning');
         return;
     }
 
@@ -211,7 +211,7 @@ function addEmployeeToDay(dayCell, employee) {
     );
 
     if(absence) {
-        alert(`${employee.name} has an absence on this day!`);
+        showAlert(`${employee.name} has an absence on this day!`, 'warning');
         return;
     }
 
@@ -384,24 +384,44 @@ function createDayCell(year, month, day) {
 function createCrewDiv(crew) {
     try {
         const crewDiv = document.createElement('div');
-        crewDiv.className = `crew-card ${crew.type.toLowerCase()}`;
+        const typeClass = (crew.type || 'ALS').toLowerCase().replace(/[^a-z]/g, '');
+        crewDiv.className = 'crew-card ' + typeClass;
         crewDiv.draggable = true;
         crewDiv.dataset.crewId = crew.id;
 
-        crewDiv.innerHTML = `
-            <div class="crew-header">
-                <strong class="crew-rig">${sanitizeHTML(crew.rig)}</strong>
-                <span class="crew-type-badge">${sanitizeHTML(crew.type)}</span>
-            </div>
-            <div class="crew-info">
-                <div class="crew-staff">
-                    <span class="crew-member paramedic">👨‍⚕️ ${sanitizeHTML(crew.paramedic || 'Unassigned')}</span>
-                    <span class="crew-member emt">🚑 ${sanitizeHTML(crew.emt || 'Unassigned')}</span>
-                </div>
-            </div>
-            <div class="crew-shift">⏰ ${sanitizeHTML(crew.shiftType)}</div>
-            <button class="delete-crew" onclick="event.stopPropagation(); deleteCrew('${sanitizeHTML(crew.id)}')" title="Delete shift">&times;</button>
-        `;
+        const paramedicName = crew.paramedic || 'Unassigned';
+        const emtName       = crew.emt       || 'Unassigned';
+        const isFullyStaffed = paramedicName !== 'Unassigned' && emtName !== 'Unassigned';
+        const hours = crew.hours ? crew.hours + 'h' : '';
+
+        // Overtime indicator: flag if staff member exceeds 72h in this schedule
+        let overtimeWarning = '';
+        if(currentEditingSchedule && isFullyStaffed) {
+            const pHours = (currentEditingSchedule.crews || [])
+                .filter(c => String(c.paramedicId) === String(crew.paramedicId))
+                .reduce((n, c) => n + (parseInt(c.hours) || 12), 0);
+            if(pHours > 72) overtimeWarning = ' <span title="Overtime warning" style="color:#e74c3c">⚠️</span>';
+        }
+
+        crewDiv.innerHTML =
+            '<div class="crew-header" style="display:flex;justify-content:space-between;align-items:center;">' +
+                '<strong class="crew-rig" style="font-size:.9rem">🚑 ' + sanitizeHTML(crew.rig || '?') + '</strong>' +
+                '<span style="display:flex;align-items:center;gap:4px;">' +
+                    '<span class="crew-type-badge" style="font-size:.7rem;padding:1px 6px;border-radius:8px">' + sanitizeHTML(crew.type || 'ALS') + '</span>' +
+                    (hours ? '<span style="font-size:.7rem;color:#888">' + hours + '</span>' : '') +
+                '</span>' +
+            '</div>' +
+            '<div class="crew-info" style="font-size:.8rem;margin:4px 0;">' +
+                '<div style="color:' + (paramedicName === 'Unassigned' ? '#e74c3c' : '#2c3e50') + '">👨‍⚕️ ' + sanitizeHTML(paramedicName) + overtimeWarning + '</div>' +
+                '<div style="color:' + (emtName === 'Unassigned' ? '#e74c3c' : '#2c3e50') + '">🏥 ' + sanitizeHTML(emtName) + '</div>' +
+            '</div>' +
+            '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:2px;">' +
+                '<span style="font-size:.75rem;color:#888">⏰ ' + sanitizeHTML(crew.shiftType || '') + '</span>' +
+                (!isFullyStaffed ? '<span style="font-size:.7rem;color:#e74c3c;font-weight:600">⚠ Incomplete</span>' : '') +
+            '</div>' +
+            '<button class="delete-crew" onclick="event.stopPropagation(); deleteCrew('' + sanitizeHTML(String(crew.id)) + '')" title="Delete shift" style="position:absolute;top:4px;right:4px;background:none;border:none;color:#aaa;cursor:pointer;font-size:1rem;line-height:1;padding:2px 4px;">&times;</button>';
+
+        crewDiv.style.position = 'relative';
 
         // Crew drag events (for moving crews between days - desktop)
         crewDiv.addEventListener('dragstart', handleCrewDragStart);
@@ -439,7 +459,7 @@ function handleCrewDragEnd(e) {
 
 /** @function deleteCrew */
 function deleteCrew(crewId) {
-    if(!confirm('Are you sure you want to delete this crew?')) return;
+    if(!confirm('Remove this crew shift? This cannot be undone.')) return;
 
     const crewIndex = currentEditingSchedule.crews.findIndex(c => String(c.id) === String(crewId));
     if(crewIndex > -1) {
@@ -519,33 +539,51 @@ function showCreateCrewModal(dateStr) {
         const paramedics = users.filter(u => u.role === 'paramedic');
         const emts = users.filter(u => u.role === 'emt');
 
-        if(paramedicSelect) {
-            paramedicSelect.innerHTML = '';
-            const placeholder = document.createElement('option');
-            placeholder.value = '';
-            placeholder.textContent = 'Select Paramedic';
-            paramedicSelect.appendChild(placeholder);
-            paramedics.forEach(p => {
-                const opt = document.createElement('option');
-                opt.value = p.id;
-                opt.textContent = (p.fullName || p.username) + ' (' + (parseInt(p.hoursWorked)||0) + 'h)';
-                paramedicSelect.appendChild(opt);
-            });
-        }
+        // Helper: check if staff member is available on dateStr
+        const isOnTimeOff = (staffId) => {
+            const tol = typeof timeoffRequests !== 'undefined' ? timeoffRequests : [];
+            return tol.some(t =>
+                String(t.staffId) === String(staffId) &&
+                t.status === 'approved' && dateStr >= t.startDate && dateStr <= t.endDate
+            );
+        };
+        const isAlreadyAssigned = (staffId) => {
+            return (currentEditingSchedule.crews || []).some(c =>
+                c.date === dateStr &&
+                (String(c.paramedicId) === String(staffId) || String(c.emtId) === String(staffId))
+            );
+        };
+        const getScheduledHours = (staffId) => {
+            return (currentEditingSchedule.crews || [])
+                .filter(c => String(c.paramedicId) === String(staffId) || String(c.emtId) === String(staffId))
+                .reduce((n, c) => n + (parseInt(c.hours) || 12), 0);
+        };
 
-        if(emtSelect) {
-            emtSelect.innerHTML = '';
-            const placeholder = document.createElement('option');
-            placeholder.value = '';
-            placeholder.textContent = 'Select EMT';
-            emtSelect.appendChild(placeholder);
-            emts.forEach(e => {
-                const opt = document.createElement('option');
-                opt.value = e.id;
-                opt.textContent = (e.fullName || e.username) + ' (' + (parseInt(e.hoursWorked)||0) + 'h)';
-                emtSelect.appendChild(opt);
+        const buildStaffOpts = (select, staffList, placeholder) => {
+            if(!select) return;
+            select.innerHTML = '';
+            const ph = document.createElement('option');
+            ph.value = '';
+            ph.textContent = placeholder;
+            select.appendChild(ph);
+            staffList.forEach(s => {
+                const opt   = document.createElement('option');
+                const hrs   = getScheduledHours(s.id);
+                const toOff = isOnTimeOff(s.id);
+                const busy  = isAlreadyAssigned(s.id);
+                opt.value = s.id;
+                let label = (s.fullName || s.username);
+                if(toOff)        { label += ' 🚫 (Time Off)';   opt.disabled = true; opt.style.color = '#ccc'; }
+                else if(busy)    { label += ' ⚠️ (Busy)';       opt.style.color = '#e67e22'; }
+                else if(hrs > 60){ label += ' ⚠️ OT (' + hrs + 'h)'; opt.style.color = '#e74c3c'; }
+                else             { label += ' ✅ (' + hrs + 'h in sched)'; }
+                opt.textContent = label;
+                select.appendChild(opt);
             });
-        }
+        };
+
+        buildStaffOpts(paramedicSelect, paramedics, 'Select Paramedic');
+        buildStaffOpts(emtSelect, emts, 'Select EMT');
 
         showModal('createCrewModal');
     } catch (error) {
@@ -1181,27 +1219,53 @@ function findCrewById(scheduleId, crewId) {
 /** @function updateScheduleStats */
 function updateScheduleStats() {
     try {
-        if(!currentEditingSchedule.crews) return;
-
-        const crews = currentEditingSchedule.crews;
+        const crews = currentEditingSchedule ? (currentEditingSchedule.crews || []) : [];
         const totalShifts = crews.length;
-        const totalHours = crews.reduce((sum, c) => sum + c.hours, 0);
-        const alsCrews = crews.filter(c => c.type === 'ALS').length;
-        const blsCrews = crews.filter(c => c.type === 'BLS').length;
+        const totalHours  = crews.reduce((sum, c) => sum + (parseInt(c.hours) || 12), 0);
+        const alsCrews    = crews.filter(c => c.type === 'ALS').length;
+        const blsCrews    = crews.filter(c => c.type === 'BLS').length;
+        const incomplete  = crews.filter(c => !c.paramedicId || !c.emtId).length;
 
-        // Find date range
-        const dates = [...new Set(crews.map(c => c.date))].sort();
+        // Unique staff + days
+        const staffSet = new Set();
+        crews.forEach(c => { if(c.paramedicId) staffSet.add(c.paramedicId); if(c.emtId) staffSet.add(c.emtId); });
+        const dates      = [...new Set(crews.map(c => c.date))].sort();
         const daysCovered = dates.length;
-        const startDate = dates[0] || 'N/A';
-        const endDate = dates[dates.length - 1] || 'N/A';
 
-        // Update display
-        document.getElementById('statTotalShifts').textContent = totalShifts;
-        document.getElementById('statTotalHours').textContent = totalHours;
-        document.getElementById('statALSCrews').textContent = alsCrews;
-        document.getElementById('statBLSCrews').textContent = blsCrews;
-        document.getElementById('statDaysCovered').textContent = daysCovered;
-        document.getElementById('statDateRange').textContent = `${startDate} to ${endDate}`;
+        // Coverage: how many days of the schedule month have ≥1 crew
+        let daysInMonth = 30;
+        if(currentEditingSchedule && currentEditingSchedule.month && currentEditingSchedule.year) {
+            const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+            const mIdx = MONTHS.indexOf(currentEditingSchedule.month);
+            if(mIdx >= 0) daysInMonth = new Date(parseInt(currentEditingSchedule.year), mIdx + 1, 0).getDate();
+        }
+        const covPct = daysInMonth > 0 ? Math.round((daysCovered / daysInMonth) * 100) : 0;
+
+        const set = (id, val) => { const el = document.getElementById(id); if(el) el.textContent = val; };
+        set('statTotalShifts',  totalShifts);
+        set('statTotalHours',   totalHours);
+        set('statALSCrews',     alsCrews);
+        set('statBLSCrews',     blsCrews);
+        set('statDaysCovered',  daysCovered + '/' + daysInMonth + ' (' + covPct + '%)');
+        set('statStaffCount',   staffSet.size);
+
+        // Incomplete warning badge
+        const warnEl = document.getElementById('statIncompleteWarning');
+        if(warnEl) {
+            warnEl.textContent = incomplete > 0 ? '⚠️ ' + incomplete + ' incomplete' : '✅ All staffed';
+            warnEl.style.color = incomplete > 0 ? '#e74c3c' : '#27ae60';
+        }
+
+        // Progress bar
+        const bar = document.getElementById('scheduleCoverageBar');
+        if(bar) {
+            const barColor = covPct < 50 ? '#e74c3c' : covPct < 80 ? '#f39c12' : '#27ae60';
+            bar.style.width = covPct + '%';
+            bar.style.background = barColor;
+        }
+
+        // Also update totalHours on the schedule object itself
+        if(currentEditingSchedule) currentEditingSchedule.totalHours = totalHours;
     } catch (error) {
         Logger.error('[updateScheduleStats] Error:', error.message || error);
     }
@@ -1484,7 +1548,7 @@ function duplicateSchedule() {
         schedules.push(duplicateSchedule);
         saveSchedules();
 
-        alert(`Schedule duplicated to ${newScheduleName}!`);
+        showAlert(`Schedule duplicated to ${newScheduleName}!`, 'warning');
         closeModal('duplicateModal');
     } catch (error) {
         Logger.error('[duplicateSchedule] Error:', error.message || error);

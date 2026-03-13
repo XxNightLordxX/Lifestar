@@ -1463,13 +1463,40 @@ function initializeDropdowns() {
 /** @function updateSidebarBadges */
 function updateSidebarBadges() {
     try {
-        const draftCount = (schedules || []).filter(s => s.status === 'draft').length;
+        const draftCount     = (schedules || []).filter(s => s.status === 'draft').length;
         const publishedCount = (schedules || []).filter(s => s.status === 'published').length;
-        const archivedCount = (schedules || []).filter(s => s.status === 'archived').length;
+        const archivedCount  = (schedules || []).filter(s => s.status === 'archived').length;
 
-        document.getElementById('draftsBadge').textContent = draftCount;
-        document.getElementById('publishedBadge').textContent = publishedCount;
-        document.getElementById('archivedBadge').textContent = archivedCount;
+        // Pending requests
+        let pendingTO = 0, pendingTrades = 0;
+        try {
+            const tr = localStorage.getItem('lifestarTimeoffRequests');
+            if(tr) pendingTO = (JSON.parse(tr) || []).filter(r => r.status === 'pending').length;
+        } catch(_) {}
+        try {
+            const td = localStorage.getItem('lifestarShiftTrades');
+            if(td) pendingTrades = (JSON.parse(td) || []).filter(r => r.status === 'pending').length;
+        } catch(_) {}
+
+        // Helper: safe set text + show/hide badge
+        const setBadge = (id, count) => {
+            const el = document.getElementById(id);
+            if(!el) return;
+            el.textContent = count;
+            el.style.display = count > 0 ? 'inline-flex' : 'none';
+        };
+
+        setBadge('draftsBadge',    draftCount);
+        setBadge('publishedBadge', publishedCount);
+        setBadge('archivedBadge',  archivedCount);
+        setBadge('timeoffBadge',   pendingTO);
+        setBadge('tradesBadge',    pendingTrades);
+
+        // Update page title to show pending items
+        const pending = pendingTO + pendingTrades;
+        document.title = pending > 0
+            ? '(' + pending + ') Lifestar Scheduling'
+            : 'Lifestar Scheduling';
     } catch (error) {
         Logger.error('[updateSidebarBadges] Error:', error.message || error);
     }
@@ -2652,35 +2679,43 @@ function loadTimeoffRequests() {
 
 /** @function approveTimeoff */
 function approveTimeoff(requestId) {
-    if(confirm('Are you sure you want to approve this time-off request?')) {
-        const request = timeoffRequests.find(r => r.id === requestId);
-        if(request) {
-            request.status = 'approved';
-            request.approvedBy = currentUser.id;
-            request.approvedAt = new Date().toISOString();
-            saveTimeoffRequests();
-            loadTimeoffRequests();
-            showAlert('Time-off request approved', 'success');
-            addSystemLog('Time-off request approved for staff ID: ' + request.staffId);
+    const request = timeoffRequests.find(r => String(r.id) === String(requestId));
+    if(!request) return;
+    const staff = users.find(u => String(u.id) === String(request.staffId));
+    const name  = staff ? (staff.fullName || staff.username) : 'Unknown';
+    if(confirm('Approve time-off for ' + name + '\n' + request.startDate + ' → ' + request.endDate + '?')) {
+        request.status     = 'approved';
+        request.approvedBy = currentUser.id;
+        request.approvedAt = new Date().toISOString();
+        saveTimeoffRequests();
+        loadTimeoffRequests();
+        showAlert('✅ Time-off approved for ' + name, 'success');
+        addSystemLog('Time-off approved: ' + name + ' (' + request.startDate + ' – ' + request.endDate + ')');
+        // Notify via notification system if available
+        if(typeof NotificationCenter !== 'undefined') {
+            NotificationCenter.add({ type: 'timeoff', message: 'Time-off approved for ' + name, level: 'success' });
         }
     }
 }
 
 /** @function rejectTimeoff */
 function rejectTimeoff(requestId) {
-    const reason = prompt('Please enter a reason for rejection:');
-    if(reason) {
-        const request = timeoffRequests.find(r => r.id === requestId);
-        if(request) {
-            request.status = 'rejected';
-            request.rejectedBy = currentUser.id;
-            request.rejectedAt = new Date().toISOString();
-            request.rejectionReason = reason;
-            saveTimeoffRequests();
-            loadTimeoffRequests();
-            showAlert('Time-off request rejected', 'warning');
-            addSystemLog('Time-off request rejected for staff ID: ' + request.staffId);
-        }
+    const request = timeoffRequests.find(r => String(r.id) === String(requestId));
+    if(!request) return;
+    const staff = users.find(u => String(u.id) === String(request.staffId));
+    const name  = staff ? (staff.fullName || staff.username) : 'Unknown';
+    const reason = prompt('Reject time-off for ' + name + '\nEnter reason for rejection (required):');
+    if(reason && reason.trim()) {
+        request.status          = 'rejected';
+        request.rejectedBy      = currentUser.id;
+        request.rejectedAt      = new Date().toISOString();
+        request.rejectionReason = reason.trim();
+        saveTimeoffRequests();
+        loadTimeoffRequests();
+        showAlert('Time-off rejected for ' + name, 'warning');
+        addSystemLog('Time-off rejected: ' + name + ' — ' + reason.trim());
+    } else if(reason !== null) {
+        showAlert('A rejection reason is required.', 'warning');
     }
 }
 
