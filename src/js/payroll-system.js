@@ -349,11 +349,11 @@ function generatePayrollHeader() {
 function generatePayrollTableRow(record) {
     return `
         <tr>
-            <td>${record.employeeName}</td>
-            <td>${record.regularHours.toFixed(1)}</td>
-            <td>${record.overtimeHours.toFixed(1)}</td>
-            <td>${formatCurrency(record.regularPay)}</td>
-            <td>${formatCurrency(record.overtimePay)}</td>
+            <td>${typeof sanitizeHTML === 'function' ? sanitizeHTML(record.employeeName) : record.employeeName}</td>
+            <td>${record.totalRegularHours.toFixed(1)}</td>
+            <td>${record.totalOvertimeHours.toFixed(1)}</td>
+            <td>${formatCurrency(record.totalRegularPay)}</td>
+            <td>${formatCurrency(record.totalOvertimePay)}</td>
             <td>${formatCurrency(record.totalPay)}</td>
             <td>
                 <button onclick="viewPayrollDetails('${record.employeeId}')" class="btn-small">Details</button>
@@ -416,8 +416,8 @@ function updatePayrollDisplay() {
     const dateEl = document.getElementById('payrollReferenceDate');
     if (!periodEl || !dateEl) return;
     const periodType = periodEl.value;
-    const referenceDate = new Date(dateEl.value);
-    
+    const referenceDate = dateEl.value ? new Date(dateEl.value) : new Date();
+
     const report = generatePayrollReport(periodType, referenceDate);
     
     // Update summary cards
@@ -455,7 +455,8 @@ function updatePayrollDisplay() {
  */
 function saveCurrentPayrollReport() {
     const periodType = document.getElementById('payrollPeriodType').value;
-    const referenceDate = new Date(document.getElementById('payrollReferenceDate').value);
+    const dateVal = document.getElementById('payrollReferenceDate').value;
+    const referenceDate = dateVal ? new Date(dateVal) : new Date();
     
     const report = generatePayrollReport(periodType, referenceDate);
     savePayrollReport(report);
@@ -470,7 +471,8 @@ function saveCurrentPayrollReport() {
 function loadPayrollReportsList() {
     const reports = getPayrollReports();
     const container = document.getElementById('payrollReportsList');
-    
+    if (!container) return;
+
     if (reports.length === 0) {
         container.innerHTML = '<p class="empty-state">No saved reports yet.</p>';
         return;

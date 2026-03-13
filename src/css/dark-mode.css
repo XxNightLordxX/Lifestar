@@ -258,7 +258,8 @@
     border-bottom-color: var(--border-color) !important;
 }
 
-/* ── Smooth theme transition ─────────────────────────────── */
-*, *::before, *::after {
+/* ── Smooth theme transition (only during theme switches) ── */
+[data-theme="dark"] *, [data-theme="dark"] *::before, [data-theme="dark"] *::after,
+.dark-mode *, .dark-mode *::before, .dark-mode *::after {
     transition: background-color .18s ease, border-color .18s ease, color .12s ease;
 }

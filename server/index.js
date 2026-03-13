@@ -131,11 +131,11 @@ app.use(helmet({
     dnsPrefetchControl: { allow: false },
     frameguard: false, // Controlled by CSP frame-ancestors instead
     hidePoweredBy: true,
-    hsts: {
+    hsts: CONSTANTS.NODE_ENV === 'production' ? {
         maxAge: 31536000,
         includeSubDomains: true,
         preload: true
-    },
+    } : false,
     ieNoOpen: true,
     noSniff: true,
     originAgentCluster: true,
@@ -464,15 +464,30 @@ function gracefulShutdown(signal) {
     
     console.log(`\n[SHUTDOWN] ${signal} received. Starting graceful shutdown...`);
     
-    // Stop accepting new connections
+    // Force shutdown after timeout
+    const forceExit = setTimeout(() => {
+        console.error('[SHUTDOWN] Forced shutdown after timeout');
+        process.exit(1);
+    }, 10000);
+    forceExit.unref();
+
+    // Stop accepting new connections (only if server is listening)
+    if (!server.listening) {
+        console.log('[SHUTDOWN] Server was not listening, exiting');
+        clearTimeout(forceExit);
+        process.exit(1);
+        return;
+    }
+
     server.close((err) => {
+        clearTimeout(forceExit);
         if (err) {
             console.error('[SHUTDOWN] Error closing server:', err);
             process.exit(1);
         }
-        
+
         console.log('[SHUTDOWN] HTTP server closed');
-        
+
         // Close database connection
         try {
             const db = getDb();
@@ -483,16 +498,10 @@ function gracefulShutdown(signal) {
         } catch (dbErr) {
             console.error('[SHUTDOWN] Error closing database:', dbErr);
         }
-        
+
         console.log('[SHUTDOWN] Graceful shutdown complete');
         process.exit(0);
     });
-    
-    // Force shutdown after timeout
-    setTimeout(() => {
-        console.error('[SHUTDOWN] Forced shutdown after timeout');
-        process.exit(1);
-    }, 10000);
 }
 
 // Handle shutdown signals

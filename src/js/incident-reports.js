@@ -592,11 +592,7 @@
         closeDetail,
         updateStatus,
         deleteReport:      function(id) {
-            if (!confirm('Delete this incident report? This cannot be undone.')) return;
             deleteReport(id);
-            closeDetail();
-            if (typeof showToast === 'function') showToast('Report deleted', 'info');
-            renderReportList('ir_list_container');
         },
         submitCreate,
         toggleCreateForm,

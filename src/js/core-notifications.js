@@ -11,6 +11,7 @@
     // ============================================
     // NOTIFICATION STATE
     // ============================================
+    let _notifIdCounter = 0;
     const NotificationState = {
         notifications: [],
         queue: [],
@@ -70,7 +71,7 @@
          */
         add(notification) {
             const newNotification = {
-                id: Date.now(),
+                id: Date.now() + (++_notifIdCounter),
                 title: notification.title || 'Notification',
                 message: notification.message || '',
                 type: notification.type || 'info',
@@ -219,7 +220,7 @@
 
                 // Close on outside click
                 document.addEventListener('click', (e) => {
-                    if (!panel.contains(e.target) && e.target.id !== 'notificationBell') {
+                    if (!panel.contains(e.target) && !e.target.closest('#notificationBell')) {
                         panel.classList.add('hidden');
                     }
                 });

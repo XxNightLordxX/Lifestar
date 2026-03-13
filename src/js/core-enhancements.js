@@ -180,6 +180,16 @@
                 startY = 0;
                 currentY = 0;
             });
+
+            // Cleanup on touch cancel
+            document.addEventListener('touchcancel', () => {
+                if (pullIndicator) {
+                    pullIndicator.remove();
+                    pullIndicator = null;
+                }
+                startY = 0;
+                currentY = 0;
+            });
         },
 
         /**
@@ -760,10 +770,11 @@
             let html = '<div class="shortcuts-help" style="padding:20px;"><h2 style="margin-bottom:16px;">Keyboard Shortcuts</h2><table style="width:100%;border-collapse:collapse;">';
             html += '<tr style="background:#f3f4f6;"><th style="padding:8px;text-align:left;border-bottom:1px solid #ddd;">Shortcut</th><th style="padding:8px;text-align:left;border-bottom:1px solid #ddd;">Action</th><th style="padding:8px;text-align:left;border-bottom:1px solid #ddd;">Context</th></tr>';
 
+            const esc = (str) => typeof InputSanitizer !== 'undefined' ? InputSanitizer.escapeHTML(str) : String(str).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
             shortcuts.forEach(s => {
-                html += `<tr><td style="padding:8px;border-bottom:1px solid #eee;"><kbd style="background:#e5e7eb;padding:2px 6px;border-radius:4px;font-family:monospace;">${s.keys}</kbd></td>`;
-                html += `<td style="padding:8px;border-bottom:1px solid #eee;">${s.description}</td>`;
-                html += `<td style="padding:8px;border-bottom:1px solid #eee;">${s.context}</td></tr>`;
+                html += `<tr><td style="padding:8px;border-bottom:1px solid #eee;"><kbd style="background:#e5e7eb;padding:2px 6px;border-radius:4px;font-family:monospace;">${esc(s.keys)}</kbd></td>`;
+                html += `<td style="padding:8px;border-bottom:1px solid #eee;">${esc(s.description)}</td>`;
+                html += `<td style="padding:8px;border-bottom:1px solid #eee;">${esc(s.context)}</td></tr>`;
             });
 
             html += '</table></div>';

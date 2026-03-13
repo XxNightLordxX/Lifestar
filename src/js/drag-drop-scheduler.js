@@ -251,7 +251,8 @@ function removePendingEmployee(button, employeeId) {
         badge.remove();
 
         // Check if pending container is empty
-        const pendingContainer = document.querySelector('.pending-employees');
+        const dayCell = badge ? badge.closest('.calendar-day') : null;
+        const pendingContainer = dayCell ? dayCell.querySelector('.pending-employees') : document.querySelector('.pending-employees');
         if(pendingContainer && pendingContainer.children.length === 0) {
             pendingContainer.remove();
         }
@@ -449,6 +450,7 @@ function createCrewDiv(crew) {
 
 /** @function handleCrewDragStart */
 function handleCrewDragStart(e) {
+    if (!currentEditingSchedule || !currentEditingSchedule.crews) return;
     const crewId = e.target.dataset.crewId;
     draggedCrew = currentEditingSchedule.crews.find(c => String(c.id) === String(crewId));
     e.target.classList.add('dragging-crew');
@@ -947,7 +949,7 @@ function doTimeRangesOverlap(range1, range2) {
             return true;
         }
         // Range1 overnight, Range2 normal - overlap if Range2 starts after s1 or ends before e1
-        return s2 >= s1 || s2 <= e1;
+        return s2 >= s1 || e2 <= e1;
     }
 
     if (e2 < s2) {

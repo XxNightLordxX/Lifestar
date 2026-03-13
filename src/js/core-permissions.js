@@ -339,14 +339,16 @@
             const userPerms = this.getUserPermissions(userId);
             const categories = this.getByCategory();
 
+            const esc = typeof InputSanitizer !== 'undefined' ? InputSanitizer.escapeHTML.bind(InputSanitizer) : (s) => String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+            const safeUserId = esc(String(userId));
             let html = `
                 <div class="permission-editor">
                     <div class="permission-header">
-                        <h3>Permissions for ${user.fullName || user.username}</h3>
-                        <span class="badge">${user.role}</span>
+                        <h3>Permissions for ${esc(user.fullName || user.username)}</h3>
+                        <span class="badge">${esc(user.role)}</span>
                     </div>
                     <div class="permission-actions">
-                        <button class="btn btn-sm btn-secondary" onclick="PermissionsManager.resetUserPermissions('${userId}')">Reset to Defaults</button>
+                        <button class="btn btn-sm btn-secondary" onclick="PermissionsManager.resetUserPermissions('${safeUserId}')">Reset to Defaults</button>
                     </div>
                     <div class="permission-categories">
             `;
@@ -365,7 +367,7 @@
                             <label>
                                 <input type="checkbox" 
                                     ${hasPermission ? 'checked' : ''} 
-                                    onchange="PermissionsManager.togglePermission('${userId}', '${perm.key}')">
+                                    onchange="PermissionsManager.togglePermission('${safeUserId}', '${esc(perm.key)}')">
                                 <span>${perm.label}</span>
                             </label>
                             <p class="permission-description">${perm.description}</p>
@@ -403,6 +405,10 @@
                     el.disabled = true;
                     el.classList.add('disabled');
                     el.setAttribute('title', 'You do not have permission to perform this action');
+                } else {
+                    el.disabled = false;
+                    el.classList.remove('disabled');
+                    el.removeAttribute('title');
                 }
             });
         }
@@ -496,8 +502,11 @@
     window.RoleManager = RoleManager;
     window.PermissionState = PermissionState;
 
-    // Backward compatibility aliases
-    window.userPermissions = PermissionState.userPermissions;
+    // Backward compatibility aliases — use getter to track reassignment
+    Object.defineProperty(window, 'userPermissions', {
+        get() { return PermissionState.userPermissions; },
+        configurable: true
+    });
     window.loadPermissions = () => PermissionsManager.load();
     window.savePermissions = () => PermissionsManager.save();
     window.getUserPermissions = (userId) => PermissionsManager.getUserPermissions(userId);

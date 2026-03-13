@@ -16,6 +16,8 @@
          * Initialize global search
          */
         init: function() {
+            if (this._initialized) return;
+            this._initialized = true;
             this.loadPresets();
             this.injectSearchBar();
             this.setupKeyboardShortcut();
@@ -147,7 +149,11 @@
             const lowerQuery = query.toLowerCase();
             
             // Search schedules
-            const schedules = JSON.parse(localStorage.getItem('lifestarSchedules') || '[]');
+            let schedules, users, timeoff, crews;
+            try { schedules = JSON.parse(localStorage.getItem('lifestarSchedules') || '[]'); } catch(e) { schedules = []; }
+            try { users = JSON.parse(localStorage.getItem('lifestarUsers') || '[]'); } catch(e) { users = []; }
+            try { timeoff = JSON.parse(localStorage.getItem('lifestarTimeoff') || '[]'); } catch(e) { timeoff = []; }
+            try { crews = JSON.parse(localStorage.getItem('lifestarCrews') || '[]'); } catch(e) { crews = []; }
             schedules.forEach(schedule => {
                 if (schedule.name.toLowerCase().includes(lowerQuery) ||
                     schedule.status.toLowerCase().includes(lowerQuery) ||
@@ -163,16 +169,15 @@
             });
             
             // Search staff
-            const users = JSON.parse(localStorage.getItem('lifestarUsers') || '[]');
             users.forEach(user => {
-                if (user.name?.toLowerCase().includes(lowerQuery) ||
+                if (user.fullName?.toLowerCase().includes(lowerQuery) ||
                     user.username?.toLowerCase().includes(lowerQuery) ||
                     user.email?.toLowerCase().includes(lowerQuery) ||
                     user.role?.toLowerCase().includes(lowerQuery)) {
                     results.push({
                         type: 'staff',
                         icon: '👤',
-                        title: user.name || user.username,
+                        title: user.fullName || user.username,
                         subtitle: `${user.role} • ${user.email || 'No email'}`,
                         action: `showBossSection('staff'); viewStaffDetails('${user.id}')`
                     });
@@ -180,10 +185,9 @@
             });
             
             // Search time-off requests
-            const timeoff = JSON.parse(localStorage.getItem('lifestarTimeoff') || '[]');
             timeoff.forEach(request => {
                 const user = users.find(u => u.id === request.userId);
-                const userName = user ? user.name : 'Unknown';
+                const userName = user ? user.fullName : 'Unknown';
                 if (userName.toLowerCase().includes(lowerQuery) ||
                     request.status?.toLowerCase().includes(lowerQuery)) {
                     results.push({
@@ -197,7 +201,6 @@
             });
             
             // Search crew templates
-            const crews = JSON.parse(localStorage.getItem('lifestarCrews') || '[]');
             crews.forEach(crew => {
                 if (crew.name?.toLowerCase().includes(lowerQuery)) {
                     results.push({
@@ -264,21 +267,29 @@
          * Safe action executor - replaces eval() for security
          */
         executeAction: function(actionStr) {
+            // Support semicolon-chained actions like "func1('a'); func2('b')"
+            const calls = actionStr.split(';').map(s => s.trim()).filter(Boolean);
+            for (const call of calls) {
+                this._executeSingleAction(call);
+            }
+        },
+
+        _executeSingleAction: function(actionStr) {
             // Parse action string like "functionName('arg')" or "functionName('arg1', 'arg2')"
             const match = actionStr.match(/^(\w+)\(([^)]*)\)$/);
             if (!match) {
                 Logger.warn('[GlobalSearch] Invalid action format:', actionStr);
                 return;
             }
-            
+
             const funcName = match[1];
             const argsStr = match[2];
-            
+
             // Parse arguments
             const args = argsStr ? argsStr.split(',').map(arg => {
                 arg = arg.trim();
                 // Remove quotes from string arguments
-                if ((arg.startsWith("'") && arg.endsWith("'")) || 
+                if ((arg.startsWith("'") && arg.endsWith("'")) ||
                     (arg.startsWith('"') && arg.endsWith('"'))) {
                     return arg.slice(1, -1);
                 }

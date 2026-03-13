@@ -34,7 +34,8 @@
 
     <div class="print-header">
         <h1>Lifestar Ambulance Scheduling System</h1>
-        <p class="print-date">Printed: <script>document.write(new Date().toLocaleDateString())</script></p>
+        <p class="print-date">Printed: <span id="printDateStamp"></span></p>
+        <script>document.getElementById('printDateStamp').textContent = new Date().toLocaleDateString();</script>
     </div>
     <!-- Login Page -->
     <div id="loginPage" class="login-container">
@@ -1179,7 +1180,7 @@
                             <button class="btn btn-light" onclick="showBossSection('timeoff')" style="width: 100%; display: flex; flex-direction: column; align-items: center; padding: 15px; gap: 8px;">
                                 <span style="font-size: 24px;">🏖️</span>
                                 <span style="font-weight: 600;">Time Off Requests</span>
-                                <span id="quickActionTimeoffBadge" class="badge" style="display: none; background: var(--danger-color); color: white; border-radius: 50%; width: 20px; height: 20px; font-size: 12px; display: flex; align-items: center; justify-content: center; position: absolute; top: 10px; right: 10px;">0</span>
+                                <span id="quickActionTimeoffBadge" class="badge" style="display: none; background: var(--danger-color); color: white; border-radius: 50%; width: 20px; height: 20px; font-size: 12px; align-items: center; justify-content: center; position: absolute; top: 10px; right: 10px;">0</span>
                             </button>
                             <button class="btn btn-light" onclick="showBossSection('staff')" style="width: 100%; display: flex; flex-direction: column; align-items: center; padding: 15px; gap: 8px;">
                                 <span style="font-size: 24px;">👥</span>
@@ -1876,6 +1877,8 @@
                             <select id="reportYear" class="form-select" style="width: 120px;">
                                 <option value="2024">2024</option>
                                 <option value="2025">2025</option>
+                                <option value="2026" selected>2026</option>
+                                <option value="2027">2027</option>
                             </select>
                             <label for="reportMonth" style="font-weight: 600;">Month:</label>
                             <select id="reportMonth" class="form-select" style="width: 150px;">
@@ -2616,8 +2619,9 @@
                             <select id="scheduleYear" class="form-select" required>
                                 <option value="">Select Year</option>
                                 <option value="2024">2024</option>
-                                <option value="2025" selected>2025</option>
-                                <option value="2026">2026</option>
+                                <option value="2025">2025</option>
+                                <option value="2026" selected>2026</option>
+                                <option value="2027">2027</option>
                             </select>
                         </div>
                     </div>
@@ -3329,65 +3333,16 @@
     <script defer src="src/js/export-utils.js"></script>
     <script defer src="src/js/theme-manager.js"></script>
 
-    <!-- Initialize All Enhancements -->
+    <!-- Initialize & Execute All Enhancements -->
     <script>
-        // Initialize all enhancements on page load
-        window.addEventListener('DOMContentLoaded', async function() {
-            try {
-                // Configuration for enhancements
-                const enhancementsConfig = {
-                    security: {
-                        sessionTimeout: 30 * 60 * 1000 // 30 minutes
-                    },
-                    performance: {
-                        enableServiceWorker: true
-                    },
-                    features: {
-                        enableAnalytics: true
-                    },
-                    userExperience: {
-                        defaultLanguage: 'en'
-                    },
-                    notifications: {
-                        twilio: {
-                            accountSid: localStorage.getItem('twilioAccountSid'),
-                            authToken: localStorage.getItem('twilioAuthToken'),
-                            fromNumber: localStorage.getItem('twilioFromNumber')
-                        },
-                        sendgrid: {
-                            apiKey: localStorage.getItem('sendgridApiKey'),
-                            fromEmail: localStorage.getItem('sendgridFromEmail'),
-                            fromName: 'Lifestar Ambulance Scheduling'
-                        },
-                        payroll: {
-                            apiEndpoint: localStorage.getItem('payrollApiEndpoint'),
-                            apiKey: localStorage.getItem('payrollApiKey')
-                        }
-                    },
-                    ai: {
-                        apiKey: localStorage.getItem('groqApiKey'),
-                        model: 'llama3-70b-8192'
-                    }
-                };
-
-                // Note: All enhancements are already loaded via individual script tags
-                console.log('✅ All enhancements loaded successfully!');
-
-            } catch (error) {
-                console.error('❌ Error initializing enhancements:', error);
-            }
-        });
-    </script>
-
-    <!-- Execute All Enhancements & Recommendations -->
-    <script>
-        window.addEventListener('DOMContentLoaded', async function() {
+        window.addEventListener('DOMContentLoaded', function() {
+            // Execute recommendations after scripts have initialized
             setTimeout(async () => {
                 try {
                     if (typeof ExecuteAllRecommendations !== 'undefined') {
                         await ExecuteAllRecommendations.executeAll();
                     }
-                    console.log('✅ All enhancements initialized');
+                    console.log('All enhancements initialized');
                 } catch (error) {
                     console.error('Enhancement init error:', error.message);
                 }

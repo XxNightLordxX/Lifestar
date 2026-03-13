@@ -40,7 +40,10 @@ self.addEventListener('install', function(event) {
                 return cache.addAll(STATIC_ASSETS);
             })
             .then(function() { return self.skipWaiting(); })
-            .catch(function(err) { console.warn('[ServiceWorker] Cache failed:', err); })
+            .catch(function(err) {
+                console.warn('[ServiceWorker] Cache failed:', err);
+                return self.skipWaiting();
+            })
     );
 });
 

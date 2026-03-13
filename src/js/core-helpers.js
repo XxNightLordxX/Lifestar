@@ -338,7 +338,6 @@ const PerformanceHelpers = {
         let timeout;
         return function executedFunction(...args) {
             const later = () => {
-                clearTimeout(timeout);
                 func.apply(this, args);
             };
             clearTimeout(timeout);
@@ -394,10 +393,12 @@ const UIHelpers = {
             loader.innerHTML = `
                 <div style="background:white;padding:2rem;border-radius:8px;text-align:center;">
                     <div style="width:40px;height:40px;border:4px solid #f3f3f3;border-top:4px solid #007bff;border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 1rem;"></div>
-                    <div id="loader-message">${message}</div>
+                    <div id="loader-message"></div>
                 </div>
             `;
             document.body.appendChild(loader);
+            const msgEl = document.getElementById('loader-message');
+            if (msgEl) msgEl.textContent = message;
 
             // Add spin animation if not exists
             if (!document.getElementById('spin-animation')) {
@@ -596,7 +597,7 @@ window.debounce = debounce;
 window.throttle = throttle;
 window.showLoading = showLoading;
 window.hideLoading = hideLoading;
-window.safeExecute = safeExecute;
+window.safeExecuteFn = safeExecute;
 window.saveUsers = saveUsers;
 window.saveSchedules = saveSchedules;
 window.filterEmployeeList = filterEmployeeList;
@@ -608,8 +609,8 @@ window.LoadingIndicator = {
     hide: hideLoading
 };
 
-// Validator alias
-window.Validator = DataValidators;
+// DataValidator alias (distinct from SecurityValidator in core-security.js)
+window.DataValidator = DataValidators;
 
 // CodeQualityUtils alias
 window.CodeQualityUtils = {

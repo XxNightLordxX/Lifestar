@@ -307,7 +307,7 @@ const SessionManager = {
     handleTimeout() {
         if (typeof currentUser === 'undefined' || !currentUser) return;
 
-        const username = currentUser ? currentUser.username : 'unknown';
+        const username = currentUser.username || 'unknown';
         
         if (typeof Logger !== 'undefined') {
             Logger.debug('[SessionManager] Session timed out for:', username);
@@ -455,11 +455,13 @@ const InputSanitizer = {
     },
 
     /**
-     * Sanitize for SQL (basic - should use parameterized queries on server)
+     * Basic SQL character filter — WARNING: Does NOT prevent SQL injection.
+     * Always use parameterized queries on the server side.
+     * @deprecated Use parameterized queries instead
      */
     sanitizeSQL(str) {
         if (!str) return '';
-        return str.replace(/[';\\-]/g, '');
+        return str.replace(/['";\\]/g, '').replace(/--/g, '').replace(/\/\*/g, '').replace(/\*\//g, '');
     },
 
     /**
@@ -601,7 +603,11 @@ const QuickActions = {
     init() {
         this.update();
         // Update badges every 30 seconds
-        setInterval(() => this.update(), 30000);
+        if (typeof MemoryManager !== 'undefined') {
+            MemoryManager.setInterval(() => this.update(), 30000);
+        } else {
+            setInterval(() => this.update(), 30000);
+        }
     }
 };
 
@@ -644,10 +650,10 @@ window.QuickActions = QuickActions;
 window.csrfProtection = CSRFProtection;
 window.SanitizeHelper = InputSanitizer;
 window.Validator = SecurityValidator;
-window.escapeHTML = InputSanitizer.escapeHTML;
-window.sanitizeInput = InputSanitizer.sanitize;
-window.safeSetInnerHTML = InputSanitizer.safeSetInnerHTML;
-window.safeCreateOptions = InputSanitizer.safeCreateOptions;
+window.escapeHTML = InputSanitizer.escapeHTML.bind(InputSanitizer);
+window.sanitizeInput = InputSanitizer.sanitize.bind(InputSanitizer);
+window.safeSetInnerHTML = InputSanitizer.safeSetInnerHTML.bind(InputSanitizer);
+window.safeCreateOptions = InputSanitizer.safeCreateOptions.bind(InputSanitizer);
 
 // Export for module systems
 if (typeof module !== 'undefined' && module.exports) {

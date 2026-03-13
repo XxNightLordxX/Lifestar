@@ -1294,7 +1294,7 @@ const BOSS_SECTION_LOADERS = {
     training: () => typeof loadTrainingRecords === 'function' && loadTrainingRecords(),
     bonus: () => typeof loadBonusHours === 'function' && loadBonusHours(),
     callins: () => typeof loadEmergencyCallins === 'function' && loadEmergencyCallins(),
-    incidents: () => typeof IncidentReports !== 'undefined' && typeof IncidentReports.loadIncidents === 'function' && IncidentReports.loadIncidents(),
+    incidents: () => typeof IncidentReports !== 'undefined' && typeof IncidentReports.load === 'function' && IncidentReports.load(),
     absences: () => typeof loadAbsences === 'function' && loadAbsences(),
     oncall: () => typeof loadOncallRotations === 'function' && loadOncallRotations(),
     analytics: () => typeof generateAnalyticsReport === 'function' && generateAnalyticsReport(),
@@ -1863,8 +1863,8 @@ document.addEventListener('click', function(event) {
 
     if(sidebar && sidebar.classList.contains('active')) {
         if(!sidebar.contains(event.target) &&
-            !menuToggle.contains(event.target) &&
-            !overlay.contains(event.target)) {
+            (!menuToggle || !menuToggle.contains(event.target)) &&
+            (!overlay || !overlay.contains(event.target))) {
             sidebar.classList.remove('active');
             overlay.classList.remove('active');
             document.body.style.overflow = '';

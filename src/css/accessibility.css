@@ -135,7 +135,7 @@ textarea:disabled {
 
 /* Invalid form field styling */
 input:invalid:not(:placeholder-shown),
-select:invalid:not(:placeholder-shown),
+select:invalid,
 textarea:invalid:not(:placeholder-shown) {
     border-color: var(--danger-color, #dc3545);
     box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.15);
@@ -173,7 +173,7 @@ textarea:invalid:not(:placeholder-shown) {
 }
 
 /* Smooth scrolling for users who haven't disabled it */
-@media not (prefers-reduced-motion: reduce) {
+@media (prefers-reduced-motion: no-preference) {
     html {
         scroll-behavior: smooth;
     }

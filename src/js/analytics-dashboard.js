@@ -303,6 +303,10 @@ const AnalyticsDashboard = (function () {
     window.addEventListener('themechange', () => {
         // Destroy charts so they repaint with the correct palette
         Object.keys(charts).forEach(destroyChart);
+        // Re-render charts with new theme colors
+        if (typeof AnalyticsDashboard !== 'undefined') {
+            setTimeout(() => load(), 100);
+        }
     });
 
     // ─── PUBLIC ───────────────────────────────────────────────────────────────

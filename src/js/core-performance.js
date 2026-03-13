@@ -415,8 +415,9 @@
 
                 if (!self.debounceTimers.has(key)) {
                     self.debounceTimers.set(key, {
-                        lastCallTime: now,
-                        timer: null
+                        lastCallTime: 0,
+                        timer: null,
+                        hasCalledLeading: false
                     });
                 }
 
@@ -426,7 +427,9 @@
                     clearTimeout(timerData.timer);
                 }
 
-                if (leading && !timerData.lastCallTime) {
+                if (leading && !timerData.hasCalledLeading) {
+                    timerData.hasCalledLeading = true;
+                    timerData.lastCallTime = now;
                     func.apply(this, args);
                     return;
                 }
@@ -474,7 +477,7 @@
                     timer = setTimeout(() => {
                         func.apply(this, args);
                         lastCallTime = Date.now();
-                    }, wait - timeSinceLastCall);
+                    }, Math.max(0, wait - timeSinceLastCall));
                 }
             };
         },
@@ -506,27 +509,25 @@
         },
 
         /**
-         * Advanced localStorage with compression
+         * Store JSON value in localStorage
          */
         compressLocalStorage: async function(key, value) {
             try {
-                const jsonString = JSON.stringify(value);
-                const compressed = jsonString.replace(/\s+/g, '');
-                localStorage.setItem(key, compressed);
+                localStorage.setItem(key, JSON.stringify(value));
                 return true;
             } catch (error) {
-                Logger.error('Compression error:', error);
+                Logger.error('localStorage write error:', error);
                 return false;
             }
         },
 
         decompressLocalStorage: async function(key) {
             try {
-                const compressed = localStorage.getItem(key);
-                if (!compressed) return null;
-                return JSON.parse(compressed);
+                const stored = localStorage.getItem(key);
+                if (!stored) return null;
+                return JSON.parse(stored);
             } catch (error) {
-                Logger.error('Decompression error:', error);
+                Logger.error('localStorage read error:', error);
                 return null;
             }
         },
@@ -607,7 +608,7 @@
          * Setup memory optimization - clear caches periodically
          */
         setupMemoryOptimization: function() {
-            setInterval(() => {
+            MemoryManager.setInterval(() => {
                 this.clearOldCacheEntries();
                 this.objectPool.clear();
             }, 5 * 60 * 1000);
@@ -930,7 +931,7 @@
                 }
             },
 
-            startOfDay: function(date, timezone = null) {
+            startOfDay: function(date) {
                 const d = EdgeCaseHandler.safeDate(date);
                 if (!d) return null;
                 
@@ -938,7 +939,7 @@
                 return d;
             },
 
-            endOfDay: function(date, timezone = null) {
+            endOfDay: function(date) {
                 const d = EdgeCaseHandler.safeDate(date);
                 if (!d) return null;
                 
@@ -1124,7 +1125,7 @@
                             case 'string':
                                 fixed[key] = String(value);
                                 break;
-                            case 'number':
+                            case 'number': {
                                 const num = parseFloat(value);
                                 if (!isNaN(num)) {
                                     fixed[key] = num;
@@ -1132,6 +1133,7 @@
                                     errors.push(`${key} must be a number`);
                                 }
                                 break;
+                            }
                             case 'boolean':
                                 fixed[key] = Boolean(value);
                                 break;
@@ -1328,7 +1330,7 @@
          * Start periodic cleanup of old entries
          */
         startCleanupInterval: function() {
-            setInterval(() => {
+            MemoryManager.setInterval(() => {
                 const now = Date.now();
                 const windowStart = now - this.config.windowMs;
 

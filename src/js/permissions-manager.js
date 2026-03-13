@@ -28,6 +28,7 @@
         dirty: false,
         loading: false,
         searchQuery: '',
+        userSearchQuery: '',
         filterCategory: 'all',
         serverMode: false,
     };
@@ -386,12 +387,11 @@
             });
         });
 
-        // User search
+        // User search (filters user list independently)
         const userSearch = container.querySelector('#pmUserSearch');
         if (userSearch) {
             userSearch.addEventListener('input', () => {
-                _state.searchQuery = userSearch.value;
-                // We only use this to filter the permission list, not the user list for now
+                _state.userSearchQuery = userSearch.value;
                 render();
             });
         }

@@ -178,7 +178,7 @@ const MultiLocation = (function() {
     /** Build location selector dropdown HTML */
     function buildLocationSelector(selectedId, elementId, includeAll) {
         const locations = getActiveLocations();
-        const html = '<select id="' + (elementId || 'locationSelect') + '" class="form-control location-selector">';
+        let html = '<select id="' + (elementId || 'locationSelect') + '" class="form-control location-selector">';
         if (includeAll !== false) {
             html += '<option value="all"' + (!selectedId || selectedId === 'all' ? ' selected' : '') + '>All Locations</option>';
         }
