@@ -13,7 +13,7 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const { getDb, addLog } = require('../db/database');
-const { generateToken, authenticate, setTokenCookie, clearTokenCookie } = require('../middleware/auth');
+const { generateToken, authenticate, setTokenCookie, clearTokenCookie, revokeToken, revokeAllUserTokens } = require('../middleware/auth');
 const rateLimit = require('express-rate-limit');
 const { SECURITY, AUTH, RATE_LIMIT, HTTP_STATUS } = require('../config');
 
@@ -155,7 +155,7 @@ const loginAttempts = new Map();
  * @returns {Object} Lock status
  */
 function checkAccountLock(username) {
-    const attempts = loginAttempts.get(username);
+    const attempts = loginAttempts.get(username.toLowerCase());
     if (!attempts) return { locked: false, attempts: 0 };
     
     if (attempts.count >= MAX_LOGIN_ATTEMPTS) {
@@ -167,9 +167,9 @@ function checkAccountLock(username) {
             };
         }
         // Lock expired, reset
-        loginAttempts.delete(username);
+        loginAttempts.delete(username.toLowerCase());
     }
-    
+
     return { locked: false, attempts: attempts.count };
 }
 
@@ -178,8 +178,9 @@ function checkAccountLock(username) {
  * @param {string} username - Username that failed
  */
 function recordFailedAttempt(username) {
-    const current = loginAttempts.get(username) || { count: 0, lastAttempt: 0 };
-    loginAttempts.set(username, {
+    const key = username.toLowerCase();
+    const current = loginAttempts.get(key) || { count: 0, lastAttempt: 0 };
+    loginAttempts.set(key, {
         count: current.count + 1,
         lastAttempt: Date.now()
     });
@@ -190,7 +191,7 @@ function recordFailedAttempt(username) {
  * @param {string} username - Username to clear
  */
 function clearLoginAttempts(username) {
-    loginAttempts.delete(username);
+    loginAttempts.delete(username.toLowerCase());
 }
 
 // ============================================
@@ -419,14 +420,19 @@ router.post('/refresh', authenticate, authLimiter, (req, res) => {
         if (!user) {
             return res.status(404).json({ error: 'User not found' });
         }
-        
+
+        // Revoke the old token before issuing a new one
+        if (req.token) {
+            revokeToken(req.token);
+        }
+
         const token = generateToken(user);
         setTokenCookie(res, token);
-        
-        res.json({ 
+
+        res.json({
             success: true,
             message: 'Token refreshed',
-            token 
+            token
         });
     } catch (err) {
         console.error('[auth/refresh] Error:', err.message);
@@ -487,11 +493,19 @@ router.post('/change-password', authenticate, authLimiter, async (req, res) => {
         db.prepare('UPDATE users SET password = ?, updatedAt = ? WHERE id = ?')
             .run(hashedPassword, new Date().toISOString(), user.id);
         
+        // Revoke all existing tokens — forces re-login on all devices
+        await revokeAllUserTokens(user.id);
+
         addLog(`Password changed for user: ${user.username}`, user.id, user.username);
-        
-        res.json({ 
+
+        // Issue a fresh token so the current session stays active
+        const newToken = generateToken(user);
+        setTokenCookie(res, newToken);
+
+        res.json({
             success: true,
-            message: 'Password changed successfully' 
+            message: 'Password changed successfully',
+            token: newToken
         });
         
     } catch (err) {

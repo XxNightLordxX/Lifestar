@@ -368,6 +368,29 @@ app.get('/api/config/server',
 
 const staticRoot = path.join(__dirname, '..');
 
+// Block access to sensitive files and directories
+app.use((req, res, next) => {
+    const lowerPath = req.path.toLowerCase();
+    // Block server source code, database files, config, env, and package files
+    if (
+        lowerPath.startsWith('/server/') ||
+        lowerPath.startsWith('/server') && lowerPath === '/server' ||
+        lowerPath.endsWith('.db') ||
+        lowerPath.endsWith('.db-journal') ||
+        lowerPath.endsWith('.db-wal') ||
+        lowerPath === '/.env' ||
+        lowerPath.startsWith('/.env.') ||
+        lowerPath === '/package.json' ||
+        lowerPath === '/package-lock.json' ||
+        lowerPath === '/.gitignore' ||
+        lowerPath.startsWith('/.git/') ||
+        lowerPath.startsWith('/node_modules/')
+    ) {
+        return res.status(404).json({ error: 'Not found' });
+    }
+    next();
+});
+
 // Static file serving with caching
 app.use(express.static(staticRoot, {
     index: 'index.html',

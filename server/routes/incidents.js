@@ -351,7 +351,7 @@ router.patch('/:id', authenticate, async (req, res) => {
         fields.push("updatedAt = datetime('now')");
         values.push(id);
 
-        db.prepare(`UPDATE incident_reports SET ${fields.join(', ')} WHERE id = ?`).run(values);
+        db.prepare(`UPDATE incident_reports SET ${fields.join(', ')} WHERE id = ?`).run(...values);
 
         const updated = db.prepare('SELECT * FROM incident_reports WHERE id = ?').get(id);
         addLog(`Incident #${id} updated by ${req.user.username}`, req.user.id, req.user.username);

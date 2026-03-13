@@ -14,7 +14,7 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const { getDb, addLog } = require('../db/database');
-const { authenticate, authorize } = require('../middleware/auth');
+const { authenticate, authorize, revokeAllUserTokens } = require('../middleware/auth');
 const rateLimit = require('express-rate-limit');
 const { SECURITY, AUTH, RATE_LIMIT, HTTP_STATUS } = require('../config');
 
@@ -595,7 +595,12 @@ router.put('/:id', authenticate, authorize('super'), updateLimiter, async (req, 
         const updateValues = [...Object.values(updates), id];
         
         db.prepare(updateQuery).run(...updateValues);
-        
+
+        // If role or active status changed, revoke all tokens so user must re-login with fresh JWT
+        if (updates.role !== undefined || updates.active !== undefined) {
+            await revokeAllUserTokens(id);
+        }
+
         // Log the action
         await addLog(`User updated: ${updates.username || user.username}`, req.user.id, req.user.username);
         

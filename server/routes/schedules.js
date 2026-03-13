@@ -932,7 +932,7 @@ router.put('/:id', authenticate, authorize('super', 'boss'), updateLimiter, asyn
         }
         
         // Build update query with column whitelist
-        const validScheduleCols = new Set(['name', 'description', 'status', 'locationId', 'totalHours', 'publishedAt']);
+        const validScheduleCols = new Set(['name', 'description', 'status', 'locationId', 'totalHours', 'publishedAt', 'month', 'year']);
         const setClauses = Object.keys(updates).filter(k => validScheduleCols.has(k)).map(key => `${key} = ?`);
         setClauses.push("updatedAt = datetime('now')");
         const safeValues = Object.keys(updates).filter(k => validScheduleCols.has(k)).map(k => updates[k]);
