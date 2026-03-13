@@ -1171,8 +1171,8 @@ function seedDefaults(conn) {
         const now = new Date().toISOString();
         
         const insert = conn.prepare(`
-            INSERT INTO users (username, password, fullName, role, phone, passwordChangedAt) 
-            VALUES (?, ?, ?, ?, ?, ?)
+            INSERT INTO users (username, password, fullName, role, phone, passwordChangedAt, mustChangePassword)
+            VALUES (?, ?, ?, ?, ?, ?, 1)
         `);
         
         insert.run('super', bcrypt.hashSync('super123', salt), 'Super Administrator', 'super', '555-0001', now);

@@ -141,14 +141,13 @@ app.use(helmet({
     originAgentCluster: true,
     permittedCrossDomainPolicies: { permittedPolicies: "none" },
     referrerPolicy: { policy: "strict-origin-when-cross-origin" },
-    xssFilter: true
+    xssFilter: false
 }));
 
 // Additional security headers
 app.use((req, res, next) => {
-    res.setHeader('X-Content-Type-Options', 'nosniff');
-    // X-Frame-Options controlled by CSP frame-ancestors (no DENY here)
-    res.setHeader('X-XSS-Protection', '1; mode=block');
+    // X-Content-Type-Options already set by helmet (noSniff: true)
+    // X-Frame-Options controlled by CSP frame-ancestors
     res.removeHeader('X-Powered-By');
     next();
 });
