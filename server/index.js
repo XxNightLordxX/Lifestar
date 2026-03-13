@@ -110,9 +110,16 @@ const cspDirectives = {
     formAction: ["'self'"],
     objectSrc: ["'none'"],
     frameSrc: ["'none'"],
-    frameAncestors: ["'none'"],
-    // Only enforce HTTPS upgrade in production
-    ...(CONSTANTS.NODE_ENV === 'production' ? { upgradeInsecureRequests: [] } : {})
+    frameAncestors: [
+        "'self'",
+        "https://*.super.myninja.ai",
+        "https://*.app.super.myninja.ai"
+    ],
+    // Only enforce HTTPS upgrade in production — in development this would break
+    // all API calls by upgrading http://localhost to https://localhost (no cert)
+    ...(CONSTANTS.NODE_ENV === 'production'
+        ? { upgradeInsecureRequests: [] }
+        : { upgradeInsecureRequests: null })
 };
 
 app.use(helmet({
@@ -120,9 +127,9 @@ app.use(helmet({
         directives: cspDirectives
     },
     crossOriginEmbedderPolicy: false,
-    crossOriginResourcePolicy: { policy: "same-origin" },
+    crossOriginResourcePolicy: { policy: "cross-origin" },
     dnsPrefetchControl: { allow: false },
-    frameguard: { action: 'deny' },
+    frameguard: false, // Controlled by CSP frame-ancestors instead
     hidePoweredBy: true,
     hsts: {
         maxAge: 31536000,
@@ -140,7 +147,7 @@ app.use(helmet({
 // Additional security headers
 app.use((req, res, next) => {
     res.setHeader('X-Content-Type-Options', 'nosniff');
-    res.setHeader('X-Frame-Options', 'DENY');
+    // X-Frame-Options controlled by CSP frame-ancestors (no DENY here)
     res.setHeader('X-XSS-Protection', '1; mode=block');
     res.removeHeader('X-Powered-By');
     next();

@@ -224,6 +224,43 @@ async function handleLogin(e) {
             return;
         }
 
+        // If server bridge is available and active, delegate to server API directly.
+        // This avoids a race where localStorage has users without passwords (synced from
+        // the server) and local comparison always fails (undefined !== 'super123').
+        if (typeof ServerBridge !== 'undefined' && ServerBridge.isServerMode) {
+            try {
+                const r = await ServerBridge.fetch('POST', '/auth/login', { username, password });
+                if (r.ok && r.data && r.data.user) {
+                    currentUser = {
+                        id:          r.data.user.id,
+                        username:    r.data.user.username,
+                        fullName:    r.data.user.fullName,
+                        role:        r.data.user.role,
+                        phone:       r.data.user.phone || '',
+                        hoursWorked: r.data.user.hoursWorked || 0,
+                        bonusHours:  r.data.user.bonusHours  || 0,
+                        locationId:  r.data.user.locationId  || null,
+                        active:      true
+                    };
+                    localStorage.setItem('lifestarCurrentUser', JSON.stringify(currentUser));
+                    if (typeof ServerBridge.refreshData === 'function') await ServerBridge.refreshData();
+                    addSystemLog('User logged in: ' + username);
+                    setLoginLoading && setLoginLoading(false);
+                    showDashboard();
+                } else {
+                    setLoginLoading && setLoginLoading(false);
+                    const msg = (r.data && (r.data.message || r.data.error)) || 'Invalid username or password';
+                    showAlert(msg, 'danger', 'loginAlert');
+                }
+                return;
+            } catch (serverErr) {
+                Logger.warn('[handleLogin] Server login failed, falling back to local:', serverErr.message);
+                // Fall through to local auth below
+            }
+        }
+
+        // ── Local authentication (localStorage / offline mode) ──
+
         // Find user by username (case-insensitive)
         const user = users.find(u => (u.username || '').toLowerCase() === username);
 
@@ -237,6 +274,13 @@ async function handleLogin(e) {
         if(user.active === false) {
             setLoginLoading && setLoginLoading(false);
             showAlert('This account has been deactivated. Please contact your administrator.', 'danger', 'loginAlert');
+            return;
+        }
+
+        // If user has no password field (e.g. synced from server), cannot do local auth
+        if (!user.password) {
+            setLoginLoading && setLoginLoading(false);
+            showAlert('Cannot verify credentials offline. Please ensure the server is running.', 'danger', 'loginAlert');
             return;
         }
 
@@ -2225,8 +2269,10 @@ function loadSampleData() {
     const lastMonth     = MONTHS[lastMonthIdx];
     const lastMonthYear = now.getMonth() === 0 ? String(now.getFullYear() - 1) : thisYear;
 
-    // Check if data already exists
-    if(users.length === 0) {
+    // Check if data already exists — also re-seed if existing users lack passwords
+    // (happens when server-bridge syncs users without password fields to localStorage)
+    const needsReseed = users.length === 0 || users.every(u => !u.password);
+    if(needsReseed) {
         // Create default users — active:true is required for session restore
         users = [
             { id: 1, username: 'super',      password: 'super123',     fullName: 'Super Administrator', role: 'super',              phone: '555-0001', hoursWorked: 0,  bonusHours: 0, active: true, createdAt: now.toISOString() },
