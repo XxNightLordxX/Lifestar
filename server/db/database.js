@@ -977,23 +977,28 @@ function initializeDatabase() {
     // Incident reports
     conn.exec(`
         CREATE TABLE IF NOT EXISTS incident_reports (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            title TEXT NOT NULL,
-            description TEXT DEFAULT '',
-            type TEXT DEFAULT 'other' CHECK(type IN ('patient-care','vehicle','workplace','equipment','other')),
-            priority TEXT DEFAULT 'medium' CHECK(priority IN ('low','medium','high','critical')),
-            status TEXT DEFAULT 'open' CHECK(status IN ('open','under-review','resolved','closed')),
-            reportedBy INTEGER,
-            assignedTo INTEGER,
-            locationId INTEGER,
-            resolvedAt TEXT,
-            resolvedNotes TEXT DEFAULT '',
-            createdAt TEXT DEFAULT (datetime('now')),
-            updatedAt TEXT DEFAULT (datetime('now')),
-            FOREIGN KEY (reportedBy) REFERENCES users(id) ON DELETE SET NULL,
-            FOREIGN KEY (assignedTo) REFERENCES users(id) ON DELETE SET NULL,
-            FOREIGN KEY (locationId) REFERENCES locations(id) ON DELETE SET NULL
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            title       TEXT    NOT NULL,
+            type        TEXT    NOT NULL CHECK(type IN ('patient-care','vehicle','workplace','equipment','other')),
+            priority    TEXT    NOT NULL DEFAULT 'medium'
+                                CHECK(priority IN ('low','medium','high','critical')),
+            status      TEXT    NOT NULL DEFAULT 'open'
+                                CHECK(status IN ('open','under-review','resolved','closed')),
+            description TEXT    NOT NULL DEFAULT '',
+            location    TEXT    DEFAULT '',
+            involvedStaff TEXT  DEFAULT '[]',
+            reportedBy  INTEGER NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+            assignedTo  INTEGER REFERENCES users(id) ON DELETE SET NULL,
+            resolvedAt  TEXT,
+            createdAt   TEXT    DEFAULT (datetime('now')),
+            updatedAt   TEXT    DEFAULT (datetime('now'))
         )
+    `);
+    conn.exec(`
+        CREATE INDEX IF NOT EXISTS idx_incidents_reportedBy ON incident_reports(reportedBy);
+        CREATE INDEX IF NOT EXISTS idx_incidents_status     ON incident_reports(status);
+        CREATE INDEX IF NOT EXISTS idx_incidents_priority   ON incident_reports(priority);
+        CREATE INDEX IF NOT EXISTS idx_incidents_createdAt  ON incident_reports(createdAt);
     `);
 
     // Shift swap requests

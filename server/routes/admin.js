@@ -56,10 +56,10 @@ router.post('/reset', async (req, res) => {
             const superExists = db.prepare(`SELECT id FROM users WHERE username = 'super'`).get();
             if (superExists) {
                 db.prepare(`UPDATE users SET password = ?, fullName = 'Super Administrator', phone = '555-0001',
-                    active = 1, failedLoginAttempts = 0, lockedUntil = NULL WHERE username = 'super'`)
+                    active = 1, failedLoginAttempts = 0, lockedUntil = NULL, mustChangePassword = 1 WHERE username = 'super'`)
                     .run(superHash);
             } else {
-                db.prepare(`INSERT INTO users (username, password, fullName, role, phone) VALUES (?, ?, ?, 'super', '555-0001')`)
+                db.prepare(`INSERT INTO users (username, password, fullName, role, phone, mustChangePassword) VALUES (?, ?, ?, 'super', '555-0001', 1)`)
                     .run('super', superHash, 'Super Administrator');
             }
 
@@ -67,10 +67,10 @@ router.post('/reset', async (req, res) => {
             const bossExists = db.prepare(`SELECT id FROM users WHERE username = 'boss'`).get();
             if (bossExists) {
                 db.prepare(`UPDATE users SET password = ?, fullName = 'Station Manager', phone = '555-0002',
-                    active = 1, failedLoginAttempts = 0, lockedUntil = NULL WHERE username = 'boss'`)
+                    active = 1, failedLoginAttempts = 0, lockedUntil = NULL, mustChangePassword = 1 WHERE username = 'boss'`)
                     .run(bossHash);
             } else {
-                db.prepare(`INSERT INTO users (username, password, fullName, role, phone) VALUES (?, ?, ?, 'boss', '555-0002')`)
+                db.prepare(`INSERT INTO users (username, password, fullName, role, phone, mustChangePassword) VALUES (?, ?, ?, 'boss', '555-0002', 1)`)
                     .run('boss', bossHash, 'Station Manager');
             }
         })();
