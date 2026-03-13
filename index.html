@@ -2099,8 +2099,8 @@
                                 </div>
                             </div>
                             <div class="form-group">
-                                <label>Preferred Days Off</label>
-                                <select class="form-select" multiple>
+                                <label for="paramedicDaysOff">Preferred Days Off</label>
+                                <select id="paramedicDaysOff" name="paramedicDaysOff" class="form-select" multiple>
                                     <option value="Sunday">Sunday</option>
                                     <option value="Monday">Monday</option>
                                     <option value="Tuesday">Tuesday</option>
@@ -2111,8 +2111,8 @@
                                 </select>
                             </div>
                             <div class="form-group">
-                                <label>Additional Notes</label>
-                                <textarea class="form-input" rows="3" placeholder="Any availability restrictions or preferences..."></textarea>
+                                <label for="paramedicAvailNotes">Additional Notes</label>
+                                <textarea id="paramedicAvailNotes" name="paramedicAvailNotes" class="form-input" rows="3" placeholder="Any availability restrictions or preferences..."></textarea>
                             </div>
                             <button type="submit" class="btn btn-primary">Save Availability</button>
                         </form>
@@ -2157,6 +2157,13 @@
                     <h1>Request Shift Trade</h1>
                 </div>
                 <div class="card"><div class="card-body"><p>Shift trade request coming soon</p></div></div>
+            </div>
+
+            <div id="paramedicSwap" class="paramedic-section hidden">
+                <div class="header">
+                    <h1>Swap Marketplace</h1>
+                </div>
+                <div id="paramedicSwapContainer" class="card"><div class="card-body"><p>Browse and accept available shift swaps.</p></div></div>
             </div>
 
             <div id="paramedicCrews" class="paramedic-section hidden">
@@ -2398,8 +2405,8 @@
                                 </div>
                             </div>
                             <div class="form-group">
-                                <label>Preferred Days Off</label>
-                                <select class="form-select" multiple>
+                                <label for="emtDaysOff">Preferred Days Off</label>
+                                <select id="emtDaysOff" name="emtDaysOff" class="form-select" multiple>
                                     <option value="Sunday">Sunday</option>
                                     <option value="Monday">Monday</option>
                                     <option value="Tuesday">Tuesday</option>
@@ -2410,8 +2417,8 @@
                                 </select>
                             </div>
                             <div class="form-group">
-                                <label>Additional Notes</label>
-                                <textarea class="form-input" rows="3" placeholder="Any availability restrictions or preferences..."></textarea>
+                                <label for="emtAvailNotes">Additional Notes</label>
+                                <textarea id="emtAvailNotes" name="emtAvailNotes" class="form-input" rows="3" placeholder="Any availability restrictions or preferences..."></textarea>
                             </div>
                             <button type="submit" class="btn btn-primary">Save Availability</button>
                         </form>
@@ -2456,6 +2463,13 @@
                     <h1>Request Shift Trade</h1>
                 </div>
                 <div class="card"><div class="card-body"><p>Shift trade request coming soon</p></div></div>
+            </div>
+
+            <div id="emtSwap" class="emt-section hidden">
+                <div class="header">
+                    <h1>Swap Marketplace</h1>
+                </div>
+                <div id="emtSwapContainer" class="card"><div class="card-body"><p>Browse and accept available shift swaps.</p></div></div>
             </div>
 
             <div id="emtCrews" class="emt-section hidden">
