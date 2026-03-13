@@ -431,6 +431,8 @@ const TimeValidation = {
         const [startH, startM] = startTime.split(':').map(Number);
         const [endH, endM] = endTime.split(':').map(Number);
 
+        if (isNaN(startH) || isNaN(startM) || isNaN(endH) || isNaN(endM)) return 0;
+
         let hours = endH - startH;
         let minutes = endM - startM;
 
@@ -538,12 +540,13 @@ const FormValidator = {
                 }
                 break;
 
-            case 'match':
+            case 'match': {
                 const matchValue = formData.get(rule.field);
                 if (value !== matchValue) {
                     return { valid: false, message: rule.message || 'Fields do not match' };
                 }
                 break;
+            }
 
             case 'pattern':
                 if (value && !rule.regex.test(value)) {

@@ -634,7 +634,16 @@
                     });
                 });
 
-                observer.observe(document.body, { childList: true, subtree: true });
+                // Observe alert/toast containers rather than entire DOM
+                const alertContainer = document.getElementById('alert-container');
+                const toastContainer = document.getElementById('toast-container');
+                if (alertContainer) observer.observe(alertContainer, { childList: true });
+                if (toastContainer) observer.observe(toastContainer, { childList: true });
+                // Fallback to body if containers not found yet
+                if (!alertContainer && !toastContainer) {
+                    observer.observe(document.body, { childList: true, subtree: true });
+                }
+                this._mutationObserver = observer;
             }
         },
 

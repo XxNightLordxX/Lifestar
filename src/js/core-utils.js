@@ -166,7 +166,7 @@ const DOMUtils = {
     setHTML(element, html) {
         const el = typeof element === 'string' ? this.getById(element, false) : element;
         if (el) {
-            el.textContent = typeof sanitizeHTML === 'function' ? sanitizeHTML(html) : html;
+            el.innerHTML = typeof sanitizeHTML === 'function' ? sanitizeHTML(html) : html;
         }
     },
 
@@ -309,6 +309,9 @@ const DateUtils = {
             return d.toISOString();
         }
 
+        if (format === 'time' || format === 'military') {
+            return d.toLocaleTimeString('en-US', formats[format]);
+        }
         return d.toLocaleDateString('en-US', formats[format] || formats.short);
     },
 
@@ -402,7 +405,7 @@ const StringUtils = {
      * Capitalize first letter
      */
     capitalize(str) {
-        return str ? str.charAt(0).toUpperCase() + str.slice(1).toLowerCase() : '';
+        return str ? str.charAt(0).toUpperCase() + str.slice(1) : '';
     },
 
     /**
@@ -764,7 +767,14 @@ const safeJSONParse = (json, fallback = null) => {
         return fallback;
     }
 };
-const safeJSONStringify = (data, fallback = '{}') => JSON.stringify(data);
+const safeJSONStringify = (data, fallback = '{}') => {
+    try {
+        const result = JSON.stringify(data);
+        return result !== undefined ? result : fallback;
+    } catch (e) {
+        return fallback;
+    }
+};
 const getStorageItem = (key, fallback = null) => StorageUtils.get(key, fallback);
 const setStorageItem = (key, value) => StorageUtils.set(key, value);
 const removeStorageItem = (key) => StorageUtils.remove(key);

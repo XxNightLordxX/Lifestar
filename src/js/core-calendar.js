@@ -66,7 +66,7 @@
             const { currentView, currentDate } = CalendarState;
 
             if (currentView === 'month') {
-                currentDate.setMonth(currentDate.getMonth() + direction);
+                CalendarState.currentDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + direction, 1);
             } else if (currentView === 'week') {
                 currentDate.setDate(currentDate.getDate() + (direction * 7));
             } else {
@@ -99,7 +99,7 @@
 
             // Get schedule data
             const schedules = JSON.parse(localStorage.getItem('lifestarSchedules') || '[]');
-            const schedule = schedules.find(s => s.id === CalendarState.currentScheduleId);
+            const schedule = schedules.find(s => String(s.id) === String(CalendarState.currentScheduleId));
 
             const { currentView } = CalendarState;
 
@@ -408,7 +408,7 @@
          * Change month
          */
         changeMonth(direction) {
-            this.currentDate.setMonth(this.currentDate.getMonth() + direction);
+            this.currentDate = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth() + direction, 1);
             this.load();
         },
 
@@ -426,8 +426,15 @@
     // ============================================
     // INITIALIZE
     // ============================================
-    EnhancedCalendar.init();
-    StaffAvailabilityCalendar.init();
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+            EnhancedCalendar.init();
+            StaffAvailabilityCalendar.init();
+        });
+    } else {
+        EnhancedCalendar.init();
+        StaffAvailabilityCalendar.init();
+    }
 
     // ============================================
     // EXPOSE TO GLOBAL SCOPE

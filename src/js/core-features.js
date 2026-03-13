@@ -693,15 +693,15 @@
     window.AnalyticsManager = AnalyticsManager;
     window.initializeFeatures = initializeFeatures;
 
-    // Backward compatibility aliases
-    window.crewTemplates = FeatureState.crewTemplates;
-    window.shiftTrades = FeatureState.shiftTrades;
-    window.swapListings = FeatureState.swapListings;
-    window.trainingRecords = FeatureState.trainingRecords;
-    window.bonusHours = FeatureState.bonusHours;
-    window.emergencyCallins = FeatureState.emergencyCallins;
-    window.absences = FeatureState.absences;
-    window.oncallRotations = FeatureState.oncallRotations;
+    // Backward compatibility aliases (use getters to track reassignment)
+    Object.defineProperty(window, 'crewTemplates', { get: () => FeatureState.crewTemplates, configurable: true });
+    Object.defineProperty(window, 'shiftTrades', { get: () => FeatureState.shiftTrades, configurable: true });
+    Object.defineProperty(window, 'swapListings', { get: () => FeatureState.swapListings, configurable: true });
+    Object.defineProperty(window, 'trainingRecords', { get: () => FeatureState.trainingRecords, configurable: true });
+    Object.defineProperty(window, 'bonusHours', { get: () => FeatureState.bonusHours, configurable: true });
+    Object.defineProperty(window, 'emergencyCallins', { get: () => FeatureState.emergencyCallins, configurable: true });
+    Object.defineProperty(window, 'absences', { get: () => FeatureState.absences, configurable: true });
+    Object.defineProperty(window, 'oncallRotations', { get: () => FeatureState.oncallRotations, configurable: true });
 
     // Legacy function aliases
     window.loadCrewTemplates = () => CrewManager.load();
@@ -716,6 +716,8 @@
     // Auto-initialize when DOM is ready
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', initializeFeatures);
+    } else {
+        initializeFeatures();
     }
 
     Logger.debug('✅ Core Features Module loaded');

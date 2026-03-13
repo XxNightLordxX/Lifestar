@@ -323,6 +323,10 @@
 
             // Generate HTML for print
             const printWindow = window.open('', '_blank');
+            if (!printWindow) {
+                if (typeof showToast === 'function') showToast('Popup blocked. Please allow popups for this site.', 'error');
+                return;
+            }
             let html = `
                 <!DOCTYPE html>
                 <html>
@@ -424,7 +428,7 @@
             const headers = Object.keys(data[0]);
             const csv = [
                 headers.join(','),
-                ...data.map(row => headers.map(h => `"${row[h] || ''}"`).join(','))
+                ...data.map(row => headers.map(h => `"${String(row[h] || '').replace(/"/g, '""')}"`).join(','))
             ].join('\n');
 
             // Download
@@ -464,6 +468,10 @@
 
             // Generate report
             const printWindow = window.open('', '_blank');
+            if (!printWindow) {
+                if (typeof showToast === 'function') showToast('Popup blocked. Please allow popups for this site.', 'error');
+                return;
+            }
             let html = `
                 <!DOCTYPE html>
                 <html>
@@ -514,7 +522,7 @@
     // EXPOSE TO GLOBAL SCOPE
     // ============================================
     window.AnalyticsState = AnalyticsState;
-    window.AnalyticsManager = AnalyticsManager;
+    window.ChartAnalyticsManager = AnalyticsManager;
     window.DataVisualization = DataVisualization;
     window.ExportReports = ExportReports;
 

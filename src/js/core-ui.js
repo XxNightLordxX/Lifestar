@@ -101,10 +101,12 @@ const ModalManager = (function() {
     }
 
     function trapFocus(modal) {
+        if (modal._focusTrapInstalled) return;
+        modal._focusTrapInstalled = true;
         const focusableElements = modal.querySelectorAll(
             'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
         );
-        
+
         if (focusableElements.length === 0) return;
 
         const firstFocusable = focusableElements[0];
@@ -184,7 +186,7 @@ const AlertManager = (function() {
         
         const escapedMessage = typeof sanitizeHTML === 'function' ? sanitizeHTML(message) : message.replace(/[&<>"']/g, function(c) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; });
         alert.innerHTML = `
-            <span class="alert-icon" aria-hidden="true">${icon || typeConfig.icon}</span>
+            <span class="alert-icon" aria-hidden="true">${typeof sanitizeHTML === 'function' ? sanitizeHTML(icon || typeConfig.icon) : (icon || typeConfig.icon)}</span>
             <span class="alert-message">${escapedMessage}</span>
             ${dismissible ? '<button class="alert-close" aria-label="Close">×</button>' : ''}
         `;
@@ -335,17 +337,18 @@ const ConfirmDialog = (function() {
             dialog.setAttribute('aria-labelledby', `${dialogId}-title`);
             dialog.setAttribute('aria-describedby', `${dialogId}-message`);
 
+            const _esc = (s) => typeof sanitizeHTML === 'function' ? sanitizeHTML(s) : String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
             dialog.innerHTML = `
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h3 id="${dialogId}-title">${title}</h3>
+                        <h3 id="${dialogId}-title">${_esc(title)}</h3>
                     </div>
                     <div class="modal-body">
-                        <p id="${dialogId}-message">${message}</p>
+                        <p id="${dialogId}-message">${_esc(message)}</p>
                     </div>
                     <div class="modal-footer">
-                        <button class="btn btn-secondary" data-action="cancel">${cancelText}</button>
-                        <button class="btn ${confirmClass}" data-action="confirm">${confirmText}</button>
+                        <button class="btn btn-secondary" data-action="cancel">${_esc(cancelText)}</button>
+                        <button class="btn ${confirmClass}" data-action="confirm">${_esc(confirmText)}</button>
                     </div>
                 </div>
             `;
@@ -427,7 +430,7 @@ const LoadingManager = (function() {
         element.classList.add('loading');
         
         if (message) {
-            element.innerHTML = `<span class="loading-spinner-small"></span> ${message}`;
+            element.innerHTML = `<span class="loading-spinner-small"></span> ${typeof sanitizeHTML === 'function' ? sanitizeHTML(message) : String(message).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])}`;
         }
 
         return element;
@@ -571,7 +574,7 @@ const TabManager = (function() {
     }
 
     function handleKeyNavigation(e) {
-        const tabList = e.target.closest('.tab-list');
+        const tabList = e.target.closest('.tab-list, .tab-container');
         if (!tabList) return;
         const tabs = Array.from(tabList.querySelectorAll('.tab-button'));
         const currentIndex = tabs.indexOf(e.target);
@@ -702,10 +705,6 @@ if (typeof module !== 'undefined' && module.exports) {
         DropdownManager,
         TabManager,
         TableUtils,
-        showModal,
-        closeModal,
-        openModal,
-        showAlert,
         showLoading,
         hideLoading
     };
