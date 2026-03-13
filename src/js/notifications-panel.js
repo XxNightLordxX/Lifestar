@@ -193,8 +193,20 @@ const NotificationsPanel = (function () {
     }
 
     function _startPolling() {
+        _stopPolling();                       // clear any previous timer
         _poll();
-        _pollTimer = setInterval(_poll, POLL_MS);
+        if (typeof MemoryManager !== 'undefined' && MemoryManager.setInterval) {
+            _pollTimer = MemoryManager.setInterval(_poll, POLL_MS, 'notifications-poll');
+        } else {
+            _pollTimer = setInterval(_poll, POLL_MS);
+        }
+    }
+
+    function _stopPolling() {
+        if (_pollTimer !== null) {
+            clearInterval(_pollTimer);
+            _pollTimer = null;
+        }
     }
 
     // ─── RECEIVE LOCAL NOTIFICATIONS ─────────────────────────────────────────
@@ -256,9 +268,17 @@ const NotificationsPanel = (function () {
                 _startPolling();
             }
         }, 2000);
+
+        // Clean up polling timer on page unload to prevent leaks
+        window.addEventListener('beforeunload', _stopPolling);
     }
 
-    return { init, push, markRead, markAllRead };
+    function destroy() {
+        _stopPolling();
+        window.removeEventListener('beforeunload', _stopPolling);
+    }
+
+    return { init, push, markRead, markAllRead, destroy };
 
 })();
 

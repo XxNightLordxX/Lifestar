@@ -63,7 +63,7 @@ function ensureIncidentsTable() {
                 description TEXT    NOT NULL,
                 location    TEXT    DEFAULT '',
                 involvedStaff TEXT  DEFAULT '[]',
-                reportedBy  INTEGER NOT NULL REFERENCES users(id) ON DELETE SET NULL,
+                reportedBy  INTEGER NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
                 assignedTo  INTEGER REFERENCES users(id) ON DELETE SET NULL,
                 resolvedAt  TEXT,
                 createdAt   TEXT    DEFAULT (datetime('now')),

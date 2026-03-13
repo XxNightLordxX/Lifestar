@@ -144,16 +144,16 @@ const VoiceCommands = (function() {
 
         // "dark mode" / "light mode"
         if (text.indexOf('dark mode') !== -1 || text.indexOf('dark theme') !== -1) {
-            if (typeof DarkMode !== 'undefined' && typeof DarkMode.enable === 'function') {
-                DarkMode.enable();
-                showFeedback('✅ Dark mode enabled');
+            if (typeof DarkMode !== 'undefined' && typeof DarkMode.setTheme === 'function') {
+                DarkMode.setTheme('dark');
+                showFeedback('Dark mode enabled');
             }
             return;
         }
         if (text.indexOf('light mode') !== -1 || text.indexOf('light theme') !== -1) {
-            if (typeof DarkMode !== 'undefined' && typeof DarkMode.disable === 'function') {
-                DarkMode.disable();
-                showFeedback('✅ Light mode enabled');
+            if (typeof DarkMode !== 'undefined' && typeof DarkMode.setTheme === 'function') {
+                DarkMode.setTheme('light');
+                showFeedback('Light mode enabled');
             }
             return;
         }

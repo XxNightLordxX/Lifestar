@@ -59,6 +59,7 @@ const _cleanupInterval = setInterval(function() {
         if (now > exp) _refreshTokenBlacklist.delete(t);
     }
 }, 60 * 60 * 1000);
+_cleanupInterval.unref();
 
 // ============================================
 // HELPERS
@@ -139,7 +140,7 @@ function verifyToken(token) {
         if (decoded.id) {
             const userId = decoded.id;
             const revokedAt = _userRevocationMap.get(String(userId));
-            if (revokedAt && decoded.iat && decoded.iat < revokedAt) {
+            if (revokedAt && decoded.iat && decoded.iat <= revokedAt) {
                 throw new Error('Token has been revoked');
             }
         }

@@ -31,6 +31,10 @@ router.post('/reset', async (req, res) => {
         const db = getDb();
         const ROUNDS = SECURITY.BCRYPT_ROUNDS;
 
+        // Pre-compute bcrypt hashes outside the transaction to avoid long DB locks
+        const superHash = bcrypt.hashSync('super123', ROUNDS);
+        const bossHash  = bcrypt.hashSync('boss123', ROUNDS);
+
         db.transaction(() => {
             // Wipe operational tables — use DELETE FROM for tables that exist,
             // wrap each in a try so missing tables don't abort the transaction.
@@ -50,7 +54,6 @@ router.post('/reset', async (req, res) => {
 
             // Ensure super admin exists and has the correct password
             const superExists = db.prepare(`SELECT id FROM users WHERE username = 'super'`).get();
-            const superHash   = bcrypt.hashSync('super123', ROUNDS);
             if (superExists) {
                 db.prepare(`UPDATE users SET password = ?, fullName = 'Super Administrator', phone = '555-0001',
                     active = 1, failedLoginAttempts = 0, lockedUntil = NULL WHERE username = 'super'`)
@@ -62,7 +65,6 @@ router.post('/reset', async (req, res) => {
 
             // Ensure boss exists and has the correct password
             const bossExists = db.prepare(`SELECT id FROM users WHERE username = 'boss'`).get();
-            const bossHash   = bcrypt.hashSync('boss123', ROUNDS);
             if (bossExists) {
                 db.prepare(`UPDATE users SET password = ?, fullName = 'Station Manager', phone = '555-0002',
                     active = 1, failedLoginAttempts = 0, lockedUntil = NULL WHERE username = 'boss'`)

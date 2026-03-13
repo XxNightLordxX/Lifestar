@@ -237,13 +237,4 @@ const UndoRedoManager = {
     }
 };
 
-// Keyboard shortcuts: Ctrl+Z = Undo, Ctrl+Shift+Z / Ctrl+Y = Redo
-document.addEventListener('keydown', function(e) {
-    if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
-        e.preventDefault();
-        UndoRedoManager.undo();
-    } else if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
-        e.preventDefault();
-        UndoRedoManager.redo();
-    }
-});
+// Keyboard shortcuts handled by mechanics-improvements.js to avoid duplicate listeners

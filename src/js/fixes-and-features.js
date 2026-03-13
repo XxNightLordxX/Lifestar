@@ -7,6 +7,8 @@
  *    (When I Work, Deputy, Sling, AMR SmartForce, EMS Manager)
  */
 
+let _cloneIdCounter = 0;
+
 // ============================================================
 // SECTION 1 — CRITICAL MISSING FUNCTIONS (from _archived)
 // ============================================================
@@ -384,7 +386,7 @@ function duplicateSchedule(scheduleId) {
                     newDate = newD.toISOString().split('T')[0];
                 }
             }
-            return { ...c, id: Date.now() + Math.random(), date: newDate };
+            return { ...c, id: Date.now() + (++_cloneIdCounter), date: newDate };
         });
 
         const newSchedule = {

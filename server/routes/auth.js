@@ -254,7 +254,7 @@ router.post('/login', loginLimiter, async (req, res) => {
             recordFailedAttempt(usernameResult.value);
             
             // Delay to prevent timing attacks
-            await new Promise(resolve => setTimeout(resolve, minResponseTime - (Date.now() - startTime)));
+            await new Promise(resolve => setTimeout(resolve, Math.max(0, minResponseTime - (Date.now() - startTime))));
             
             return res.status(401).json({ 
                 error: 'Invalid credentials',
@@ -270,12 +270,11 @@ router.post('/login', loginLimiter, async (req, res) => {
             addLog(`Failed login attempt for user: ${usernameResult.value}`, null, usernameResult.value);
             
             // Delay to prevent timing attacks
-            await new Promise(resolve => setTimeout(resolve, minResponseTime - (Date.now() - startTime)));
+            await new Promise(resolve => setTimeout(resolve, Math.max(0, minResponseTime - (Date.now() - startTime))));
             
-            return res.status(401).json({ 
+            return res.status(401).json({
                 error: 'Invalid credentials',
-                message: 'Username or password is incorrect',
-                attemptsRemaining: MAX_LOGIN_ATTEMPTS - (loginAttempts.get(usernameResult.value)?.count || 0)
+                message: 'Username or password is incorrect. Account will lock after multiple failures.'
             });
         }
         

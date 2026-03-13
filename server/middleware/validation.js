@@ -41,13 +41,13 @@ const CONSTANTS = {
     
     // XSS patterns
     XSS_PATTERNS: [
-        /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,
-        /javascript:/gi,
-        /on\w+\s*=/gi,
-        /<iframe/gi,
-        /<object/gi,
-        /<embed/gi,
-        /<img[^>]+onerror/gi
+        /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/i,
+        /javascript:/i,
+        /on\w+\s*=/i,
+        /<iframe/i,
+        /<object/i,
+        /<embed/i,
+        /<img[^>]+onerror/i
     ],
     
     // HTTP Status codes
@@ -207,7 +207,7 @@ function validateType(field, value, type, rules = {}) {
             }
             break;
             
-        case 'date':
+        case 'date': {
             if (!CONSTANTS.PATTERNS.date.test(String(value))) {
                 return `${field} must be a valid date (YYYY-MM-DD)`;
             }
@@ -216,13 +216,15 @@ function validateType(field, value, type, rules = {}) {
                 return `${field} must be a valid date`;
             }
             break;
-            
-        case 'uuid':
+        }
+
+        case 'uuid': {
             const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
             if (!uuidPattern.test(String(value))) {
                 return `${field} must be a valid UUID`;
             }
             break;
+        }
     }
     
     return null;

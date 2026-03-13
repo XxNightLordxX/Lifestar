@@ -125,7 +125,7 @@
                 if(staffToAdd && staffToAdd.length > 0 && select.options.length <= 1) {
                     const currentVal = select.value;
                     const placeholder = select.options[0] ? select.options[0].textContent : 'Select';
-                    select.innerHTML = '<option value="">' + placeholder + '</option>';
+                    select.innerHTML = '<option value="">' + escapeHTML(placeholder) + '</option>';
                     staffToAdd.forEach(function(s) {
                         const opt = document.createElement('option');
                         opt.value = s.id;

@@ -99,8 +99,10 @@ router.patch('/:id', authenticate, authorize('super', 'boss'), (req, res) => {
         }
 
         const validColumns = new Set(['status', 'replacedBy']);
-        const setClauses = Object.keys(updates).filter(k => validColumns.has(k)).map(k => `${k} = ?`).join(', ');
-        db.prepare(`UPDATE emergency_callins SET ${setClauses} WHERE id = ?`).run(...Object.values(updates), id);
+        const entries = Object.entries(updates).filter(([k]) => validColumns.has(k));
+        const setClauses = entries.map(([k]) => `${k} = ?`).join(', ');
+        const values = entries.map(([, v]) => v);
+        db.prepare(`UPDATE emergency_callins SET ${setClauses} WHERE id = ?`).run(...values, id);
 
         addLog(`Call-in #${id} updated to ${status}`, req.user.id, req.user.username);
         res.json({ message: 'Call-in updated', callIn: db.prepare('SELECT * FROM emergency_callins WHERE id = ?').get(id) });

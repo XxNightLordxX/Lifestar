@@ -381,10 +381,9 @@ function doubleSubmitCsrf(options = {}) {
         
         // Timing-safe comparison
         try {
-            if (!crypto.timingSafeEqual(
-                Buffer.from(cookieToken),
-                Buffer.from(headerToken)
-            )) {
+            const cookieBuf = Buffer.from(cookieToken, 'utf8');
+            const headerBuf = Buffer.from(headerToken, 'utf8');
+            if (cookieBuf.length !== headerBuf.length || !crypto.timingSafeEqual(cookieBuf, headerBuf)) {
                 return res.status(CONSTANTS.HTTP_STATUS.FORBIDDEN).json({
                     error: 'Invalid CSRF token',
                     code: 'CSRF_INVALID'

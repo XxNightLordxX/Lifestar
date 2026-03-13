@@ -131,8 +131,10 @@ router.put('/:id', authenticate, authorize('super', 'boss'), writeLimiter, (req,
         }
 
         const validColumns = new Set(allowed);
-        const setClauses = Object.keys(updates).filter(k => validColumns.has(k)).map(k => `${k} = ?`).join(', ');
-        db.prepare(`UPDATE training_records SET ${setClauses} WHERE id = ?`).run(...Object.values(updates), id);
+        const entries = Object.entries(updates).filter(([k]) => validColumns.has(k));
+        const setClauses = entries.map(([k]) => `${k} = ?`).join(', ');
+        const values = entries.map(([, v]) => v);
+        db.prepare(`UPDATE training_records SET ${setClauses} WHERE id = ?`).run(...values, id);
 
         res.json({ record: db.prepare('SELECT * FROM training_records WHERE id = ?').get(id), message: 'Record updated' });
     } catch (err) {
