@@ -298,7 +298,7 @@ function formatCurrency(amount) {
  * @returns {string} HTML string
  */
 function generatePayrollSummaryCards(report) {
-    return `;
+    return `
         <div class="payroll-summary-cards">
             <div class="summary-card">
                 <h3>Total Payroll</h3>
@@ -325,7 +325,7 @@ function generatePayrollSummaryCards(report) {
  * @returns {string} HTML string
  */
 function generatePayrollHeader() {
-    return `;
+    return `
         <div class="payroll-header">
             <h2>Payroll Management</h2>
             <div class="payroll-controls">
@@ -347,7 +347,7 @@ function generatePayrollHeader() {
  * @returns {string} HTML string
  */
 function generatePayrollTableRow(record) {
-    return `;
+    return `
         <tr>
             <td>${record.employeeName}</td>
             <td>${record.regularHours.toFixed(1)}</td>
@@ -369,8 +369,8 @@ function generatePayrollTableRow(record) {
  */
 function generatePayrollTable(report) {
     const rows = report.records.map(generatePayrollTableRow).join('');
-    
-    return `;
+
+    return `
         <div class="payroll-table-container">
             <h3>Payroll Details - ${report.periodType.charAt(0).toUpperCase() + report.periodType.slice(1)} (${report.startDate} to ${report.endDate})</h3>
             <table class="payroll-table">

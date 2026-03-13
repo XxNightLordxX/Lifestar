@@ -266,11 +266,11 @@ router.get('/schedule-health', (req, res) => {
 
             // Check for crews with missing staff assignments
             const emptyCrews = db.prepare(`
-                SELECT id, crewName, shiftType, date
+                SELECT id, rig, shiftType, date
                 FROM crews
                 WHERE scheduleId = ?
-                  AND (employee1 IS NULL OR employee1 = '')
-                  AND (employee2 IS NULL OR employee2 = '')
+                  AND (paramedic IS NULL OR paramedic = '')
+                  AND (emt IS NULL OR emt = '')
             `).all(schedule.id);
 
             for (const crew of emptyCrews) {
@@ -279,16 +279,16 @@ router.get('/schedule-health', (req, res) => {
                     severity: 'high',
                     scheduleId: schedule.id,
                     crewId: crew.id,
-                    message: `Crew "${crew.crewName || crew.shiftType}" on ${crew.date || 'unknown date'} has no staff assigned`
+                    message: `Crew "${crew.rig || crew.shiftType}" on ${crew.date || 'unknown date'} has no staff assigned`
                 });
             }
 
             // Check for staff working more than 24 hours without rest
             const staffDoubled = db.prepare(`
-                SELECT employee1, COUNT(*) AS shiftCount
+                SELECT paramedic, COUNT(*) AS shiftCount
                 FROM crews
-                WHERE scheduleId = ? AND employee1 IS NOT NULL AND employee1 != ''
-                GROUP BY employee1, date
+                WHERE scheduleId = ? AND paramedic IS NOT NULL AND paramedic != ''
+                GROUP BY paramedic, date
                 HAVING COUNT(*) > 1
             `).all(schedule.id);
 
@@ -297,8 +297,8 @@ router.get('/schedule-health', (req, res) => {
                     type: 'double_booked',
                     severity: 'critical',
                     scheduleId: schedule.id,
-                    staffName: s.employee1,
-                    message: `${s.employee1} is double-booked with ${s.shiftCount} shifts on the same date`
+                    staffName: s.paramedic,
+                    message: `${s.paramedic} is double-booked with ${s.shiftCount} shifts on the same date`
                 });
             }
         }
@@ -310,7 +310,7 @@ router.get('/schedule-health', (req, res) => {
                    c.id AS crewId, c.date AS shiftDate, s.name AS scheduleName
             FROM timeoff_requests t
             JOIN users u ON u.id = t.userId
-            JOIN crews c ON (c.employee1 = u.fullName OR c.employee2 = u.fullName)
+            JOIN crews c ON (c.paramedic = u.fullName OR c.emt = u.fullName)
             JOIN schedules s ON s.id = c.scheduleId AND s.status = 'published'
             WHERE t.status = 'approved'
               AND c.date BETWEEN t.startDate AND t.endDate

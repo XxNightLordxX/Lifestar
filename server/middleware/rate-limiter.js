@@ -385,7 +385,7 @@ const apiLimiter = createRateLimiter({
 const readLimiter = createRateLimiter({
     windowMs: 60 * 1000, // 1 minute
     maxRequests: 300,
-    blockDurationMs: 0 // No auto-block
+    blockDurationMs: 30 * 1000 // 30 second block after exceeding limit
 });
 
 /**

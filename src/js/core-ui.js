@@ -182,9 +182,10 @@ const AlertManager = (function() {
         alert.className = `alert ${typeConfig.class}`;
         if (id) alert.id = id;
         
+        const escapedMessage = typeof sanitizeHTML === 'function' ? sanitizeHTML(message) : message.replace(/[&<>"']/g, function(c) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; });
         alert.innerHTML = `
             <span class="alert-icon" aria-hidden="true">${icon || typeConfig.icon}</span>
-            <span class="alert-message">${DOMUtils.create('span').textContent = message, message}</span>
+            <span class="alert-message">${escapedMessage}</span>
             ${dismissible ? '<button class="alert-close" aria-label="Close">×</button>' : ''}
         `;
 

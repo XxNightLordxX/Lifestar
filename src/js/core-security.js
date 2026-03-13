@@ -623,7 +623,7 @@ if (document.readyState === 'loading') {
 
 // Auto-initialize quick actions
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', QuickActions.init);
+    document.addEventListener('DOMContentLoaded', function() { QuickActions.init(); });
 } else {
     QuickActions.init();
 }

@@ -46,8 +46,11 @@ function _blacklistHas(token, store) {
     return true;
 }
 
+// Per-user revocation timestamps — any token issued before this time is invalid
+const _userRevocationMap = new Map();
+
 // Hourly memory-hygiene sweep
-setInterval(function() {
+const _cleanupInterval = setInterval(function() {
     const now = Date.now();
     for (const [t, exp] of _tokenBlacklist) {
         if (now > exp) _tokenBlacklist.delete(t);
@@ -132,6 +135,14 @@ function verifyToken(token) {
             algorithms: [SECURITY.JWT_ALGORITHM]
         });
         if (decoded.type !== 'access') throw new Error('Invalid token type');
+        // Check per-user revocation — reject tokens issued before revocation time
+        if (decoded.userId || decoded.sub) {
+            const userId = decoded.userId || decoded.sub;
+            const revokedAt = _userRevocationMap.get(String(userId));
+            if (revokedAt && decoded.iat && decoded.iat < revokedAt) {
+                throw new Error('Token has been revoked');
+            }
+        }
         return decoded;
     } catch (err) {
         if (err.name === 'TokenExpiredError')  throw new Error('Token expired');
@@ -343,8 +354,8 @@ function revokeRefreshToken(token) {
 }
 
 function revokeAllUserTokens(userId) {
-    // In-memory store can't enumerate by userId. For full revocation in production,
-    // add a token_version column to users and check it inside verifyToken().
+    // Store current epoch seconds — verifyToken() rejects tokens with iat before this
+    _userRevocationMap.set(String(userId), Math.floor(Date.now() / 1000));
     logAuthEvent('ALL_TOKENS_REVOKED', { userId: userId });
     return Promise.resolve();
 }

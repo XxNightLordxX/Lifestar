@@ -419,7 +419,7 @@ function createCrewDiv(crew) {
                 '<span style="font-size:.75rem;color:#888">⏰ ' + sanitizeHTML(crew.shiftType || '') + '</span>' +
                 (!isFullyStaffed ? '<span style="font-size:.7rem;color:#e74c3c;font-weight:600">⚠ Incomplete</span>' : '') +
             '</div>' +
-            '<button class="delete-crew" onclick="event.stopPropagation(); deleteCrew('' + sanitizeHTML(String(crew.id)) + '')" title="Delete shift" style="position:absolute;top:4px;right:4px;background:none;border:none;color:#aaa;cursor:pointer;font-size:1rem;line-height:1;padding:2px 4px;">&times;</button>';
+            '<button class="delete-crew" onclick="event.stopPropagation(); deleteCrew(&quot;' + sanitizeHTML(String(crew.id)) + '&quot;)" title="Delete shift" style="position:absolute;top:4px;right:4px;background:none;border:none;color:#aaa;cursor:pointer;font-size:1rem;line-height:1;padding:2px 4px;">&times;</button>';
 
         crewDiv.style.position = 'relative';
 

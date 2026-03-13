@@ -233,7 +233,7 @@ const MultiLocation = (function() {
             }
 
             // Staff count at this location
-            const staffCount = 0;
+            let staffCount = 0;
             if (typeof users !== 'undefined' && Array.isArray(users)) {
                 staffCount = users.filter(function(u) { return u.locationId === loc.id && (u.role === 'paramedic' || u.role === 'emt'); }).length;
             }
@@ -252,7 +252,7 @@ const MultiLocation = (function() {
         });
         html += '</div>';
 
-        container.textContent = html;
+        container.innerHTML = html;
     }
 
     /** Show Add Location Modal */
@@ -379,7 +379,7 @@ const MultiLocation = (function() {
         // Build staff list with checkboxes
         const staffList = modal.querySelector('.staff-assign-list');
         if (staffList && typeof users !== 'undefined' && Array.isArray(users)) {
-            const html = '';
+            let html = '';
             const staffUsers = users.filter(function(u) { return u.role === 'paramedic' || u.role === 'emt'; });
             if (staffUsers.length === 0) {
                 html = '<p style="color:var(--text-secondary,#6c757d);text-align:center;">No staff members found</p>';
@@ -395,7 +395,7 @@ const MultiLocation = (function() {
                     html += '</div></label>';
                 });
             }
-            staffList.textContent = html;
+            staffList.innerHTML = html;
         }
 
         if (typeof showModal === 'function') {

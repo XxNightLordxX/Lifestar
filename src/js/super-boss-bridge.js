@@ -695,7 +695,7 @@ function loadSuperCalendar() {
     }
 
     html += '</div>';
-    container.textContent = html;
+    container.innerHTML = html;
 }
 
 function closeSuperScheduleEditor() {

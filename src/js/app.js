@@ -198,12 +198,18 @@ function _doSave() {
 
 /** @function generateCSRFToken */
 function generateCSRFToken(sessionId) {
-    return csrfProtection.generateToken(sessionId);
+    if (typeof csrfProtection !== 'undefined' && csrfProtection.generateToken) {
+        return csrfProtection.generateToken(sessionId);
+    }
+    return '';
 }
 
 /** @function validateCSRFToken */
 function validateCSRFToken(token, sessionId) {
-    return csrfProtection.validateToken(token, sessionId);
+    if (typeof csrfProtection !== 'undefined' && csrfProtection.validateToken) {
+        return csrfProtection.validateToken(token, sessionId);
+    }
+    return true;
 }
 
 /** @function handleLogin */
@@ -2539,8 +2545,10 @@ function filterStaff() {
         const staffCards = document.querySelectorAll('#staffGrid .card');
 
         staffCards.forEach(card => {
-            const name = card.querySelector('.card-header h2').textContent.toLowerCase();
-            const role = card.querySelector('.badge').textContent.toLowerCase();
+            const nameEl = card.querySelector('.card-header h2') || card.querySelector('h2') || card.querySelector('h3');
+            const roleEl = card.querySelector('.badge') || card.querySelector('[data-role]');
+            const name = (nameEl ? nameEl.textContent : card.textContent).toLowerCase();
+            const role = (roleEl ? roleEl.textContent : '').toLowerCase();
 
             const matchesSearch = name.includes(searchTerm);
             const matchesRole = roleFilter === '' || role.includes(roleFilter.toLowerCase());
@@ -2656,7 +2664,7 @@ function viewStaffDetails(staffId) {
             '<div><span style="color:#888">Scheduled Hours</span><br><strong>' + totalH + 'h</strong></div>' +
             '</div>' +
             '<div style="margin-top:14px;display:flex;gap:8px;">' +
-            '<button class="btn btn-sm btn-primary" onclick="closeModal('alertModal');viewStaffSchedule(' + parseInt(staffId) + ')">📅 View Schedule</button>' +
+            '<button class="btn btn-sm btn-primary" onclick="closeModal(&quot;alertModal&quot;);viewStaffSchedule(' + parseInt(staffId) + ')">📅 View Schedule</button>' +
             '</div>';
 
         const titleEl = document.getElementById('alertModalTitle');
