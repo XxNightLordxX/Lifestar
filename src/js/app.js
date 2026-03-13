@@ -560,40 +560,107 @@ function showSuperSection(section) {
 /** @function updateOverviewStats */
 function updateOverviewStats() {
     try {
-        document.getElementById('totalUsersCount').textContent = users.length;
-        document.getElementById('totalSchedulesCount').textContent = schedules.length;
-        document.getElementById('lastSystemUpdate').textContent = new Date().toLocaleString();
+        const activeUsers   = users.filter(u => u.active !== false).length;
+        const draftCount    = schedules.filter(s => s.status === 'draft').length;
+        const pubCount      = schedules.filter(s => s.status === 'published').length;
+        const paramedics    = users.filter(u => u.role === 'paramedic' && u.active !== false).length;
+        const emts          = users.filter(u => u.role === 'emt' && u.active !== false).length;
+        const totalCrew     = schedules.reduce((n, s) => n + (s.crews || []).length, 0);
+
+        const set = (id, val) => { const el = document.getElementById(id); if(el) el.textContent = val; };
+        set('totalUsersCount',     activeUsers);
+        set('totalSchedulesCount', schedules.length);
+        set('lastSystemUpdate',    new Date().toLocaleString());
+
+        // Extended stats — safe-set (elements may not exist on all layouts)
+        set('draftSchedulesCount',     draftCount);
+        set('publishedSchedulesCount', pubCount);
+        set('paramedicCount',          paramedics);
+        set('emtCount',                emts);
+        set('totalCrewAssignments',    totalCrew);
+
+        // Render quick-stats cards if container exists
+        const statsContainer = document.getElementById('overviewQuickStats');
+        if(statsContainer) {
+            statsContainer.innerHTML =
+                _statCard('👤', activeUsers,   'Active Users',      '#3498db') +
+                _statCard('📋', draftCount,    'Drafts',            '#f39c12') +
+                _statCard('✅', pubCount,      'Published',         '#27ae60') +
+                _statCard('🚑', paramedics,    'Paramedics',        '#e74c3c') +
+                _statCard('🏥', emts,          'EMTs',              '#9b59b6') +
+                _statCard('👥', totalCrew,     'Crew Assignments',  '#1abc9c');
+        }
     } catch (error) {
         Logger.error('[updateOverviewStats] Error:', error.message || error);
     }
+}
+
+function _statCard(icon, value, label, color) {
+    return '<div style="background:#fff;border-radius:12px;padding:16px 20px;box-shadow:0 2px 8px rgba(0,0,0,.08);display:flex;align-items:center;gap:14px;min-width:150px;flex:1;">' +
+        '<div style="font-size:2rem;line-height:1">' + icon + '</div>' +
+        '<div>' +
+        '<div style="font-size:1.6rem;font-weight:700;color:' + color + ';line-height:1">' + value + '</div>' +
+        '<div style="font-size:.8rem;color:#888;margin-top:2px">' + label + '</div>' +
+        '</div></div>';
 }
 
 /** @function loadUsersTable */
 function loadUsersTable() {
     try {
         const tbody = document.getElementById('usersTableBody');
+        if(!tbody) return;
         tbody.textContent = '';
 
-        users.forEach(user => {
+        // Sort: super > boss > paramedic > emt, then alphabetically
+        const roleOrder = { super: 0, boss: 1, paramedic: 2, emt: 3 };
+        const sorted = [...users].sort((a, b) => {
+            const rd = (roleOrder[a.role] || 9) - (roleOrder[b.role] || 9);
+            return rd !== 0 ? rd : (a.fullName || a.username).localeCompare(b.fullName || b.username);
+        });
+
+        sorted.forEach(user => {
             let locName = '—';
             if (user.locationId && typeof MultiLocation !== 'undefined') {
                 const loc = MultiLocation.getLocationById(user.locationId);
                 if (loc) locName = loc.code;
             }
+
+            // Count shift assignments for this user
+            let shiftCount = 0;
+            schedules.forEach(s => {
+                (s.crews || []).forEach(c => {
+                    if(String(c.paramedicId) === String(user.id) || String(c.emtId) === String(user.id)) shiftCount++;
+                });
+            });
+
+            const isActive = user.active !== false;
+            const statusBadge = isActive
+                ? '<span style="background:#d4edda;color:#155724;padding:2px 8px;border-radius:10px;font-size:.75rem;font-weight:600">Active</span>'
+                : '<span style="background:#f8d7da;color:#721c24;padding:2px 8px;border-radius:10px;font-size:.75rem;font-weight:600">Inactive</span>';
+
+            const roleColors = { super: '#6f42c1', boss: '#fd7e14', paramedic: '#0d6efd', emt: '#20c997' };
+            const roleColor  = roleColors[user.role] || '#6c757d';
+
             const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${sanitizeHTML(user.username)}</td>
-                <td>${sanitizeHTML(user.fullName || 'N/A')}</td>
-                <td><span class="badge badge-${sanitizeHTML(user.role)}">${sanitizeHTML(user.role.toUpperCase())}</span></td>
-                <td>${sanitizeHTML(user.phone || 'N/A')}</td>
-                <td>${sanitizeHTML(locName)}</td>
-                <td>
-                    <button class="btn btn-sm btn-warning" onclick="editUser(${parseInt(user.id)})">Edit</button>
-                    ${user.id !== currentUser.id ? `<button class="btn btn-sm btn-danger" onclick="deleteUser(${parseInt(user.id)})">Delete</button>` : ''}
-                </td>
-            `;
+            row.style.opacity = isActive ? '1' : '0.6';
+            row.innerHTML =
+                '<td><strong>' + sanitizeHTML(user.username) + '</strong></td>' +
+                '<td>' + sanitizeHTML(user.fullName || 'N/A') + '</td>' +
+                '<td><span style="background:' + roleColor + ';color:#fff;padding:2px 10px;border-radius:10px;font-size:.75rem;font-weight:600">' + sanitizeHTML(user.role.toUpperCase()) + '</span></td>' +
+                '<td>' + sanitizeHTML(user.phone || 'N/A') + '</td>' +
+                '<td>' + sanitizeHTML(locName) + '</td>' +
+                '<td>' + shiftCount + ' shift' + (shiftCount !== 1 ? 's' : '') + '</td>' +
+                '<td>' + statusBadge + '</td>' +
+                '<td style="white-space:nowrap">' +
+                    '<button class="btn btn-sm btn-warning" onclick="editUser(' + parseInt(user.id) + ')" title="Edit user">✏️</button> ' +
+                    (user.id !== currentUser.id ? '<button class="btn btn-sm btn-danger" onclick="deleteUser(' + parseInt(user.id) + ')" title="Delete user">🗑</button>' : '') +
+                '</td>';
             tbody.appendChild(row);
         });
+
+        // Update count badge
+        const countEl = document.getElementById('usersTableCount');
+        if(countEl) countEl.textContent = users.length + ' users';
     } catch (error) {
         Logger.error('[loadUsersTable] Error:', error.message || error);
     }
@@ -1399,37 +1466,81 @@ function loadSchedules() {
 function createScheduleCard(schedule) {
     try {
         const card = document.createElement('div');
-        card.className = `schedule-item ${schedule.status}`;
-        card.innerHTML = `
-            <div class="schedule-header">
-                <div class="schedule-title">${sanitizeHTML(schedule.name)}</div>
-                <div class="schedule-status ${sanitizeHTML(schedule.status)}">${sanitizeHTML(schedule.status)}</div>
-            </div>
-            <div class="schedule-info">
-                <div class="schedule-info-item">
-                    <span class="schedule-info-item-icon">📅</span>
-                    ${sanitizeHTML(schedule.month)} ${sanitizeHTML(String(schedule.year))}
-                </div>
-                <div class="schedule-info-item">
-                    <span class="schedule-info-item-icon">👥</span>
-                    ${parseInt(schedule.crews?.length) || 0} crews
-                </div>
-                <div class="schedule-info-item">
-                    <span class="schedule-info-item-icon">🕐</span>
-                    ${parseInt(schedule.totalHours) || 0} hours
-                </div>
-            </div>
-            <div class="schedule-actions">
-                <button class="btn btn-sm btn-primary" onclick="viewSchedule(${parseInt(schedule.id)})">View</button>
-                ${schedule.status === 'draft' ? `<button class="btn btn-sm btn-warning" onclick="editSchedule(${parseInt(schedule.id)})">Edit</button>` : ''}
-                ${schedule.status === 'draft' ? `<button class="btn btn-sm btn-success" onclick="publishSchedule(${parseInt(schedule.id)})">Publish</button>` : ''}
-                <button class="btn btn-sm btn-info" onclick="duplicateSchedule(${parseInt(schedule.id)})" title="Copy to another month">📋 Copy</button>
-                <button class="btn btn-sm btn-danger" onclick="deleteSchedule(${parseInt(schedule.id)})">Delete</button>
-            </div>
-        `;
+        card.className = 'schedule-item ' + schedule.status;
+        card.dataset.scheduleId = schedule.id;
+
+        // Calculate coverage progress for draft schedules
+        const crewCount = (schedule.crews || []).length;
+        const totalHours = parseInt(schedule.totalHours) || 0;
+        const statusLabels = { draft: '✏️ Draft', published: '✅ Published', archived: '📦 Archived' };
+        const statusLabel = statusLabels[schedule.status] || schedule.status;
+
+        // Build unique staff set for this schedule
+        const staffIds = new Set();
+        (schedule.crews || []).forEach(c => {
+            if(c.paramedicId) staffIds.add(c.paramedicId);
+            if(c.emtId) staffIds.add(c.emtId);
+        });
+
+        // Coverage progress bar for drafts (target: 30 crews = full month approx)
+        let progressHtml = '';
+        if(schedule.status === 'draft') {
+            const target = 30;
+            const pct = Math.min(100, Math.round((crewCount / target) * 100));
+            const barColor = pct < 30 ? '#e74c3c' : pct < 70 ? '#f39c12' : '#27ae60';
+            progressHtml = '<div style="margin-top:8px;">' +
+                '<div style="display:flex;justify-content:space-between;font-size:.75rem;color:#888;margin-bottom:3px;">' +
+                '<span>Coverage Progress</span><span>' + pct + '%</span></div>' +
+                '<div style="background:#f0f0f0;border-radius:4px;height:6px;overflow:hidden;">' +
+                '<div style="width:' + pct + '%;background:' + barColor + ';height:100%;border-radius:4px;transition:width .3s"></div>' +
+                '</div></div>';
+        }
+
+        const publishedInfo = schedule.publishedAt
+            ? '<div class="schedule-info-item"><span class="schedule-info-item-icon">🚀</span>Published ' + new Date(schedule.publishedAt).toLocaleDateString() + '</div>'
+            : '';
+
+        card.innerHTML =
+            '<div class="schedule-header">' +
+                '<div class="schedule-title">' + sanitizeHTML(schedule.name) + '</div>' +
+                '<div class="schedule-status ' + sanitizeHTML(schedule.status) + '">' + statusLabel + '</div>' +
+            '</div>' +
+            '<div class="schedule-info">' +
+                '<div class="schedule-info-item"><span class="schedule-info-item-icon">📅</span>' + sanitizeHTML(schedule.month) + ' ' + sanitizeHTML(String(schedule.year)) + '</div>' +
+                '<div class="schedule-info-item"><span class="schedule-info-item-icon">👥</span>' + crewCount + ' crew' + (crewCount !== 1 ? 's' : '') + ' &nbsp;·&nbsp; ' + staffIds.size + ' staff</div>' +
+                '<div class="schedule-info-item"><span class="schedule-info-item-icon">🕐</span>' + totalHours + ' total hours</div>' +
+                publishedInfo +
+            '</div>' +
+            progressHtml +
+            '<div class="schedule-actions" style="margin-top:10px;">' +
+                '<button class="btn btn-sm btn-primary" onclick="viewSchedule(' + parseInt(schedule.id) + ')">👁 View</button>' +
+                (schedule.status === 'draft' ? '<button class="btn btn-sm btn-warning" onclick="editSchedule(' + parseInt(schedule.id) + ')">✏️ Edit</button>' : '') +
+                (schedule.status === 'draft' ? '<button class="btn btn-sm btn-success" onclick="publishSchedule(' + parseInt(schedule.id) + ')">🚀 Publish</button>' : '') +
+                (schedule.status === 'published' ? '<button class="btn btn-sm btn-secondary" onclick="archiveSchedule(' + parseInt(schedule.id) + ')">📦 Archive</button>' : '') +
+                '<button class="btn btn-sm btn-info" onclick="duplicateSchedule(' + parseInt(schedule.id) + ')" title="Copy to another month">📋 Copy</button>' +
+                '<button class="btn btn-sm btn-danger" onclick="deleteSchedule(' + parseInt(schedule.id) + ')">🗑 Delete</button>' +
+            '</div>';
         return card;
     } catch (error) {
         Logger.error('[createScheduleCard] Error:', error.message || error);
+    }
+}
+
+/** @function archiveSchedule */
+function archiveSchedule(scheduleId) {
+    if(confirm('Archive this published schedule? It will no longer be visible to staff.')) {
+        const schedule = schedules.find(s => String(s.id) === String(scheduleId));
+        if(schedule) {
+            schedule.status = 'archived';
+            schedule.archivedAt = new Date().toISOString();
+            saveData();
+            loadDraftSchedules();
+            loadPublishedSchedules();
+            if(typeof loadArchivedSchedules === 'function') loadArchivedSchedules();
+            updateSidebarBadges();
+            showAlert('Schedule archived successfully.', 'success');
+            addSystemLog('Schedule archived: ' + schedule.name);
+        }
     }
 }
 
@@ -1537,7 +1648,7 @@ function editSchedule(scheduleId) {
 /** @function deleteSchedule */
 function deleteSchedule(scheduleId) {
     if(confirm('Are you sure you want to delete this schedule?')) {
-        const scheduleIndex = schedules.findIndex(s => s.id === scheduleId);
+        const scheduleIndex = schedules.findIndex(s => String(s.id) === String(scheduleId));
         if(scheduleIndex > -1) {
             const scheduleName = schedules[scheduleIndex].name;
             schedules.splice(scheduleIndex, 1);
@@ -1891,65 +2002,103 @@ async function confirmResetSystem() {
     }
 }
 
+// ========================================
+// AI ASSISTANT — Anthropic-powered
+// ========================================
+let _aiChatHistory = [];
+
 /** @function sendAiMessage */
-function sendAiMessage() {
+async function sendAiMessage() {
     try {
         const input = document.getElementById('aiInput');
         const message = input.value.trim();
-
         if(!message) return;
 
         const chatContainer = document.getElementById('aiChatContainer');
 
-        // Add user message
-        const userMessage = document.createElement('div');
-        userMessage.style.padding = '10px';
-        userMessage.style.background = '#e3f2fd';
-        userMessage.style.borderRadius = '8px';
-        userMessage.style.marginBottom = '10px';
-        userMessage.style.marginLeft = '40px';
-        userMessage.textContent = 'You: ' + message;
-        chatContainer.appendChild(userMessage);
-
-        // Add AI response (basic mode)
-        const aiMessage = document.createElement('div');
-        aiMessage.style.padding = '10px';
-        aiMessage.style.background = '#f5f5f5';
-        aiMessage.style.borderRadius = '8px';
-        aiMessage.style.marginBottom = '10px';
-        aiMessage.style.marginRight = '40px';
-        aiMessage.textContent = 'AI: ' + generateBasicAIResponse(message);
-        chatContainer.appendChild(aiMessage);
-
-        // Clear input
+        // Render user bubble
+        const userBubble = document.createElement('div');
+        userBubble.style.cssText = 'padding:10px 14px;background:linear-gradient(135deg,#e74c3c,#c0392b);color:#fff;border-radius:14px 14px 4px 14px;margin-bottom:10px;margin-left:30px;max-width:85%;align-self:flex-end;box-shadow:0 2px 6px rgba(0,0,0,.15);font-size:.9rem;';
+        userBubble.textContent = message;
+        chatContainer.appendChild(userBubble);
         input.value = '';
+        chatContainer.scrollTop = chatContainer.scrollHeight;
 
-        // Scroll to bottom
+        // Typing indicator
+        const typingEl = document.createElement('div');
+        typingEl.style.cssText = 'padding:10px 14px;background:#f0f0f0;border-radius:14px 14px 14px 4px;margin-bottom:10px;margin-right:30px;max-width:85%;color:#888;font-style:italic;font-size:.85rem;';
+        typingEl.textContent = '⏳ Lifestar AI is thinking…';
+        chatContainer.appendChild(typingEl);
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+
+        // Build context summary for AI
+        const ctxDrafts    = schedules.filter(s => s.status === 'draft').length;
+        const ctxPublished = schedules.filter(s => s.status === 'published').length;
+        const ctxStaff     = users.filter(u => u.role === 'paramedic' || u.role === 'emt').length;
+        const systemPrompt = 'You are Lifestar AI, the built-in scheduling assistant for Lifestar Ambulance Service. ' +
+            'You have access to the following live system data: ' +
+            ctxStaff + ' staff members (paramedics + EMTs), ' +
+            ctxDrafts + ' draft schedule(s), ' +
+            ctxPublished + ' published schedule(s), ' +
+            users.length + ' total users. ' +
+            'The current date is ' + new Date().toLocaleDateString('en-US', {weekday:'long',year:'numeric',month:'long',day:'numeric'}) + '. ' +
+            'You help managers and staff with scheduling questions, coverage analysis, policy guidance, and workflow tips. ' +
+            'Keep answers concise, practical, and friendly. Use bullet points for lists.';
+
+        _aiChatHistory.push({ role: 'user', content: message });
+        // Keep last 10 turns to avoid token bloat
+        if(_aiChatHistory.length > 20) _aiChatHistory = _aiChatHistory.slice(-20);
+
+        let aiText = '';
+        try {
+            const resp = await fetch('https://api.anthropic.com/v1/messages', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'anthropic-dangerous-direct-browser-access': 'true' },
+                body: JSON.stringify({
+                    model: 'claude-sonnet-4-20250514',
+                    max_tokens: 600,
+                    system: systemPrompt,
+                    messages: _aiChatHistory
+                })
+            });
+            if(resp.ok) {
+                const data = await resp.json();
+                aiText = (data.content || []).map(b => b.text || '').join('');
+                _aiChatHistory.push({ role: 'assistant', content: aiText });
+            } else {
+                aiText = generateBasicAIResponse(message);
+            }
+        } catch(_) {
+            aiText = generateBasicAIResponse(message);
+        }
+
+        // Replace typing indicator with response
+        typingEl.style.cssText = 'padding:10px 14px;background:#f0f4ff;border:1px solid #d0d9ff;border-radius:14px 14px 14px 4px;margin-bottom:10px;margin-right:30px;max-width:85%;font-size:.9rem;line-height:1.5;white-space:pre-wrap;';
+        typingEl.textContent = aiText;
         chatContainer.scrollTop = chatContainer.scrollHeight;
     } catch (error) {
         Logger.error('[sendAiMessage] Error:', error.message || error);
     }
 }
 
-/** @function generateBasicAIResponse */
+/** @function generateBasicAIResponse — fallback when API unavailable */
 function generateBasicAIResponse(message) {
-    const lowerMessage = message.toLowerCase();
+    const m = message.toLowerCase();
+    const drafts    = schedules.filter(s => s.status === 'draft').length;
+    const published = schedules.filter(s => s.status === 'published').length;
+    const staff     = users.filter(u => u.role === 'paramedic' || u.role === 'emt').length;
 
-    if(lowerMessage.includes('schedule')) {
-        return 'You currently have ' + schedules.length + ' schedule(s) in the system. ' +
-               (schedules || []).filter(s => s.status === 'draft').length + ' draft(s) and ' +
-               (schedules || []).filter(s => s.status === 'published').length + ' published.';
-    }
-
-    if(lowerMessage.includes('user')) {
-        return 'There are ' + users.length + ' user(s) in the system.';
-    }
-
-    if(lowerMessage.includes('help')) {
-        return 'I can help you with scheduling, user management, and system operations. Try asking about schedules, users, or how to perform specific tasks.';
-    }
-
-    return 'I understand you\'re asking about "' + message + '". For advanced AI capabilities, please configure a Groq API key in the API Keys section.';
+    if(m.includes('schedule') || m.includes('shift'))
+        return 'You have ' + schedules.length + ' schedule(s): ' + drafts + ' draft and ' + published + ' published. Use the Drafts tab to create or edit schedules.';
+    if(m.includes('staff') || m.includes('user') || m.includes('crew'))
+        return 'There are ' + users.length + ' user(s) in the system including ' + staff + ' field staff (paramedics + EMTs).';
+    if(m.includes('coverage') || m.includes('gap'))
+        return 'Check the draft schedules and use the Coverage Gap Scanner to identify days without assigned crews.';
+    if(m.includes('publish'))
+        return 'To publish a schedule: open Drafts, assign crews for all needed days, then click "🚀 Publish". Staff can then see their shifts in My Schedule.';
+    if(m.includes('help') || m.includes('what can'))
+        return 'I can help with:\n• Understanding coverage gaps\n• Publishing workflows\n• Staff shift questions\n• System navigation tips\n\nTry asking: "How many staff do I have?" or "What schedules are published?"';
+    return 'I\'m here to help with scheduling. Try asking about coverage, staff, or how to use a feature. For the best AI experience, I\'m powered by Claude — no API key needed!';
 }
 
 // ========================================
@@ -1958,53 +2107,69 @@ function generateBasicAIResponse(message) {
 
 /** @function loadSampleData */
 function loadSampleData() {
+    const now = new Date();
+    const MONTHS = ['January','February','March','April','May','June',
+                    'July','August','September','October','November','December'];
+    const thisYear  = String(now.getFullYear());
+    const thisMonth = MONTHS[now.getMonth()];
+    const lastMonthIdx  = now.getMonth() === 0 ? 11 : now.getMonth() - 1;
+    const lastMonth     = MONTHS[lastMonthIdx];
+    const lastMonthYear = now.getMonth() === 0 ? String(now.getFullYear() - 1) : thisYear;
+
     // Check if data already exists
     if(users.length === 0) {
-        // Create default users
+        // Create default users — active:true is required for session restore
         users = [
-            { id: 1, username: 'super', password: 'super123', fullName: 'Super Administrator', role: 'super', phone: '555-0001', hoursWorked: 0, bonusHours: 0, createdAt: new Date().toISOString() },
-            { id: 2, username: 'boss', password: 'boss123', fullName: 'Station Manager', role: 'boss', phone: '555-0002', hoursWorked: 0, bonusHours: 0, createdAt: new Date().toISOString() },
-            { id: 3, username: 'paramedic1', password: 'paramedic123', fullName: 'Sarah Medic', role: USER_ROLES.PARAMEDIC, phone: '555-0003', hoursWorked: 0, bonusHours: 0, createdAt: new Date().toISOString() },
-            { id: 4, username: 'paramedic2', password: 'paramedic123', fullName: 'Mike Medic', role: USER_ROLES.PARAMEDIC, phone: '555-0004', hoursWorked: 0, bonusHours: 0, createdAt: new Date().toISOString() },
-            { id: 5, username: 'emt1', password: 'emt123', fullName: 'Tom EMT', role: USER_ROLES.EMT, phone: '555-0005', hoursWorked: 0, bonusHours: 0, createdAt: new Date().toISOString() },
-            { id: 6, username: 'emt2', password: 'emt123', fullName: 'Lisa EMT', role: USER_ROLES.EMT, phone: '555-0006', hoursWorked: 0, bonusHours: 0, createdAt: new Date().toISOString() }
+            { id: 1, username: 'super',      password: 'super123',     fullName: 'Super Administrator', role: 'super',              phone: '555-0001', hoursWorked: 0,  bonusHours: 0, active: true, createdAt: now.toISOString() },
+            { id: 2, username: 'boss',       password: 'boss123',      fullName: 'Station Manager',     role: 'boss',               phone: '555-0002', hoursWorked: 0,  bonusHours: 0, active: true, createdAt: now.toISOString() },
+            { id: 3, username: 'paramedic1', password: 'paramedic123', fullName: 'Sarah Medic',         role: USER_ROLES.PARAMEDIC, phone: '555-0003', hoursWorked: 96, bonusHours: 4, active: true, createdAt: now.toISOString() },
+            { id: 4, username: 'paramedic2', password: 'paramedic123', fullName: 'Mike Medic',          role: USER_ROLES.PARAMEDIC, phone: '555-0004', hoursWorked: 84, bonusHours: 0, active: true, createdAt: now.toISOString() },
+            { id: 5, username: 'emt1',       password: 'emt123',       fullName: 'Tom EMT',             role: USER_ROLES.EMT,       phone: '555-0005', hoursWorked: 72, bonusHours: 0, active: true, createdAt: now.toISOString() },
+            { id: 6, username: 'emt2',       password: 'emt123',       fullName: 'Lisa EMT',            role: USER_ROLES.EMT,       phone: '555-0006', hoursWorked: 60, bonusHours: 2, active: true, createdAt: now.toISOString() }
         ];
-
         saveData();
     }
 
-    // Create sample schedules if none exist
+    // Create sample schedules if none exist — crews use IDs so loadMySchedule works correctly
     if(schedules.length === 0) {
-        // Create a draft schedule
+        const pad = n => String(n).padStart(2,'0');
+        const yr = parseInt(lastMonthYear);
+        const mo = lastMonthIdx + 1;
+        const d1 = yr + '-' + pad(mo) + '-01';
+        const d2 = yr + '-' + pad(mo) + '-02';
+        const d3 = yr + '-' + pad(mo) + '-03';
+
+        // Draft schedule for current month
         schedules.push({
             id: Date.now(),
-            name: 'January 2025 - Draft',
-            month: 'January',
-            year: '2025',
-            description: 'Draft schedule for January 2025 - still being finalized',
+            name: thisMonth + ' ' + thisYear + ' — Draft',
+            month: thisMonth,
+            year: thisYear,
+            description: 'Draft schedule for ' + thisMonth + ' ' + thisYear + ' — assignments in progress',
             status: 'draft',
             crews: [],
             totalHours: 0,
-            createdAt: new Date().toISOString(),
+            createdAt: now.toISOString(),
             createdBy: 2
         });
 
-        // Create a published schedule
+        // Published schedule for last month — paramedicId/emtId enable My Schedule tab
         schedules.push({
             id: Date.now() + 1,
-            name: 'December 2024 - Published',
-            month: 'December',
-            year: '2024',
-            description: 'Final schedule for December 2024 - all shifts assigned',
+            name: lastMonth + ' ' + lastMonthYear + ' — Published',
+            month: lastMonth,
+            year: lastMonthYear,
+            description: 'Final schedule for ' + lastMonth + ' ' + lastMonthYear + ' — all shifts assigned',
             status: 'published',
             crews: [
-                { id: 1, rig: '3F16', paramedic: 'Sarah Medic', emt: 'Tom EMT', shiftType: '24-Hour', date: '2024-12-01' },
-                { id: 2, rig: '3F17', paramedic: 'Mike Medic', emt: 'Lisa EMT', shiftType: '24-Hour', date: '2024-12-01' },
-                { id: 3, rig: '3F18', paramedic: 'Sarah Medic', emt: 'Lisa EMT', shiftType: 'Day', date: '2024-12-02' },
-                { id: 4, rig: '3F23', paramedic: 'Mike Medic', emt: 'Tom EMT', shiftType: 'Night', date: '2024-12-02' }
+                { id: 101, rig: '3F16', paramedicId: 3, paramedic: 'Sarah Medic', emtId: 5, emt: 'Tom EMT',  shiftType: '24-Hour', type: 'ALS', hours: 24, date: d1 },
+                { id: 102, rig: '3F17', paramedicId: 4, paramedic: 'Mike Medic',  emtId: 6, emt: 'Lisa EMT', shiftType: '24-Hour', type: 'ALS', hours: 24, date: d1 },
+                { id: 103, rig: '3F16', paramedicId: 3, paramedic: 'Sarah Medic', emtId: 6, emt: 'Lisa EMT', shiftType: 'Day',     type: 'ALS', hours: 12, date: d2 },
+                { id: 104, rig: '3F17', paramedicId: 4, paramedic: 'Mike Medic',  emtId: 5, emt: 'Tom EMT',  shiftType: 'Night',   type: 'BLS', hours: 12, date: d2 },
+                { id: 105, rig: '3F16', paramedicId: 3, paramedic: 'Sarah Medic', emtId: 5, emt: 'Tom EMT',  shiftType: '24-Hour', type: 'ALS', hours: 24, date: d3 }
             ],
-            totalHours: 720,
-            publishedAt: new Date().toISOString(),
+            totalHours: 96,
+            publishedAt: now.toISOString(),
             createdBy: 2
         });
 
