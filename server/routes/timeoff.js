@@ -780,11 +780,13 @@ router.put('/:id', authenticate, updateLimiter, async (req, res) => {
             }
             
             if (Object.keys(updates).length > 0) {
-                const setClauses = Object.keys(updates).map(key => `${key} = ?`);
+                const validColumns = new Set(['startDate', 'endDate', 'reason']);
+                const setClauses = Object.keys(updates).filter(k => validColumns.has(k)).map(key => `${key} = ?`);
                 setClauses.push("updatedAt = datetime('now')");
-                
+                const safeValues = Object.keys(updates).filter(k => validColumns.has(k)).map(k => updates[k]);
+
                 db.prepare(`UPDATE timeoff_requests SET ${setClauses.join(', ')} WHERE id = ?`)
-                    .run(...Object.values(updates), id);
+                    .run(...safeValues, id);
             }
         }
         

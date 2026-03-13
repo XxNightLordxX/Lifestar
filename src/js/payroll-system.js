@@ -412,20 +412,24 @@ function loadPayrollDashboard() {
  * Update payroll display based on selected options
  */
 function updatePayrollDisplay() {
-    const periodType = document.getElementById('payrollPeriodType').value;
-    const referenceDate = new Date(document.getElementById('payrollReferenceDate').value);
+    const periodEl = document.getElementById('payrollPeriodType');
+    const dateEl = document.getElementById('payrollReferenceDate');
+    if (!periodEl || !dateEl) return;
+    const periodType = periodEl.value;
+    const referenceDate = new Date(dateEl.value);
     
     const report = generatePayrollReport(periodType, referenceDate);
     
     // Update summary cards
     const summaryCards = document.querySelectorAll('.summary-card');
-    summaryCards[0].querySelector('.amount').textContent = formatCurrency(report.summary.totalPay);
-    summaryCards[1].querySelector('.hours').textContent = report.summary.totalHours.toFixed(1);
-    summaryCards[2].querySelector('.amount').textContent = formatCurrency(report.summary.totalRegularPay);
-    summaryCards[3].querySelector('.amount').textContent = formatCurrency(report.summary.totalOvertimePay);
-    
+    if (summaryCards[0]) { const el = summaryCards[0].querySelector('.amount'); if (el) el.textContent = formatCurrency(report.summary.totalPay); }
+    if (summaryCards[1]) { const el = summaryCards[1].querySelector('.hours'); if (el) el.textContent = report.summary.totalHours.toFixed(1); }
+    if (summaryCards[2]) { const el = summaryCards[2].querySelector('.amount'); if (el) el.textContent = formatCurrency(report.summary.totalRegularPay); }
+    if (summaryCards[3]) { const el = summaryCards[3].querySelector('.amount'); if (el) el.textContent = formatCurrency(report.summary.totalOvertimePay); }
+
     // Update table
     const tbody = document.querySelector('.payroll-table tbody');
+    if (!tbody) return;
     tbody.innerHTML = report.records.map(record => `
         <tr>
             <td>${sanitizeHTML(record.employeeName)}</td>
@@ -441,7 +445,8 @@ function updatePayrollDisplay() {
     `).join('');
     
     // Update date display
-    document.querySelector('.payroll-table-container h3').textContent = 
+    const payrollHeading = document.querySelector('.payroll-table-container h3');
+    if (payrollHeading) payrollHeading.textContent =
         `Payroll Details - ${periodType.charAt(0).toUpperCase() + periodType.slice(1)} (${report.startDate} to ${report.endDate})`;
 }
 

@@ -130,7 +130,8 @@ router.put('/:id', authenticate, authorize('super', 'boss'), writeLimiter, (req,
             return res.status(HTTP_STATUS.BAD_REQUEST).json({ error: 'No fields to update' });
         }
 
-        const setClauses = Object.keys(updates).map(k => `${k} = ?`).join(', ');
+        const validColumns = new Set(allowed);
+        const setClauses = Object.keys(updates).filter(k => validColumns.has(k)).map(k => `${k} = ?`).join(', ');
         db.prepare(`UPDATE training_records SET ${setClauses} WHERE id = ?`).run(...Object.values(updates), id);
 
         res.json({ record: db.prepare('SELECT * FROM training_records WHERE id = ?').get(id), message: 'Record updated' });

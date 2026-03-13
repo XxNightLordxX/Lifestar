@@ -98,7 +98,8 @@ router.patch('/:id', authenticate, authorize('super', 'boss'), (req, res) => {
             return res.status(HTTP_STATUS.BAD_REQUEST).json({ error: 'Provide status and/or replacedBy' });
         }
 
-        const setClauses = Object.keys(updates).map(k => `${k} = ?`).join(', ');
+        const validColumns = new Set(['status', 'replacedBy']);
+        const setClauses = Object.keys(updates).filter(k => validColumns.has(k)).map(k => `${k} = ?`).join(', ');
         db.prepare(`UPDATE emergency_callins SET ${setClauses} WHERE id = ?`).run(...Object.values(updates), id);
 
         addLog(`Call-in #${id} updated to ${status}`, req.user.id, req.user.username);

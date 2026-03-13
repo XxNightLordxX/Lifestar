@@ -770,12 +770,14 @@ router.put('/:id', authenticate, authorize('super', 'boss'), updateLimiter, asyn
             });
         }
         
-        // Build update query
-        const setClauses = Object.keys(updates).map(key => `${key} = ?`);
+        // Build update query with column whitelist
+        const validScheduleCols = new Set(['name', 'description', 'status', 'locationId', 'totalHours', 'publishedAt']);
+        const setClauses = Object.keys(updates).filter(k => validScheduleCols.has(k)).map(key => `${key} = ?`);
         setClauses.push("updatedAt = datetime('now')");
-        
+        const safeValues = Object.keys(updates).filter(k => validScheduleCols.has(k)).map(k => updates[k]);
+
         const updateQuery = `UPDATE schedules SET ${setClauses.join(', ')} WHERE id = ?`;
-        const updateValues = [...Object.values(updates), id];
+        const updateValues = [...safeValues, id];
         
         db.prepare(updateQuery).run(...updateValues);
         
@@ -1212,11 +1214,13 @@ router.put('/crews/:id', authenticate, authorize('super', 'boss'), crewLimiter, 
             });
         }
         
-        const setClauses = Object.keys(updates).map(key => `${key} = ?`);
+        const validCrewCols = new Set(['rig', 'paramedic', 'emt', 'shiftType', 'date', 'crewType']);
+        const setClauses = Object.keys(updates).filter(k => validCrewCols.has(k)).map(key => `${key} = ?`);
         setClauses.push("updatedAt = datetime('now')");
-        
+        const safeValues = Object.keys(updates).filter(k => validCrewCols.has(k)).map(k => updates[k]);
+
         const updateQuery = `UPDATE crews SET ${setClauses.join(', ')} WHERE id = ?`;
-        db.prepare(updateQuery).run(...Object.values(updates), id);
+        db.prepare(updateQuery).run(...safeValues, id);
         
         const updated = db.prepare('SELECT * FROM crews WHERE id = ?').get(id);
         
@@ -1417,10 +1421,12 @@ router.put('/templates/:id', authenticate, authorize('super', 'boss'), async (re
             });
         }
 
-        const setClauses = Object.keys(updates).map(k => `${k} = ?`);
+        const validTemplateCols = new Set(['name', 'rig', 'paramedic', 'emt', 'shiftType', 'crewType']);
+        const setClauses = Object.keys(updates).filter(k => validTemplateCols.has(k)).map(k => `${k} = ?`);
         setClauses.push("updatedAt = datetime('now')");
+        const safeValues = Object.keys(updates).filter(k => validTemplateCols.has(k)).map(k => updates[k]);
         db.prepare(`UPDATE crew_templates SET ${setClauses.join(', ')} WHERE id = ?`)
-            .run(...Object.values(updates), templateId);
+            .run(...safeValues, templateId);
 
         const updated = db.prepare('SELECT * FROM crew_templates WHERE id = ?').get(templateId);
         res.json({ template: updated, message: 'Template updated successfully' });

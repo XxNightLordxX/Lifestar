@@ -395,7 +395,8 @@ const LoadingManager = (function() {
                 <div class="loading-message">${message}</div>
             `;
         } else {
-            globalOverlay.querySelector('.loading-message').textContent = message;
+            const msgEl = globalOverlay.querySelector('.loading-message');
+            if (msgEl) msgEl.textContent = message;
         }
 
         document.body.appendChild(globalOverlay);

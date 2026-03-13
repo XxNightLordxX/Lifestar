@@ -1242,7 +1242,7 @@ function toggleFeature(featureId) {
                 // Global search available when enabled
                 break;
             case 'quickActions':
-                const panel = document.getElementById('quickActionsPanel');
+                const panel = document.getElementById('floatingQuickActionsPanel');
                 if(panel) {
                     if(isEnabled) panel.classList.remove('hidden');
                     else panel.classList.add('hidden');

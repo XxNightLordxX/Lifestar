@@ -1152,17 +1152,16 @@
                         <h1>Draft Schedules</h1>
                         <p>Manage and edit draft schedules</p>
                     </div>
-                    
+                    <div class="header-right">
+                        <button class="btn btn-secondary" onclick="ExportReports.exportSchedulesToPDF()">📄 Export PDF</button>
+                        <button class="btn btn-success" onclick="showCreateScheduleModal()">+ Create New Draft</button>
+                    </div>
+                </div>
                 <!-- Empty State -->
                 <div id="empty-state-bossDrafts" class="empty-state" style="display:none;text-align:center;padding:3rem 1rem;">
                     <div style="font-size:3rem;margin-bottom:1rem;">📋</div>
                     <h3 style="margin:0 0 0.5rem 0;color:var(--text-primary,#212529);">No Data Available</h3>
                     <p style="margin:0;color:var(--text-secondary,#6c757d);">There are no items to display at this time.</p>
-                </div>
-<div class="header-right">
-                        <button class="btn btn-secondary" onclick="ExportReports.exportSchedulesToPDF()">📄 Export PDF</button>
-                        <button class="btn btn-success" onclick="showCreateScheduleModal()">+ Create New Draft</button>
-                    </div>
                 </div>
                 
                 <!-- Quick Actions Panel -->
@@ -2937,8 +2936,8 @@
         </div>
     </div>
 
-    <!-- Quick Actions Panel -->
-    <div id="quickActionsPanel" class="quick-actions-panel hidden no-print">
+    <!-- Quick Actions Panel (floating) -->
+    <div id="floatingQuickActionsPanel" class="quick-actions-panel hidden no-print">
         <button class="quick-action-btn" onclick="performQuickAction('createSchedule')">
             <span class="icon">📅</span>
             <span>Create Schedule</span>
