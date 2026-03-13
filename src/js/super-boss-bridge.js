@@ -159,14 +159,14 @@ function loadSuperCrews() {
             container.innerHTML += `
                 <div class="card">
                     <div class="card-header" style="background: ${crew.type === 'ALS' ? '#e74c3c' : '#3498db'};">
-                        <h2>${crew.rig || 'Unnamed'} (${crew.type || 'BLS'})</h2>
+                        <h2>${sanitizeHTML(crew.rig || 'Unnamed')} (${sanitizeHTML(crew.type || 'BLS')})</h2>
                     </div>
                     <div class="card-body">
-                        <p><strong>Paramedic:</strong> ${crew.paramedic || 'Unassigned'}</p>
-                        <p><strong>EMT:</strong> ${crew.emt || 'Unassigned'}</p>
-                        <p><strong>Shift:</strong> ${crew.shiftType || 'N/A'}</p>
+                        <p><strong>Paramedic:</strong> ${sanitizeHTML(crew.paramedic || 'Unassigned')}</p>
+                        <p><strong>EMT:</strong> ${sanitizeHTML(crew.emt || 'Unassigned')}</p>
+                        <p><strong>Shift:</strong> ${sanitizeHTML(crew.shiftType || 'N/A')}</p>
                         <div style="margin-top: 10px;">
-                            <button class="btn btn-sm btn-danger" onclick="deleteCrewTemplate('${crew.id}')">Delete</button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteCrewTemplate('${sanitizeHTML(String(crew.id))}')">Delete</button>
                         </div>
                     </div>
                 </div>
@@ -199,13 +199,13 @@ function loadSuperTimeoff() {
             tbody.innerHTML += `
                 <tr>
                     <td>${sanitizeHTML(staff ? staff.fullName : 'Unknown')}</td>
-                    <td>${req.type || 'PTO'}</td>
-                    <td>${req.startDate || ''} - ${req.endDate || ''}</td>
-                    <td><span class="badge badge-${req.status === 'approved' ? 'success' : req.status === 'denied' ? 'danger' : 'warning'}">${(req.status || 'pending').toUpperCase()}</span></td>
+                    <td>${sanitizeHTML(req.type || 'PTO')}</td>
+                    <td>${sanitizeHTML(req.startDate || '')} - ${sanitizeHTML(req.endDate || '')}</td>
+                    <td><span class="badge badge-${req.status === 'approved' ? 'success' : req.status === 'denied' ? 'danger' : 'warning'}">${sanitizeHTML((req.status || 'pending').toUpperCase())}</span></td>
                     <td>
                         ${req.status === 'pending' ? `
-                            <button class="btn btn-sm btn-success" onclick="approveTimeoff('${req.id}')">Approve</button>
-                            <button class="btn btn-sm btn-danger" onclick="denyTimeoff('${req.id}')">Deny</button>
+                            <button class="btn btn-sm btn-success" onclick="approveTimeoff('${sanitizeHTML(String(req.id))}')">Approve</button>
+                            <button class="btn btn-sm btn-danger" onclick="denyTimeoff('${sanitizeHTML(String(req.id))}')">Deny</button>
                         ` : '-'}
                     </td>
                 </tr>
@@ -232,14 +232,14 @@ function loadSuperTrades() {
         trades.forEach(trade => {
             tbody.innerHTML += `
                 <tr>
-                    <td>${trade.requester || 'Unknown'}</td>
-                    <td>${trade.shift || 'N/A'}</td>
-                    <td>${trade.tradeWith || 'Open'}</td>
-                    <td><span class="badge badge-${trade.status === 'approved' ? 'success' : 'warning'}">${(trade.status || 'pending').toUpperCase()}</span></td>
+                    <td>${sanitizeHTML(trade.requester || 'Unknown')}</td>
+                    <td>${sanitizeHTML(trade.shift || 'N/A')}</td>
+                    <td>${sanitizeHTML(trade.tradeWith || 'Open')}</td>
+                    <td><span class="badge badge-${trade.status === 'approved' ? 'success' : 'warning'}">${sanitizeHTML((trade.status || 'pending').toUpperCase())}</span></td>
                     <td>
                         ${trade.status === 'pending' ? `
-                            <button class="btn btn-sm btn-success" onclick="approveShiftTrade('${trade.id}')">Approve</button>
-                            <button class="btn btn-sm btn-danger" onclick="denyShiftTrade('${trade.id}')">Deny</button>
+                            <button class="btn btn-sm btn-success" onclick="approveShiftTrade('${sanitizeHTML(String(trade.id))}')">Approve</button>
+                            <button class="btn btn-sm btn-danger" onclick="denyShiftTrade('${sanitizeHTML(String(trade.id))}')">Deny</button>
                         ` : '-'}
                     </td>
                 </tr>
@@ -269,10 +269,10 @@ function loadSuperSwap() {
             container.innerHTML += `
                 <div class="card">
                     <div class="card-body">
-                        <p><strong>Posted by:</strong> ${swap.postedBy || 'Unknown'}</p>
-                        <p><strong>Shift:</strong> ${swap.shift || 'N/A'}</p>
-                        <p><strong>Date:</strong> ${swap.date || 'N/A'}</p>
-                        <p><strong>Status:</strong> ${swap.status || 'Open'}</p>
+                        <p><strong>Posted by:</strong> ${sanitizeHTML(swap.postedBy || 'Unknown')}</p>
+                        <p><strong>Shift:</strong> ${sanitizeHTML(swap.shift || 'N/A')}</p>
+                        <p><strong>Date:</strong> ${sanitizeHTML(swap.date || 'N/A')}</p>
+                        <p><strong>Status:</strong> ${sanitizeHTML(swap.status || 'Open')}</p>
                     </div>
                 </div>
             `;
@@ -328,7 +328,7 @@ function loadSuperTraining() {
                 tbody.innerHTML += `
                     <tr>
                         <td>${sanitizeHTML(member.fullName || member.username)}</td>
-                        <td>${cert}</td>
+                        <td>${sanitizeHTML(cert)}</td>
                         <td>-</td>
                         <td><span class="badge badge-success">ACTIVE</span></td>
                         <td><button class="btn btn-sm btn-info" onclick="editTraining(${member.id})">Edit</button></td>
@@ -344,8 +344,8 @@ function loadSuperTraining() {
             tbody.innerHTML += `
                 <tr>
                     <td>${sanitizeHTML(staff ? staff.fullName : 'Unknown')}</td>
-                    <td>${record.certification || 'N/A'}</td>
-                    <td>${record.expiryDate || 'N/A'}</td>
+                    <td>${sanitizeHTML(record.certification || 'N/A')}</td>
+                    <td>${sanitizeHTML(record.expiryDate || 'N/A')}</td>
                     <td><span class="badge badge-${isExpired ? 'danger' : 'success'}">${isExpired ? 'EXPIRED' : 'ACTIVE'}</span></td>
                     <td><button class="btn btn-sm btn-info" onclick="editTraining(${record.userId})">Edit</button></td>
                 </tr>
@@ -402,13 +402,13 @@ function loadSuperCallins() {
         callins.forEach(callin => {
             tbody.innerHTML += `
                 <tr>
-                    <td>${callin.dateTime || 'N/A'}</td>
-                    <td>${callin.employee || 'Unknown'}</td>
-                    <td>${callin.reason || 'N/A'}</td>
-                    <td>${callin.replacement || 'Pending'}</td>
-                    <td><span class="badge badge-${callin.status === 'resolved' ? 'success' : 'warning'}">${(callin.status || 'open').toUpperCase()}</span></td>
+                    <td>${sanitizeHTML(callin.dateTime || 'N/A')}</td>
+                    <td>${sanitizeHTML(callin.employee || 'Unknown')}</td>
+                    <td>${sanitizeHTML(callin.reason || 'N/A')}</td>
+                    <td>${sanitizeHTML(callin.replacement || 'Pending')}</td>
+                    <td><span class="badge badge-${callin.status === 'resolved' ? 'success' : 'warning'}">${sanitizeHTML((callin.status || 'open').toUpperCase())}</span></td>
                     <td>
-                        ${callin.status !== 'resolved' ? `<button class="btn btn-sm btn-success" onclick="resolveCallin('${callin.id}')">Resolve</button>` : '-'}
+                        ${callin.status !== 'resolved' ? `<button class="btn btn-sm btn-success" onclick="resolveCallin('${sanitizeHTML(String(callin.id))}')">Resolve</button>` : '-'}
                     </td>
                 </tr>
             `;
@@ -434,10 +434,10 @@ function loadSuperAbsences() {
         absences.forEach(absence => {
             tbody.innerHTML += `
                 <tr>
-                    <td>${absence.employee || 'Unknown'}</td>
-                    <td>${absence.date || 'N/A'}</td>
-                    <td>${absence.type || 'Unexcused'}</td>
-                    <td>${absence.reason || 'N/A'}</td>
+                    <td>${sanitizeHTML(absence.employee || 'Unknown')}</td>
+                    <td>${sanitizeHTML(absence.date || 'N/A')}</td>
+                    <td>${sanitizeHTML(absence.type || 'Unexcused')}</td>
+                    <td>${sanitizeHTML(absence.reason || 'N/A')}</td>
                     <td><span class="badge badge-${absence.excused ? 'success' : 'danger'}">${absence.excused ? 'EXCUSED' : 'UNEXCUSED'}</span></td>
                 </tr>
             `;
@@ -469,8 +469,8 @@ function loadSuperOncall() {
                 tbody.innerHTML += `
                     <tr>
                         <td>Week of ${weekStart.toLocaleDateString()}</td>
-                        <td>${primary ? primary.fullName : 'Unassigned'}</td>
-                        <td>${backup ? backup.fullName : 'Unassigned'}</td>
+                        <td>${sanitizeHTML(primary ? primary.fullName : 'Unassigned')}</td>
+                        <td>${sanitizeHTML(backup ? backup.fullName : 'Unassigned')}</td>
                         <td><span class="badge badge-${i === 0 ? 'success' : 'info'}">${i === 0 ? 'CURRENT' : 'UPCOMING'}</span></td>
                     </tr>
                 `;
@@ -481,10 +481,10 @@ function loadSuperOncall() {
         oncall.forEach(entry => {
             tbody.innerHTML += `
                 <tr>
-                    <td>${entry.week || 'N/A'}</td>
-                    <td>${entry.primary || 'Unassigned'}</td>
-                    <td>${entry.backup || 'Unassigned'}</td>
-                    <td><span class="badge badge-info">${entry.status || 'SCHEDULED'}</span></td>
+                    <td>${sanitizeHTML(entry.week || 'N/A')}</td>
+                    <td>${sanitizeHTML(entry.primary || 'Unassigned')}</td>
+                    <td>${sanitizeHTML(entry.backup || 'Unassigned')}</td>
+                    <td><span class="badge badge-info">${sanitizeHTML(entry.status || 'SCHEDULED')}</span></td>
                 </tr>
             `;
         });
@@ -552,12 +552,12 @@ function loadSuperHistory() {
 
         tbody.innerHTML += `
             <tr>
-                <td>${crew.date || 'N/A'}</td>
-                <td>${crew.rig || 'N/A'}</td>
-                <td>${crew.paramedic || 'Unassigned'}</td>
-                <td>${crew.emt || 'Unassigned'}</td>
-                <td>${crew.shiftType || 'N/A'}</td>
-                <td>${crew.scheduleName || 'Unknown'}</td>
+                <td>${sanitizeHTML(crew.date || 'N/A')}</td>
+                <td>${sanitizeHTML(crew.rig || 'N/A')}</td>
+                <td>${sanitizeHTML(crew.paramedic || 'Unassigned')}</td>
+                <td>${sanitizeHTML(crew.emt || 'Unassigned')}</td>
+                <td>${sanitizeHTML(crew.shiftType || 'N/A')}</td>
+                <td>${sanitizeHTML(crew.scheduleName || 'Unknown')}</td>
             </tr>
         `;
     });
@@ -590,10 +590,10 @@ function loadSuperNotes() {
             container.innerHTML += `
                 <div class="content-card" style="margin-bottom: 12px;">
                     <div class="card-header">
-                        <h2>${note.title || 'Untitled Note'}</h2>
+                        <h2>${sanitizeHTML(note.title || 'Untitled Note')}</h2>
                     </div>
                     <div class="card-body" style="padding: 15px;">
-                        <p>${note.content || ''}</p>
+                        <p>${sanitizeHTML(note.content || '')}</p>
                         <small class="text-muted">Created: ${note.createdAt ? new Date(note.createdAt).toLocaleString() : 'N/A'}</small>
                     </div>
                 </div>
@@ -623,14 +623,14 @@ function loadSuperTemplates() {
             container.innerHTML += `
                 <div class="card">
                     <div class="card-header">
-                        <h2>${template.name || 'Unnamed Template'}</h2>
+                        <h2>${sanitizeHTML(template.name || 'Unnamed Template')}</h2>
                     </div>
                     <div class="card-body">
-                        <p>${template.description || 'No description'}</p>
+                        <p>${sanitizeHTML(template.description || 'No description')}</p>
                         <p><strong>Shifts:</strong> ${(template.shifts || []).length}</p>
                         <div style="margin-top: 10px;">
-                            <button class="btn btn-sm btn-primary" onclick="useTemplate('${template.id}')">Use Template</button>
-                            <button class="btn btn-sm btn-danger" onclick="deleteTemplate('${template.id}')">Delete</button>
+                            <button class="btn btn-sm btn-primary" onclick="useTemplate('${sanitizeHTML(String(template.id))}')">Use Template</button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteTemplate('${sanitizeHTML(String(template.id))}')">Delete</button>
                         </div>
                     </div>
                 </div>
@@ -688,7 +688,7 @@ function loadSuperCalendar() {
 
         dayCrews.forEach(crew => {
             const color = crew.shiftType === '24-Hour' ? '#e74c3c' : crew.shiftType === 'Day' ? '#f39c12' : '#3498db';
-            html += `<div style="font-size: 10px; background: ${color}; color: white; padding: 2px 4px; border-radius: 3px; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${crew.rig || ''} ${crew.shiftType || ''}</div>`;
+            html += `<div style="font-size: 10px; background: ${color}; color: white; padding: 2px 4px; border-radius: 3px; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${sanitizeHTML(crew.rig || '')} ${sanitizeHTML(crew.shiftType || '')}</div>`;
         });
 
         html += '</div>';
