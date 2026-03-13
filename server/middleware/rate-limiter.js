@@ -67,8 +67,9 @@ class RateLimiter {
         this.requests = new Map();
         this.blocks = new Map();
         
-        // Start cleanup interval
+        // Start cleanup interval (unref so it doesn't prevent graceful shutdown)
         this.cleanupTimer = setInterval(() => this.cleanup(), CONSTANTS.CLEANUP_INTERVAL_MS);
+        this.cleanupTimer.unref();
     }
     
     /**

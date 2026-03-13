@@ -253,14 +253,14 @@ router.post('/login', loginLimiter, async (req, res) => {
             WHERE username = ? COLLATE NOCASE AND active = 1
         `).get(usernameResult.value);
         
-        // Always use the same response time to prevent timing attacks
-        const minResponseTime = 100;
-        
-        if (!user) {
-            recordFailedAttempt(usernameResult.value);
+        // Run bcrypt.compare even when user is not found to prevent timing attacks.
+        // A dummy hash ensures the response time is the same whether the user exists or not.
+        const DUMMY_HASH = '$2a$12$LJ3m4ys3Lg2VBe5LOGqAGeRZ1DqOCOIhJam0KbJQKeFe5raIYfZFm';
 
-            // Delay to prevent timing attacks
-            await new Promise(resolve => setTimeout(resolve, Math.max(0, minResponseTime - (Date.now() - startTime))));
+        if (!user) {
+            // Spend the same time as a real password check
+            await bcrypt.compare(password, DUMMY_HASH);
+            recordFailedAttempt(usernameResult.value);
 
             return res.status(401).json({
                 error: 'Invalid credentials',
@@ -337,7 +337,12 @@ router.post('/logout', authenticate, (req, res) => {
         if (req.user) {
             addLog(`User logged out: ${req.user.username}`, req.user.id, req.user.username);
         }
-        
+
+        // Revoke the token server-side so it can't be reused via Bearer header
+        if (req.token) {
+            revokeToken(req.token);
+        }
+
         clearTokenCookie(res);
         
         res.json({ 

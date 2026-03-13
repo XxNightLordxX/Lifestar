@@ -58,6 +58,13 @@ const _cleanupInterval = setInterval(function() {
     for (const [t, exp] of _refreshTokenBlacklist) {
         if (now > exp) _refreshTokenBlacklist.delete(t);
     }
+    // Clean up user revocation entries older than max refresh token lifetime (7 days).
+    // All tokens issued before those timestamps have expired naturally by now.
+    const maxTokenLifetimeMs = SECURITY.REFRESH_TOKEN_MAX_AGE_MS || 7 * 24 * 60 * 60 * 1000;
+    const cutoff = Math.floor((now - maxTokenLifetimeMs) / 1000);
+    for (const [userId, revokedAt] of _userRevocationMap) {
+        if (revokedAt < cutoff) _userRevocationMap.delete(userId);
+    }
 }, 60 * 60 * 1000);
 _cleanupInterval.unref();
 
@@ -160,6 +167,13 @@ function verifyRefreshToken(token) {
             algorithms: [SECURITY.JWT_ALGORITHM]
         });
         if (decoded.type !== 'refresh') throw new Error('Invalid token type');
+        // Check per-user revocation — reject refresh tokens issued before revocation time
+        if (decoded.id) {
+            const revokedAt = _userRevocationMap.get(String(decoded.id));
+            if (revokedAt && decoded.iat && decoded.iat <= revokedAt) {
+                throw new Error('Refresh token has been revoked');
+            }
+        }
         return decoded;
     } catch (err) {
         if (err.name === 'TokenExpiredError') throw new Error('Refresh token expired');
