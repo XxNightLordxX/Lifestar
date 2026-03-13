@@ -38,13 +38,16 @@ const LOCKOUT_DURATION   = AUTH.LOCKOUT_DURATION_MS;
 const loginLimiter = rateLimit({
     windowMs: RATE_LIMIT.LOGIN_WINDOW_MS,
     max: RATE_LIMIT.LOGIN_MAX_ATTEMPTS,
-    message: { 
-        error: 'Too many login attempts', 
+    message: {
+        error: 'Too many login attempts',
         message: 'Please try again later',
         retryAfter: RATE_LIMIT.LOGIN_WINDOW_MS / 1000
     },
     standardHeaders: true,
     legacyHeaders: false,
+    // Only count failed attempts (non-2xx responses) toward the rate limit.
+    // Without this, 5 successful logins in 15 minutes locks the user out.
+    skipSuccessfulRequests: true,
     // Use normalized IP + username as key to prevent distributed attacks
     keyGenerator: (req) => {
         const username = req.body?.username || 'unknown';
@@ -87,15 +90,10 @@ function validateUsername(username) {
         errors.push(`Username must be at most ${USERNAME_MAX} characters`);
     }
     
-    // Only allow alphanumeric and underscore
+    // Only allow alphanumeric and underscore — this implicitly blocks all
+    // SQL injection and XSS since no special characters can pass.
     if (!/^[a-zA-Z0-9_]+$/.test(trimmed)) {
         errors.push('Username can only contain letters, numbers, and underscores');
-    }
-    
-    // Check for SQL injection patterns
-    const sqlPatterns = /(\b(SELECT|INSERT|UPDATE|DELETE|DROP|UNION|ALTER)\b)|(--)|(\/\*)|(\*\/)|(\bOR\b\s+\d+\s*=\s*\d+)/i;
-    if (sqlPatterns.test(trimmed)) {
-        errors.push('Invalid username format');
     }
     
     return {
@@ -206,8 +204,15 @@ function clearLoginAttempts(username) {
  */
 router.post('/login', loginLimiter, async (req, res) => {
     const startTime = Date.now();
-    
+
     try {
+        if (!req.body || typeof req.body !== 'object') {
+            return res.status(400).json({
+                error: 'Validation failed',
+                details: ['Username is required']
+            });
+        }
+
         const { username, password } = req.body;
         
         // Input validation
@@ -252,29 +257,30 @@ router.post('/login', loginLimiter, async (req, res) => {
         
         if (!user) {
             recordFailedAttempt(usernameResult.value);
-            
+
             // Delay to prevent timing attacks
             await new Promise(resolve => setTimeout(resolve, Math.max(0, minResponseTime - (Date.now() - startTime))));
-            
-            return res.status(401).json({ 
+
+            return res.status(401).json({
                 error: 'Invalid credentials',
                 message: 'Username or password is incorrect'
             });
         }
-        
+
         // Password verification
         const validPassword = await bcrypt.compare(password, user.password);
-        
+
         if (!validPassword) {
             recordFailedAttempt(usernameResult.value);
             addLog(`Failed login attempt for user: ${usernameResult.value}`, null, usernameResult.value);
-            
+
             // Delay to prevent timing attacks
             await new Promise(resolve => setTimeout(resolve, Math.max(0, minResponseTime - (Date.now() - startTime))));
-            
+
+            // Use the same message as "user not found" to prevent username enumeration
             return res.status(401).json({
                 error: 'Invalid credentials',
-                message: 'Username or password is incorrect. Account will lock after multiple failures.'
+                message: 'Username or password is incorrect'
             });
         }
         

@@ -437,7 +437,21 @@ function validateQuery(schema) {
  */
 function sanitizeBody(req, res, next) {
     if (req.body && typeof req.body === 'object') {
+        // Preserve password fields — trimming/altering passwords silently is a
+        // security issue (users who include leading/trailing spaces intentionally
+        // would be unable to log in later, or passwords weaken without notice).
+        const passwordFields = ['password', 'currentPassword', 'newPassword', 'confirmPassword'];
+        const savedPasswords = {};
+        for (const field of passwordFields) {
+            if (req.body[field] !== undefined) {
+                savedPasswords[field] = req.body[field];
+            }
+        }
         req.body = sanitizeObject(req.body);
+        // Restore original password values
+        for (const [field, value] of Object.entries(savedPasswords)) {
+            req.body[field] = value;
+        }
     }
     next();
 }
