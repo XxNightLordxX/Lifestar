@@ -288,11 +288,13 @@ router.post('/user/:id/reset', (req, res) => {
     if (isNaN(userId)) return res.status(400).json({ error: 'Invalid user ID' });
 
     const db = getDb();
+    const user = db.prepare('SELECT id, username, role FROM users WHERE id = ?').get(userId);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
     db.prepare('DELETE FROM user_permissions WHERE userId = ?').run(userId);
 
-    const user = db.prepare('SELECT id, username, role FROM users WHERE id = ?').get(userId);
-    addLog(`Permissions reset to role defaults for user ${user?.username}`, req.user.id, req.user.username);
-    res.json({ success: true, effective: ROLE_PERMISSIONS[user?.role] || [] });
+    addLog(`Permissions reset to role defaults for user ${user.username}`, req.user.id, req.user.username);
+    res.json({ success: true, effective: ROLE_PERMISSIONS[user.role] || [] });
 });
 
 /** GET /api/permissions/role/:role — get role default permissions */

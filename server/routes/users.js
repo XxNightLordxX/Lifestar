@@ -319,7 +319,7 @@ router.get('/', authenticate, authorize('super', 'boss'), async (req, res) => {
         // Get total count for pagination
         let countQuery = 'SELECT COUNT(*) as total FROM users';
         if (conditions.length > 0) {
-            countQuery += ' WHERE ' + conditions.slice(0, conditions.length).join(' AND ');
+            countQuery += ' WHERE ' + conditions.join(' AND ');
         }
         const countParams = params.slice(0, params.length - 2);
         const { total } = db.prepare(countQuery).get(...countParams);

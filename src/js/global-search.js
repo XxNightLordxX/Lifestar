@@ -61,12 +61,12 @@
             searchContainer.style.cssText = 'position: relative; margin-right: 15px;';
             searchContainer.innerHTML = `
                 <div style="position: relative;">
-                    <input type="text" id="globalSearchInput" 
-                           placeholder="Search... (Ctrl+K)"; 
-                           style="padding: 8px 35px 8px 12px; border: 1px solid #d1d5db; border-radius: 6px; width: 250px; font-size: 14px;";
-                           autocomplete="off">;
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" 
-                         style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: #9ca3af; pointer-events: none;">;
+                    <input type="text" id="globalSearchInput"
+                           placeholder="Search... (Ctrl+K)"
+                           style="padding: 8px 35px 8px 12px; border: 1px solid #d1d5db; border-radius: 6px; width: 250px; font-size: 14px;"
+                           autocomplete="off">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                         style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: #9ca3af; pointer-events: none;">
                         <circle cx="11" cy="11" r="8"></circle>
                         <path d="m21 21-4.35-4.35"></path>
                     </svg>

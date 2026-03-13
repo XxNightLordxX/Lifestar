@@ -87,7 +87,7 @@
 
     function updateReportStatus(id, status) {
         const reports = loadReports();
-        const idx = reports.findIndex(r => r.id == id);
+        const idx = reports.findIndex(r => r.id === id);
         if (idx === -1) return false;
         reports[idx].status    = status;
         reports[idx].updatedAt = new Date().toISOString();

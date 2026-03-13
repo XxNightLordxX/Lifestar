@@ -475,10 +475,10 @@ const DropdownManager = (function() {
         });
 
         // Initialize dropdown toggles
-        document.querySelectorAll('[data-dropdown]').forEach(toggle => {
-            toggle.addEventListener('click', (e) => {
+        document.querySelectorAll('[data-dropdown]').forEach(el => {
+            el.addEventListener('click', (e) => {
                 e.stopPropagation();
-                toggle(toggle.dataset.dropdown);
+                toggle(el.dataset.dropdown);
             });
         });
     }
@@ -571,7 +571,9 @@ const TabManager = (function() {
     }
 
     function handleKeyNavigation(e) {
-        const tabs = Array.from(e.target.closest('.tab-list').querySelectorAll('.tab-button'));
+        const tabList = e.target.closest('.tab-list');
+        if (!tabList) return;
+        const tabs = Array.from(tabList.querySelectorAll('.tab-button'));
         const currentIndex = tabs.indexOf(e.target);
 
         let newIndex;

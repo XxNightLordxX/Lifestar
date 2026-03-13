@@ -582,10 +582,8 @@ window.UIHelpers = UIHelpers;
 window.MissingFunctionsPatch = MissingFunctionsPatch;
 
 // Make function aliases available globally
-window.validateScheduleData = validateScheduleData;
-window.validateEmployeeData = validateEmployeeData;
-window.validateShiftData = validateShiftData;
-window.validateCrewData = validateCrewData;
+// Note: validateScheduleData, validateEmployeeData, validateShiftData, validateCrewData
+// are defined in core-validation.js and are already global function declarations.
 window.calculateShiftHours = calculateShiftHours;
 window.checkShiftConflicts = checkShiftConflicts;
 window.calculateOvertime = calculateOvertime;
