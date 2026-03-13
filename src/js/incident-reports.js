@@ -290,7 +290,7 @@
     }
 
     function closeDetail(e) {
-        if (e && e.target !== document.getElementById('incidentDetailModal')) return;
+        if (e && e.target && e.target !== document.getElementById('incidentDetailModal')) return;
         const modal = document.getElementById('incidentDetailModal');
         if (modal) modal.remove();
     }

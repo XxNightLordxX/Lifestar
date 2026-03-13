@@ -304,9 +304,10 @@ router.get('/', authenticate, authorize('super'), logsLimiter, async (req, res) 
         
         const logs = db.prepare(sql).all(...params);
         
-        // Get total count
-        let countSql = 'SELECT COUNT(*) as total FROM system_logs WHERE 1=1';
+        // Get total count — reuse the same WHERE conditions (strip SELECT * and ORDER/LIMIT)
         const countParams = params.slice(0, params.length - 2);
+        const wherePart = sql.replace(/^SELECT \* FROM system_logs/, '').replace(/\s*ORDER BY.*$/, '');
+        const countSql = 'SELECT COUNT(*) as total FROM system_logs' + wherePart;
         const { total } = db.prepare(countSql).get(...countParams);
         
         res.json({

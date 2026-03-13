@@ -257,7 +257,7 @@ const MultiLocation = (function() {
 
     /** Show Add Location Modal */
     function showAddLocationModal() {
-        const modal = document.getElementById('locationModal');
+        let modal = document.getElementById('locationModal');
         if (!modal) {
             _createLocationModal();
             modal = document.getElementById('locationModal');
@@ -282,7 +282,7 @@ const MultiLocation = (function() {
         const loc = getLocationById(id);
         if (!loc) return;
 
-        const modal = document.getElementById('locationModal');
+        let modal = document.getElementById('locationModal');
         if (!modal) {
             _createLocationModal();
             modal = document.getElementById('locationModal');
@@ -366,7 +366,7 @@ const MultiLocation = (function() {
         const loc = getLocationById(locationId);
         if (!loc) return;
 
-        const modal = document.getElementById('assignStaffLocationModal');
+        let modal = document.getElementById('assignStaffLocationModal');
         if (!modal) {
             _createAssignStaffModal();
             modal = document.getElementById('assignStaffLocationModal');

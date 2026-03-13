@@ -34,8 +34,10 @@ function openScheduleEditor(scheduleId) {
 function initializeScheduleEditor() {
     try {
         // Set header info
-        document.getElementById('editorScheduleName').textContent = currentEditingSchedule.name;
-        document.getElementById('editorScheduleStatus').textContent =
+        const nameEl = document.getElementById('editorScheduleName');
+        if (nameEl) nameEl.textContent = currentEditingSchedule.name;
+        const statusEl = document.getElementById('editorScheduleStatus');
+        if (statusEl) statusEl.textContent =
             currentEditingSchedule.status === 'draft' ? 'Draft' : 'Published';
 
         // Load employees
@@ -72,6 +74,7 @@ function hideAllSections() {
 function loadEmployeesForEditor() {
     try {
         const container = document.getElementById('employeeList');
+        if (!container) return;
         container.textContent = '';
 
         const employees = users.filter(u => u.role === 'paramedic' || u.role === 'emt');
@@ -265,6 +268,7 @@ function removePendingEmployee(button, employeeId) {
 function generateEditorCalendar() {
     try {
         const grid = document.getElementById('editorCalendarGrid');
+        if (!grid) return;
         const monthYear = document.getElementById('editorMonthYear');
 
         // Use the schedule's actual month/year fields, not the name string

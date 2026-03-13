@@ -243,10 +243,9 @@ app.use(sanitizeBody);
 app.use(checkSqlInjection({ log: true }));
 app.use(checkXss({ log: true }));
 
-// Rate limiting for API routes
-const { apiLimiter, authLimiter, passwordResetLimiter } = require('./middleware/rate-limiter');
-app.use('/api/auth/login', authLimiter);
-app.use('/api/auth', apiLimiter);
+// Rate limiting for API routes — login has its own limiter inside auth.js,
+// so we only apply the general API limiter here (not on /api/auth/login specifically)
+const { apiLimiter } = require('./middleware/rate-limiter');
 app.use('/api', apiLimiter);
 
 // ============================================

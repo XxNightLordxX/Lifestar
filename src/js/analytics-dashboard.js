@@ -262,10 +262,10 @@ const AnalyticsDashboard = (function () {
     async function load(containerId) {
         // Try multiple container IDs used across boss / super dashboards
         const targetId = containerId
-            || 'superAnalyticsStats'
+            || (document.getElementById('superAnalyticsStats') ? 'superAnalyticsStats' : null)
             || 'bossAnalyticsContainer';
 
-        ensureAnalyticsHTML(targetId || 'superAnalyticsStats');
+        ensureAnalyticsHTML(targetId);
 
         let overview, staffData;
 

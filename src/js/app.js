@@ -441,30 +441,28 @@ function showDashboard() {
         hideAllDashboards();
 
         // Show appropriate dashboard
-        if(currentUser.role === 'super') {
-            const dashboard = document.getElementById('superDashboard');
-            dashboard.classList.add('active');
-            dashboard.style.display = 'flex';
-            document.getElementById('superUserName').textContent = currentUser.fullName || currentUser.username;
-            loadSuperAdminDashboard();
-        } else if(currentUser.role === 'boss') {
-            const dashboard = document.getElementById('bossDashboard');
-            dashboard.classList.add('active');
-            dashboard.style.display = 'flex';
-            document.getElementById('bossUserName').textContent = currentUser.fullName || currentUser.username;
-            loadBossDashboard();
-        } else if(currentUser.role === USER_ROLES.PARAMEDIC) {
-            const dashboard = document.getElementById('paramedicDashboard');
-            dashboard.classList.add('active');
-            dashboard.style.display = 'flex';
-            document.getElementById('paramedicUserName').textContent = currentUser.fullName || currentUser.username;
-            loadParamedicDashboard();
-        } else if(currentUser.role === USER_ROLES.EMT) {
-            const dashboard = document.getElementById('emtDashboard');
-            dashboard.classList.add('active');
-            dashboard.style.display = 'flex';
-            document.getElementById('emtUserName').textContent = currentUser.fullName || currentUser.username;
-            loadEmtDashboard();
+        if(!currentUser || !currentUser.role) {
+            Logger.error('[showDashboard] No currentUser or role set');
+            return;
+        }
+
+        const roleMap = {
+            'super':     { dashId: 'superDashboard',     nameId: 'superUserName',     loader: loadSuperAdminDashboard },
+            'boss':      { dashId: 'bossDashboard',      nameId: 'bossUserName',      loader: loadBossDashboard },
+            'paramedic': { dashId: 'paramedicDashboard',  nameId: 'paramedicUserName',  loader: loadParamedicDashboard },
+            'emt':       { dashId: 'emtDashboard',        nameId: 'emtUserName',        loader: loadEmtDashboard }
+        };
+
+        const cfg = roleMap[currentUser.role];
+        if(cfg) {
+            const dashboard = document.getElementById(cfg.dashId);
+            if(dashboard) {
+                dashboard.classList.add('active');
+                dashboard.style.display = 'flex';
+            }
+            const nameEl = document.getElementById(cfg.nameId);
+            if(nameEl) nameEl.textContent = currentUser.fullName || currentUser.username;
+            if(typeof cfg.loader === 'function') cfg.loader();
         }
         
         // Initialize notification center

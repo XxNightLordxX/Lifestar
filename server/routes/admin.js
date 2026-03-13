@@ -36,9 +36,10 @@ router.post('/reset', async (req, res) => {
             // wrap each in a try so missing tables don't abort the transaction.
             const tablesToWipe = [
                 'crews', 'schedules', 'system_logs', 'notifications',
-                'incident_reports', 'timeoff_requests', 'shift_swaps',
+                'incidents', 'timeoff_requests', 'shift_swaps',
                 'emergency_callins', 'training_records', 'user_permissions',
-                'locations'
+                'locations', 'payroll_reports', 'audit_log',
+                'refresh_tokens', 'password_reset_tokens', 'crew_templates'
             ];
             for (const table of tablesToWipe) {
                 try { db.prepare(`DELETE FROM ${table}`).run(); } catch (_) { /* table may not exist */ }

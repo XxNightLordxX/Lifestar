@@ -136,8 +136,8 @@ function verifyToken(token) {
         });
         if (decoded.type !== 'access') throw new Error('Invalid token type');
         // Check per-user revocation — reject tokens issued before revocation time
-        if (decoded.userId || decoded.sub) {
-            const userId = decoded.userId || decoded.sub;
+        if (decoded.id) {
+            const userId = decoded.id;
             const revokedAt = _userRevocationMap.get(String(userId));
             if (revokedAt && decoded.iat && decoded.iat < revokedAt) {
                 throw new Error('Token has been revoked');
