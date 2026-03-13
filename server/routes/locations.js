@@ -379,8 +379,9 @@ router.get('/', authenticate, async (req, res) => {
         
         const locations = db.prepare(sql).all(...params);
         
-        // Get total count
-        let countSql = 'SELECT COUNT(*) as total FROM locations WHERE 1=1';
+        // Get total count — re-use same conditions without LIMIT/OFFSET
+        let countSql = sql.replace(/SELECT \* FROM/, 'SELECT COUNT(*) as total FROM')
+            .replace(/ORDER BY.*$/, '');
         const countParams = params.slice(0, params.length - 2);
         const { total } = db.prepare(countSql).get(...countParams);
         

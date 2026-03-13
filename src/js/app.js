@@ -590,8 +590,65 @@ function updateOverviewStats() {
                 _statCard('🏥', emts,          'EMTs',              '#9b59b6') +
                 _statCard('👥', totalCrew,     'Crew Assignments',  '#1abc9c');
         }
+
+        // Render pending actions widget
+        renderPendingActions();
     } catch (error) {
         Logger.error('[updateOverviewStats] Error:', error.message || error);
+    }
+}
+
+/** @function renderPendingActions - Renders pending action items for the overview dashboard */
+function renderPendingActions() {
+    try {
+        const container = document.getElementById('pendingActionsList');
+        if (!container) return;
+
+        // Gather counts from local storage / in-memory data
+        let pendingTimeoff = 0, openSwaps = 0, openCallins = 0, expiringTraining = 0;
+        try {
+            const tr = localStorage.getItem('lifestarTimeoffRequests');
+            if (tr) pendingTimeoff = (JSON.parse(tr) || []).filter(r => r.status === 'pending').length;
+        } catch (_) {}
+        try {
+            const sw = localStorage.getItem('lifestarSwapListings');
+            if (sw) openSwaps = (JSON.parse(sw) || []).filter(r => r.status === 'open' || r.status === 'pending').length;
+        } catch (_) {}
+        try {
+            const ci = localStorage.getItem('lifestarCallins');
+            if (ci) openCallins = (JSON.parse(ci) || []).filter(r => r.status === 'open' || r.status === 'pending').length;
+        } catch (_) {}
+        try {
+            const tg = localStorage.getItem('lifestarTrainingRecords');
+            if (tg) {
+                const now = new Date();
+                const thirtyDays = 30 * 24 * 60 * 60 * 1000;
+                expiringTraining = (JSON.parse(tg) || []).filter(r => {
+                    if (!r.expiryDate) return false;
+                    const exp = new Date(r.expiryDate);
+                    return exp - now < thirtyDays && exp > now;
+                }).length;
+            }
+        } catch (_) {}
+
+        const items = [
+            { icon: '🏖️', count: pendingTimeoff, label: 'Pending Time Off', section: 's_timeoff', color: '#f39c12' },
+            { icon: '🔀', count: openSwaps, label: 'Open Swaps', section: 's_swap', color: '#3498db' },
+            { icon: '🚨', count: openCallins, label: 'Open Call-ins', section: 's_callins', color: '#e74c3c' },
+            { icon: '🎓', count: expiringTraining, label: 'Expiring Certs (30d)', section: 's_training', color: '#9b59b6' }
+        ];
+
+        container.innerHTML = items.map(function(item) {
+            var urgencyBg = item.count > 0 ? 'rgba(' + (item.color === '#e74c3c' ? '231,76,60' : item.color === '#f39c12' ? '243,156,18' : item.color === '#3498db' ? '52,152,219' : '155,89,182') + ',.1)' : '#f8f9fa';
+            return '<div onclick="showSuperSection(\'' + item.section + '\')" style="cursor:pointer;background:' + urgencyBg + ';border-radius:12px;padding:14px 18px;display:flex;align-items:center;gap:12px;min-width:180px;flex:1;border:1px solid ' + (item.count > 0 ? item.color + '33' : '#eee') + ';transition:transform .15s,box-shadow .15s;" onmouseenter="this.style.transform=\'translateY(-2px)\';this.style.boxShadow=\'0 4px 12px rgba(0,0,0,.12)\'" onmouseleave="this.style.transform=\'none\';this.style.boxShadow=\'none\'">' +
+                '<div style="font-size:1.8rem;line-height:1">' + item.icon + '</div>' +
+                '<div>' +
+                '<div style="font-size:1.5rem;font-weight:700;color:' + item.color + ';line-height:1">' + item.count + '</div>' +
+                '<div style="font-size:.78rem;color:#666;margin-top:2px">' + item.label + '</div>' +
+                '</div></div>';
+        }).join('');
+    } catch (e) {
+        Logger.error('[renderPendingActions]', e);
     }
 }
 
@@ -1189,6 +1246,7 @@ const BOSS_SECTION_LOADERS = {
     training: () => typeof loadTrainingRecords === 'function' && loadTrainingRecords(),
     bonus: () => typeof loadBonusHours === 'function' && loadBonusHours(),
     callins: () => typeof loadEmergencyCallins === 'function' && loadEmergencyCallins(),
+    incidents: () => typeof IncidentReports !== 'undefined' && typeof IncidentReports.loadIncidents === 'function' && IncidentReports.loadIncidents(),
     absences: () => typeof loadAbsences === 'function' && loadAbsences(),
     oncall: () => typeof loadOncallRotations === 'function' && loadOncallRotations(),
     analytics: () => typeof generateAnalyticsReport === 'function' && generateAnalyticsReport(),
@@ -2765,6 +2823,7 @@ function addSampleTimeoffRequests() {
 function loadParamedicDashboard() {
     showParamedicSection('myschedule');
     loadMySchedule();
+    renderEmployeeStatsHeader('paramedicDashboard');
 }
 
 /** @function showParamedicSection */
@@ -2921,6 +2980,7 @@ function loadMySchedule() {
 function loadEmtDashboard() {
     showEmtSection('myschedule');
     loadEmtMySchedule();
+    renderEmployeeStatsHeader('emtDashboard');
 }
 
 /** @function showEmtSection */
@@ -3063,6 +3123,70 @@ function loadEmtMySchedule() {
         });
     } catch (error) {
         Logger.error('[loadEmtMySchedule] Error:', error.message || error);
+    }
+}
+
+/** @function renderEmployeeStatsHeader - Shows hours summary at top of employee dashboard */
+function renderEmployeeStatsHeader(dashboardId) {
+    try {
+        const dashboard = document.getElementById(dashboardId);
+        if (!dashboard || !currentUser) return;
+
+        // Remove existing header if any
+        const existing = dashboard.querySelector('.employee-stats-header');
+        if (existing) existing.remove();
+
+        // Calculate monthly hours from published schedules
+        const now = new Date();
+        const currentMonth = now.toLocaleString('en-US', { month: 'long' });
+        const currentYear = now.getFullYear();
+        let monthlyHours = 0;
+        let totalShifts = 0;
+        let upcomingShifts = 0;
+
+        (schedules || []).filter(function(s) { return s.status === 'published'; }).forEach(function(schedule) {
+            (schedule.crews || []).forEach(function(crew) {
+                var isAssigned = String(crew.paramedicId) === String(currentUser.id) || String(crew.emtId) === String(currentUser.id);
+                if (!isAssigned) return;
+                totalShifts++;
+                var crewDate = new Date(crew.date);
+                if (crewDate >= now) upcomingShifts++;
+                if (crewDate.getMonth() === now.getMonth() && crewDate.getFullYear() === currentYear) {
+                    monthlyHours += parseInt(crew.hours) || 12;
+                }
+            });
+        });
+
+        var hoursRemaining = Math.max(0, 160 - monthlyHours);
+        var hoursPercent = Math.min(100, Math.round((monthlyHours / 160) * 100));
+        var barColor = hoursPercent > 90 ? '#e74c3c' : hoursPercent > 70 ? '#f39c12' : '#27ae60';
+
+        var header = document.createElement('div');
+        header.className = 'employee-stats-header';
+        header.style.cssText = 'display:flex;flex-wrap:wrap;gap:12px;padding:16px 20px;margin-bottom:0;';
+
+        header.innerHTML =
+            '<div style="background:#fff;border-radius:10px;padding:12px 16px;box-shadow:0 2px 6px rgba(0,0,0,.06);flex:1;min-width:140px;">' +
+            '<div style="font-size:.75rem;color:#888;text-transform:uppercase;letter-spacing:.5px">This Month</div>' +
+            '<div style="font-size:1.4rem;font-weight:700;color:' + barColor + '">' + monthlyHours + 'h <span style="font-size:.8rem;color:#aaa;font-weight:400">/ 160h</span></div>' +
+            '<div style="background:#f0f0f0;border-radius:3px;height:4px;margin-top:6px;overflow:hidden"><div style="width:' + hoursPercent + '%;background:' + barColor + ';height:100%;border-radius:3px"></div></div>' +
+            '</div>' +
+            '<div style="background:#fff;border-radius:10px;padding:12px 16px;box-shadow:0 2px 6px rgba(0,0,0,.06);flex:1;min-width:140px;">' +
+            '<div style="font-size:.75rem;color:#888;text-transform:uppercase;letter-spacing:.5px">Upcoming Shifts</div>' +
+            '<div style="font-size:1.4rem;font-weight:700;color:#3498db">' + upcomingShifts + '</div>' +
+            '</div>' +
+            '<div style="background:#fff;border-radius:10px;padding:12px 16px;box-shadow:0 2px 6px rgba(0,0,0,.06);flex:1;min-width:140px;">' +
+            '<div style="font-size:.75rem;color:#888;text-transform:uppercase;letter-spacing:.5px">Hours Remaining</div>' +
+            '<div style="font-size:1.4rem;font-weight:700;color:' + (hoursRemaining < 20 ? '#e74c3c' : '#27ae60') + '">' + hoursRemaining + 'h</div>' +
+            '</div>';
+
+        // Insert at the top of main content
+        var mainContent = dashboard.querySelector('.main-content');
+        if (mainContent && mainContent.firstChild) {
+            mainContent.insertBefore(header, mainContent.firstChild);
+        }
+    } catch (e) {
+        Logger.error('[renderEmployeeStatsHeader]', e);
     }
 }
 

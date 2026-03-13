@@ -32,23 +32,17 @@ router.post('/reset', async (req, res) => {
         const ROUNDS = SECURITY.BCRYPT_ROUNDS;
 
         db.transaction(() => {
-            // Wipe operational tables
-            db.exec(`
-                DELETE FROM crews;
-                DELETE FROM schedules;
-                DELETE FROM system_logs;
-                DELETE FROM notifications;
-                DELETE FROM incidents;
-                DELETE FROM timeoff_requests;
-                DELETE FROM shift_swaps;
-                DELETE FROM emergency_callins;
-                DELETE FROM training_records;
-                DELETE FROM payroll_reports;
-                DELETE FROM user_permissions;
-                DELETE FROM refresh_tokens;
-                DELETE FROM password_reset_tokens;
-                DELETE FROM audit_log;
-            `);
+            // Wipe operational tables — use DELETE FROM for tables that exist,
+            // wrap each in a try so missing tables don't abort the transaction.
+            const tablesToWipe = [
+                'crews', 'schedules', 'system_logs', 'notifications',
+                'incident_reports', 'timeoff_requests', 'shift_swaps',
+                'emergency_callins', 'training_records', 'user_permissions',
+                'locations'
+            ];
+            for (const table of tablesToWipe) {
+                try { db.prepare(`DELETE FROM ${table}`).run(); } catch (_) { /* table may not exist */ }
+            }
 
             // Remove all non-super/boss users
             db.prepare(`DELETE FROM users WHERE role NOT IN ('super', 'boss')`).run();
