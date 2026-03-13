@@ -36,9 +36,6 @@
         <h1>Lifestar Ambulance Scheduling System</h1>
         <p class="print-date">Printed: <script>document.write(new Date().toLocaleDateString())</script></p>
     </div>
-
-        <!-- Skip to main content link for accessibility -->
-        <a href="#main-content" class="skip-to-content">Skip to main content</a>
     <!-- Login Page -->
     <div id="loginPage" class="login-container">
         <div class="login-box">
@@ -254,6 +251,10 @@
                         <div class="nav-item-icon">🚨</div>
                         <div class="nav-item-text">Emergency Call-ins</div>
                     </div>
+                    <div class="nav-item" onclick="showSuperSection('s_incidents')">
+                        <div class="nav-item-icon">📋</div>
+                        <div class="nav-item-text">Incident Reports</div>
+                    </div>
                     <div class="nav-item" onclick="showSuperSection('s_absences')">
                         <div class="nav-item-icon">❌</div>
                         <div class="nav-item-text">Absences</div>
@@ -319,20 +320,37 @@
                 <!-- NEW: Schedule Health Widget -->
                 <div id="scheduleHealthWidget" style="margin-top: 20px;"></div>
 
+                <!-- Pending Actions Widget -->
+                <div id="superPendingActionsWidget" class="card" style="margin-top: 20px;">
+                    <div class="card-header">
+                        <h2>Pending Actions</h2>
+                    </div>
+                    <div class="card-body">
+                        <div id="pendingActionsList" style="display:flex;flex-wrap:wrap;gap:12px;">
+                            <!-- Populated by JS - shows counts for pending timeoff, open swaps, open callins, expiring certs -->
+                        </div>
+                    </div>
+                </div>
+
                 <div class="card" style="margin-top: 20px;">
                     <div class="card-header">
                         <h2>Quick Actions</h2>
                     </div>
                     <div class="card-body">
                         <div class="grid-3" style="margin-bottom: 12px;">
-                            <button class="btn btn-primary" onclick="showSuperSection('users')">👥 Manage Users</button>
-                            <button class="btn btn-success" onclick="showSuperSection('features')">⚙️ Toggle Features</button>
-                            <button class="btn btn-warning" onclick="showSuperSection('logs')">📋 View Logs</button>
-                        </div>
-                        <div class="grid-3">
                             <button class="btn btn-success" onclick="showCreateScheduleModal()">➕ Create Schedule</button>
                             <button class="btn btn-primary" onclick="showSuperSection('s_drafts')">📝 Draft Schedules</button>
+                            <button class="btn btn-primary" onclick="showSuperSection('s_calendar')">📆 Calendar View</button>
+                        </div>
+                        <div class="grid-3" style="margin-bottom: 12px;">
+                            <button class="btn btn-primary" onclick="showSuperSection('users')">👥 Manage Users</button>
+                            <button class="btn btn-warning" onclick="showSuperSection('s_timeoff')">🏖️ Time Off Requests</button>
+                            <button class="btn btn-warning" onclick="showSuperSection('s_callins')">🚨 Emergency Call-ins</button>
+                        </div>
+                        <div class="grid-3">
+                            <button class="btn btn-success" onclick="showSuperSection('features')">⚙️ Toggle Features</button>
                             <button class="btn btn-info" onclick="showSuperSection('permissions')">🔐 Permissions</button>
+                            <button class="btn btn-warning" onclick="showSuperSection('logs')">📋 View Logs</button>
                         </div>
                     </div>
                 </div>
@@ -468,11 +486,11 @@
                             <h2>System Info</h2>
                         </div>
                         <div class="card-body">
-                            <p><strong>Version:</strong> 3.0.0</p>
+                            <p><strong>Version:</strong> 3.2.0</p>
                             <p><strong>Last Update:</strong> <span id="lastSystemUpdate"></span></p>
                             <p><strong>Total Features:</strong> 50+</p>
                             <p><strong>Languages:</strong> 13</p>
-                            <p><strong>JS Files:</strong> 34</p>
+                            <p><strong>JS Files:</strong> 37</p>
                         </div>
                     </div>
                 </div>
@@ -827,6 +845,39 @@
                 </div>
             </div>
 
+            <!-- Incident Reports -->
+            <div id="superS_incidents" class="super-section hidden">
+                <div class="header">
+                    <div class="header-left">
+                        <h1>Incident Reports</h1>
+                        <p>Track and manage incident reports</p>
+                    </div>
+                    <div class="header-right">
+                        <button class="btn btn-danger" onclick="if(typeof IncidentReports!=='undefined') IncidentReports.showCreateModal(); else showAlert('Incident Reports module loading...','info');">+ New Report</button>
+                    </div>
+                </div>
+                <div id="superIncidentsContainer">
+                    <div class="card">
+                        <div class="card-body">
+                            <div style="display:flex;gap:10px;align-items:center;margin-bottom:12px;flex-wrap:wrap;">
+                                <input type="text" id="superIncidentSearch" class="form-input" placeholder="Search incidents..." style="flex:1;min-width:200px;">
+                                <select id="superIncidentStatusFilter" class="form-input" style="max-width:160px;">
+                                    <option value="">All Statuses</option>
+                                    <option value="open">Open</option>
+                                    <option value="investigating">Investigating</option>
+                                    <option value="resolved">Resolved</option>
+                                    <option value="closed">Closed</option>
+                                </select>
+                            </div>
+                            <table>
+                                <thead><tr><th>Date</th><th>Type</th><th>Reporter</th><th>Description</th><th>Severity</th><th>Status</th><th>Actions</th></tr></thead>
+                                <tbody id="superIncidentsTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Absences -->
             <div id="superS_absences" class="super-section hidden">
                 <div class="header">
@@ -1038,6 +1089,10 @@
                     <div class="nav-item" onclick="showBossSection('callins')">
                         <div class="nav-item-icon">🚨</div>
                         <div class="nav-item-text">Emergency Call-ins</div>
+                    </div>
+                    <div class="nav-item" onclick="showBossSection('incidents')">
+                        <div class="nav-item-icon">📋</div>
+                        <div class="nav-item-text">Incident Reports</div>
                     </div>
                     <div class="nav-item" onclick="showBossSection('absences')">
                         <div class="nav-item-icon">❌</div>
@@ -1590,6 +1645,29 @@
                 </div>
             </div>
 
+            <!-- Boss Incident Reports -->
+            <div id="bossIncidents" class="boss-section hidden">
+                <div class="header">
+                    <div class="header-left">
+                        <h1>Incident Reports</h1>
+                        <p>Track and manage incident reports</p>
+                    </div>
+                    <div class="header-right">
+                        <button class="btn btn-danger" onclick="if(typeof IncidentReports!=='undefined') IncidentReports.showCreateModal(); else showAlert('Incident Reports module loading...','info');">+ New Report</button>
+                    </div>
+                </div>
+                <div id="bossIncidentsContainer">
+                    <div class="card">
+                        <div class="card-body">
+                            <table>
+                                <thead><tr><th>Date</th><th>Type</th><th>Reporter</th><th>Description</th><th>Severity</th><th>Status</th><th>Actions</th></tr></thead>
+                                <tbody id="bossIncidentsTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div id="bossAbsences" class="boss-section hidden">
                 <div class="header">
                     <div class="header-left">
@@ -1905,6 +1983,10 @@
                 </div>
                 <div class="sidebar-title">Paramedic</div>
                 <div class="sidebar-user-info" id="paramedicUserName">Paramedic</div>
+                <div style="font-size:11px;color:rgba(255,255,255,0.7);margin-top:4px;text-align:center;">
+                    <div class="dashboard-clock-time" style="font-weight:600;letter-spacing:1px;"></div>
+                    <div class="dashboard-clock-date" style="font-size:10px;opacity:0.8;"></div>
+                </div>
             </div>
             <div class="sidebar-nav">
                 <div class="nav-section">
@@ -1927,6 +2009,10 @@
                     <div class="nav-item" onclick="showParamedicSection('trades')">
                         <div class="nav-item-icon">🔄</div>
                         <div class="nav-item-text">Request Trade</div>
+                    </div>
+                    <div class="nav-item" onclick="showParamedicSection('swap')">
+                        <div class="nav-item-icon">🔀</div>
+                        <div class="nav-item-text">Swap Marketplace</div>
                     </div>
                 </div>
                 <div class="nav-section">
@@ -2196,6 +2282,10 @@
                 </div>
                 <div class="sidebar-title">EMT Dashboard</div>
                 <div class="sidebar-user-info" id="emtUserName">EMT</div>
+                <div style="font-size:11px;color:rgba(255,255,255,0.7);margin-top:4px;text-align:center;">
+                    <div class="dashboard-clock-time" style="font-weight:600;letter-spacing:1px;"></div>
+                    <div class="dashboard-clock-date" style="font-size:10px;opacity:0.8;"></div>
+                </div>
             </div>
             <div class="sidebar-nav">
                 <div class="nav-section">
@@ -2218,6 +2308,10 @@
                     <div class="nav-item" onclick="showEmtSection('trades')">
                         <div class="nav-item-icon">🔄</div>
                         <div class="nav-item-text">Request Trade</div>
+                    </div>
+                    <div class="nav-item" onclick="showEmtSection('swap')">
+                        <div class="nav-item-icon">🔀</div>
+                        <div class="nav-item-text">Swap Marketplace</div>
                     </div>
                 </div>
                 <div class="nav-section">
@@ -2809,9 +2903,10 @@
                             <label for="duplicateYear">Target Year</label>
                             <select id="duplicateYear" class="form-select" required>
                                 <option value="">Select Year</option>
-                                <option value="2024">2024</option>
-                                <option value="2025" selected>2025</option>
-                                <option value="2026">2026</option>
+                                <option value="2025">2025</option>
+                                <option value="2026" selected>2026</option>
+                                <option value="2027">2027</option>
+                                <option value="2028">2028</option>
                             </select>
                         </div>
                     </div>

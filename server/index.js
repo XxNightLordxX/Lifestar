@@ -37,27 +37,27 @@ const http = require('http');
 const { initializeDatabase, getDb } = require('./db/database');
 
 // ============================================
-// CONSTANTS
+// CONSTANTS — derived from centralised config.js
 // ============================================
 const CONSTANTS = {
-    PORT: process.env.PORT || 8061,
-    NODE_ENV: process.env.NODE_ENV || 'development',
-    API_VERSION: '3.1.0',
-    
+    PORT: SERVER.PORT,
+    NODE_ENV: SERVER.NODE_ENV,
+    API_VERSION: SERVER.API_VERSION,
+
     // Body limits
-    JSON_LIMIT: '10mb',
+    JSON_LIMIT: SERVER.JSON_LIMIT || '10mb',
     URL_ENCODED_LIMIT: '10mb',
-    
-    // Security
-    COOKIE_SECRET: process.env.COOKIE_SECRET || 'lifestar-cookie-secret-change-in-production',
-    JWT_SECRET: process.env.JWT_SECRET,
-    
+
+    // Security — read from config.js, never hardcoded
+    COOKIE_SECRET: SECURITY.COOKIE_SECRET,
+    JWT_SECRET: SECURITY.JWT_SECRET,
+
     // Timeouts
-    KEEP_ALIVE_TIMEOUT: 65000,
-    HEADERS_TIMEOUT: 66000,
-    
+    KEEP_ALIVE_TIMEOUT: SERVER.KEEP_ALIVE_TIMEOUT,
+    HEADERS_TIMEOUT: SERVER.HEADERS_TIMEOUT,
+
     // Logging
-    LOG_EXCLUDED_PATHS: ['/api/health', '/favicon.ico', '/css/', '/js/', '/images/']
+    LOG_EXCLUDED_PATHS: SERVER.LOG_EXCLUDED_PATHS
 };
 
 // ============================================

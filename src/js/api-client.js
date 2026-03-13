@@ -1000,6 +1000,224 @@ const ApiClient = (function() {
     }
 
     // ============================================
+    // INCIDENTS ENDPOINTS
+    // ============================================
+
+    function getIncidents(params = {}) {
+        return requestWithRetry('GET', '/incidents' + buildQueryString(params));
+    }
+
+    function getIncident(id) {
+        return requestWithRetry('GET', `/incidents/${id}`);
+    }
+
+    function createIncident(data) {
+        clearCache('/incidents');
+        return requestWithRetry('POST', '/incidents', data, { cacheEnabled: false });
+    }
+
+    function updateIncident(id, data) {
+        clearCache('/incidents');
+        return requestWithRetry('PATCH', `/incidents/${id}`, data, { cacheEnabled: false });
+    }
+
+    function updateIncidentStatus(id, status) {
+        clearCache('/incidents');
+        return requestWithRetry('PATCH', `/incidents/${id}/status`, { status }, { cacheEnabled: false });
+    }
+
+    function deleteIncident(id) {
+        clearCache('/incidents');
+        return requestWithRetry('DELETE', `/incidents/${id}`, null, { cacheEnabled: false });
+    }
+
+    function getIncidentStats() {
+        return requestWithRetry('GET', '/incidents/stats/summary');
+    }
+
+    // ============================================
+    // SHIFT SWAPS ENDPOINTS
+    // ============================================
+
+    function getSwaps(params = {}) {
+        return requestWithRetry('GET', '/swaps' + buildQueryString(params));
+    }
+
+    function createSwap(data) {
+        clearCache('/swaps');
+        return requestWithRetry('POST', '/swaps', data, { cacheEnabled: false });
+    }
+
+    function acceptSwap(id) {
+        clearCache('/swaps');
+        return requestWithRetry('POST', `/swaps/${id}/accept`, null, { cacheEnabled: false });
+    }
+
+    function approveSwap(id) {
+        clearCache('/swaps');
+        return requestWithRetry('PATCH', `/swaps/${id}/approve`, null, { cacheEnabled: false });
+    }
+
+    function denySwap(id) {
+        clearCache('/swaps');
+        return requestWithRetry('PATCH', `/swaps/${id}/deny`, null, { cacheEnabled: false });
+    }
+
+    function cancelSwap(id) {
+        clearCache('/swaps');
+        return requestWithRetry('DELETE', `/swaps/${id}`, null, { cacheEnabled: false });
+    }
+
+    // ============================================
+    // TRAINING ENDPOINTS
+    // ============================================
+
+    function getTraining(params = {}) {
+        return requestWithRetry('GET', '/training' + buildQueryString(params));
+    }
+
+    function getExpiringTraining(days = 30) {
+        return requestWithRetry('GET', `/training/expiring?days=${days}`);
+    }
+
+    function createTraining(data) {
+        clearCache('/training');
+        return requestWithRetry('POST', '/training', data, { cacheEnabled: false });
+    }
+
+    function updateTraining(id, data) {
+        clearCache('/training');
+        return requestWithRetry('PUT', `/training/${id}`, data, { cacheEnabled: false });
+    }
+
+    function deleteTraining(id) {
+        clearCache('/training');
+        return requestWithRetry('DELETE', `/training/${id}`, null, { cacheEnabled: false });
+    }
+
+    // ============================================
+    // CALL-IN ENDPOINTS
+    // ============================================
+
+    function getCallins(params = {}) {
+        return requestWithRetry('GET', '/callins' + buildQueryString(params));
+    }
+
+    function createCallin(data) {
+        clearCache('/callins');
+        return requestWithRetry('POST', '/callins', data, { cacheEnabled: false });
+    }
+
+    function updateCallin(id, data) {
+        clearCache('/callins');
+        return requestWithRetry('PATCH', `/callins/${id}`, data, { cacheEnabled: false });
+    }
+
+    function deleteCallin(id) {
+        clearCache('/callins');
+        return requestWithRetry('DELETE', `/callins/${id}`, null, { cacheEnabled: false });
+    }
+
+    // ============================================
+    // ANALYTICS ENDPOINTS
+    // ============================================
+
+    function getAnalyticsOverview() {
+        return requestWithRetry('GET', '/analytics/overview');
+    }
+
+    function getAnalyticsSchedules() {
+        return requestWithRetry('GET', '/analytics/schedules');
+    }
+
+    function getAnalyticsStaff() {
+        return requestWithRetry('GET', '/analytics/staff');
+    }
+
+    function getAnalyticsIncidents() {
+        return requestWithRetry('GET', '/analytics/incidents');
+    }
+
+    function getAnalyticsTimeoff() {
+        return requestWithRetry('GET', '/analytics/timeoff');
+    }
+
+    // ============================================
+    // PERMISSIONS ENDPOINTS
+    // ============================================
+
+    function getPermissionDefinitions() {
+        return requestWithRetry('GET', '/permissions/definitions');
+    }
+
+    function getUserPermissions(userId) {
+        return requestWithRetry('GET', `/permissions/user/${userId}`);
+    }
+
+    function setUserPermissions(userId, permissions) {
+        return requestWithRetry('PUT', `/permissions/user/${userId}`, { permissions }, { cacheEnabled: false });
+    }
+
+    function grantPermission(userId, permission) {
+        return requestWithRetry('POST', `/permissions/user/${userId}/grant`, { permission }, { cacheEnabled: false });
+    }
+
+    function revokePermission(userId, permission) {
+        return requestWithRetry('POST', `/permissions/user/${userId}/revoke`, { permission }, { cacheEnabled: false });
+    }
+
+    function resetUserPermissions(userId) {
+        return requestWithRetry('POST', `/permissions/user/${userId}/reset`, null, { cacheEnabled: false });
+    }
+
+    // ============================================
+    // ADMIN ENDPOINTS
+    // ============================================
+
+    function adminReset() {
+        clearCache();
+        return requestWithRetry('POST', '/admin/reset', null, { cacheEnabled: false });
+    }
+
+    function getConfigKeys() {
+        return requestWithRetry('GET', '/config/keys');
+    }
+
+    function getServerConfig() {
+        return requestWithRetry('GET', '/config/server');
+    }
+
+    // ============================================
+    // USER HOURS ENDPOINTS
+    // ============================================
+
+    function updateUserHours(id, data) {
+        clearCache('/users');
+        return requestWithRetry('PATCH', `/users/${id}/hours`, data, { cacheEnabled: false });
+    }
+
+    // ============================================
+    // DASHBOARD COUNTS (convenience method)
+    // ============================================
+
+    async function getDashboardCounts() {
+        try {
+            const [timeoff, swaps, callins] = await Promise.all([
+                requestWithRetry('GET', '/timeoff?status=pending&limit=1').catch(() => ({ pagination: { total: 0 } })),
+                requestWithRetry('GET', '/swaps?status=open').catch(() => ({ swaps: [] })),
+                requestWithRetry('GET', '/callins?status=open').catch(() => ({ callins: [] }))
+            ]);
+            return {
+                pendingTimeoff: timeoff.pagination?.total || 0,
+                openSwaps: (swaps.swaps || []).length,
+                openCallins: (callins.callins || []).filter(c => c.status === 'open').length
+            };
+        } catch (e) {
+            return { pendingTimeoff: 0, openSwaps: 0, openCallins: 0 };
+        }
+    }
+
+    // ============================================
     // SYSTEM ENDPOINTS
     // ============================================
 
@@ -1085,14 +1303,14 @@ const ApiClient = (function() {
         // Core
         request,
         init,
-        
+
         // Auth
         login,
         logout,
         getMe,
         refreshToken,
         changePassword,
-        
+
         // Users
         getUsers,
         getUser,
@@ -1101,7 +1319,8 @@ const ApiClient = (function() {
         deleteUser,
         resetPassword,
         toggleUserStatus,
-        
+        updateUserHours,
+
         // Schedules
         getSchedules,
         getSchedule,
@@ -1110,7 +1329,7 @@ const ApiClient = (function() {
         deleteSchedule,
         duplicateSchedule,
         publishSchedule,
-        
+
         // Crews
         getCrews,
         getCrew,
@@ -1118,7 +1337,7 @@ const ApiClient = (function() {
         updateCrew,
         deleteCrew,
         batchUpdateCrews,
-        
+
         // Locations
         getLocations,
         getLocation,
@@ -1126,43 +1345,96 @@ const ApiClient = (function() {
         updateLocation,
         deleteLocation,
         batchCreateLocations,
-        
+
         // Time Off
         getTimeoff,
         getTimeoffRequest,
         createTimeoff,
         updateTimeoff,
         getTimeoffStats,
-        
+
+        // Incidents
+        getIncidents,
+        getIncident,
+        createIncident,
+        updateIncident,
+        updateIncidentStatus,
+        deleteIncident,
+        getIncidentStats,
+
+        // Shift Swaps
+        getSwaps,
+        createSwap,
+        acceptSwap,
+        approveSwap,
+        denySwap,
+        cancelSwap,
+
+        // Training
+        getTraining,
+        getExpiringTraining,
+        createTraining,
+        updateTraining,
+        deleteTraining,
+
+        // Call-ins
+        getCallins,
+        createCallin,
+        updateCallin,
+        deleteCallin,
+
+        // Analytics
+        getAnalyticsOverview,
+        getAnalyticsSchedules,
+        getAnalyticsStaff,
+        getAnalyticsIncidents,
+        getAnalyticsTimeoff,
+
+        // Permissions
+        getPermissionDefinitions,
+        getUserPermissions,
+        setUserPermissions,
+        grantPermission,
+        revokePermission,
+        resetUserPermissions,
+
+        // Admin
+        adminReset,
+        getConfigKeys,
+        getServerConfig,
+
+        // Dashboard
+        getDashboardCounts,
+
         // Logs
         getLogs,
         getLogStats,
         exportLogs,
-        
+
         // Notifications
         getNotifications,
         markNotificationRead,
         markAllNotificationsRead,
         deleteNotification,
-        
+
         // System
         healthCheck,
         getStats,
-        
+
         // State
         isOnline: () => state.isOnline,
         getToken: () => state.token,
         getCsrfToken,
-        
+
         // Control
         cancelRequest,
         cancelAllRequests,
         clearCache,
-        
+
         // Queue
         getQueueLength: () => state.requestQueue.length,
         processQueue,
-        
+
         // Constants
         CONSTANTS,
         ERROR_CODES

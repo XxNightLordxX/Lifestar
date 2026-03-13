@@ -374,8 +374,8 @@ router.get('/export', authenticate, authorize('super'), exportLimiter, async (re
         // Export format
         if (format === 'csv') {
             const header = 'id,message,level,userId,username,ipAddress,createdAt\n';
-            const rows = logs.map(log => 
-                `"${log.id}","${(log.message || '').replace(/"/g, '""')}","${log.type || ''}","${log.userId || ''}","${log.username || ''}","${log.ipAddress || ''}","${log.createdAt || ''}"`
+            const rows = logs.map(log =>
+                `"${log.id}","${(log.message || '').replace(/"/g, '""')}","${log.level || ''}","${log.userId || ''}","${log.username || ''}","${log.ipAddress || ''}","${log.createdAt || ''}"`
             ).join('\n');
             
             res.setHeader('Content-Type', 'text/csv');
@@ -444,10 +444,10 @@ router.get('/stats', authenticate, authorize('super'), async (req, res) => {
             summary: {
                 total: stats.total || 0,
                 info: stats.info || 0,
-                warning: stats.warning || 0,
+                warn: stats.warn || 0,
                 error: stats.error || 0,
-                audit: stats.audit || 0,
-                security: stats.security || 0
+                debug: stats.debug || 0,
+                critical: stats.critical || 0
             }
         });
     } catch (err) {

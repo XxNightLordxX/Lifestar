@@ -382,15 +382,21 @@ router.patch('/:id/status', authenticate, requireMinRole('boss'), (req, res) => 
         const incident = db.prepare('SELECT * FROM incident_reports WHERE id = ?').get(id);
         if (!incident) return res.status(HTTP_STATUS.NOT_FOUND).json({ error: 'Report not found' });
 
-        const resolvedAt = (req.body.status === 'resolved' || req.body.status === 'closed') && !incident.resolvedAt
-            ? "datetime('now')"
-            : `'${incident.resolvedAt}'`;
+        const shouldSetResolved = (req.body.status === 'resolved' || req.body.status === 'closed') && !incident.resolvedAt;
 
-        db.prepare(`
-            UPDATE incident_reports
-            SET status = ?, resolvedAt = ${resolvedAt}, updatedAt = datetime('now')
-            WHERE id = ?
-        `).run(req.body.status, id);
+        if (shouldSetResolved) {
+            db.prepare(`
+                UPDATE incident_reports
+                SET status = ?, resolvedAt = datetime('now'), updatedAt = datetime('now')
+                WHERE id = ?
+            `).run(req.body.status, id);
+        } else {
+            db.prepare(`
+                UPDATE incident_reports
+                SET status = ?, updatedAt = datetime('now')
+                WHERE id = ?
+            `).run(req.body.status, id);
+        }
 
         addLog(`Incident #${id} status → ${req.body.status} by ${req.user.username}`, req.user.id, req.user.username);
 
