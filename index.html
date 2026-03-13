@@ -305,38 +305,13 @@
                     </div>
                 </div>
 
-                <div class="grid-3">
-                    <div class="card">
-                        <div class="card-header" style="background: linear-gradient(135deg, #6f42c1 0%, #8e5eb8 100%);">
-                            <h2>Total Users</h2>
-                            <div class="card-header-icon">👥</div>
-                        </div>
-                        <div class="card-body">
-                            <h3 id="totalUsersCount">0</h3>
-                            <p class="text-muted">Registered users</p>
-                        </div>
-                    </div>
-                    <div class="card">
-                        <div class="card-header" style="background: linear-gradient(135deg, var(--lifestar-blue) 0%, var(--lifestar-light-blue) 100%);">
-                            <h2>Total Schedules</h2>
-                            <div class="card-header-icon">📅</div>
-                        </div>
-                        <div class="card-body">
-                            <h3 id="totalSchedulesCount">0</h3>
-                            <p class="text-muted">Draft + Published</p>
-                        </div>
-                    </div>
-                    <div class="card">
-                        <div class="card-header" style="background: linear-gradient(135deg, var(--success-color) 0%, #34ce57 100%);">
-                            <h2>System Status</h2>
-                            <div class="card-header-icon">✅</div>
-                        </div>
-                        <div class="card-body">
-                            <h3>Online</h3>
-                            <p class="text-muted">All systems operational</p>
-                        </div>
-                    </div>
+                <!-- Live stat cards rendered by updateOverviewStats() -->
+                <div id="overviewQuickStats" style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:4px;">
+                    <!-- populated by JS -->
                 </div>
+                <!-- Hidden legacy elements kept for backward-compat -->
+                <span id="totalUsersCount" style="display:none">0</span>
+                <span id="totalSchedulesCount" style="display:none">0</span>
 
                 <!-- NEW: Today's Coverage Widget -->
                 <div id="superTodaysCoverageWidget" style="margin-top: 20px;"></div>
@@ -376,21 +351,36 @@
                 </div>
                 <div id="usersTableContainer" class="card">
                     <div class="card-body">
-                        <table id="usersTable">
+                        <div style="display:flex;gap:10px;align-items:center;margin-bottom:12px;flex-wrap:wrap;">
+                            <input type="text" id="usersSearchInput" class="form-input" placeholder="🔍 Search users…" style="flex:1;min-width:200px;" oninput="filterUsersTable(this.value)">
+                            <select id="usersRoleFilter" class="form-input" style="max-width:160px;" onchange="filterUsersTable(document.getElementById('usersSearchInput').value)">
+                                <option value="">All Roles</option>
+                                <option value="super">Super Admin</option>
+                                <option value="boss">Boss</option>
+                                <option value="paramedic">Paramedic</option>
+                                <option value="emt">EMT</option>
+                            </select>
+                            <span id="usersTableCount" style="color:#888;font-size:.85rem;white-space:nowrap;"></span>
+                        </div>
+                        <div style="overflow-x:auto;">
+                        <table id="usersTable" style="width:100%;border-collapse:collapse;">
                             <thead>
-                                <tr>
-                                    <th>Username</th>
-                                    <th>Full Name</th>
-                                    <th>Role</th>
-                                    <th>Phone</th>
-                                    <th>Location</th>
-                                    <th>Actions</th>
+                                <tr style="background:#f8f9fa;">
+                                    <th style="padding:10px 12px;text-align:left;border-bottom:2px solid #dee2e6;">Username</th>
+                                    <th style="padding:10px 12px;text-align:left;border-bottom:2px solid #dee2e6;">Full Name</th>
+                                    <th style="padding:10px 12px;text-align:left;border-bottom:2px solid #dee2e6;">Role</th>
+                                    <th style="padding:10px 12px;text-align:left;border-bottom:2px solid #dee2e6;">Phone</th>
+                                    <th style="padding:10px 12px;text-align:left;border-bottom:2px solid #dee2e6;">Location</th>
+                                    <th style="padding:10px 12px;text-align:left;border-bottom:2px solid #dee2e6;">Shifts</th>
+                                    <th style="padding:10px 12px;text-align:left;border-bottom:2px solid #dee2e6;">Status</th>
+                                    <th style="padding:10px 12px;text-align:left;border-bottom:2px solid #dee2e6;">Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="usersTableBody">
-                                <!-- Users will be populated here -->
+                                <!-- Users populated by loadUsersTable() -->
                             </tbody>
                         </table>
+                        </div>
                     </div>
                 </div>
             </div>

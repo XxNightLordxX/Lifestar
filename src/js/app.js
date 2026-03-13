@@ -666,6 +666,26 @@ function loadUsersTable() {
     }
 }
 
+/** @function filterUsersTable — live search + role filter for users table */
+function filterUsersTable(query) {
+    try {
+        const q    = (query || '').toLowerCase().trim();
+        const role = (document.getElementById('usersRoleFilter') || {value: ''}).value;
+        const rows = document.querySelectorAll('#usersTableBody tr');
+        let visible = 0;
+        rows.forEach(row => {
+            const text = row.textContent.toLowerCase();
+            const rowRole = (row.querySelector('td:nth-child(3)') || {textContent:''}).textContent.toLowerCase();
+            const matchQ    = !q    || text.includes(q);
+            const matchRole = !role || rowRole.includes(role);
+            row.style.display = (matchQ && matchRole) ? '' : 'none';
+            if(matchQ && matchRole) visible++;
+        });
+        const countEl = document.getElementById('usersTableCount');
+        if(countEl) countEl.textContent = visible + ' of ' + users.length + ' users';
+    } catch(e) { Logger.error('[filterUsersTable]', e); }
+}
+
 /**
  * Get user form data from DOM
  * @returns {Object} Form data object
@@ -2358,35 +2378,68 @@ function changeCalendarMonth(delta) {
 function loadStaffDirectory() {
     try {
         const staffGrid = document.getElementById('staffGrid');
+        if(!staffGrid) return;
         staffGrid.textContent = '';
 
-        const staff = users.filter(u => u.role === USER_ROLES.PARAMEDIC || u.role === USER_ROLES.EMT);
+        const staff = users.filter(u =>
+            (u.role === USER_ROLES.PARAMEDIC || u.role === USER_ROLES.EMT) && u.active !== false
+        ).sort((a, b) => (a.fullName || a.username).localeCompare(b.fullName || b.username));
 
         if(staff.length === 0) {
-            staffGrid.innerHTML = '<p class="text-muted">No staff members found.</p>';
+            staffGrid.innerHTML = '<p class="text-muted" style="padding:20px">No active staff members found.</p>';
             return;
         }
 
         staff.forEach(member => {
+            // Count upcoming shifts
+            const now = new Date();
+            let upcoming = 0, total = 0;
+            schedules.forEach(s => {
+                (s.crews || []).forEach(c => {
+                    if(String(c.paramedicId) === String(member.id) || String(c.emtId) === String(member.id)) {
+                        total++;
+                        if(new Date(c.date) >= now) upcoming++;
+                    }
+                });
+            });
+
+            const isParamedic = member.role === USER_ROLES.PARAMEDIC;
+            const roleColor = isParamedic ? '#e74c3c' : '#2980b9';
+            const roleEmoji = isParamedic ? '🚑' : '🏥';
+            const hours = parseInt(member.hoursWorked) || 0;
+            const bonus = parseInt(member.bonusHours) || 0;
+
             const card = document.createElement('div');
             card.className = 'card';
-            card.innerHTML = `
-                <div class="card-header" style="background: ${member.role === USER_ROLES.PARAMEDIC ? 'var(--lifestar-red)' : 'var(--lifestar-light-blue)'};">
-                    <h2>${sanitizeHTML(member.fullName || member.username)}</h2>
-                </div>
-                <div class="card-body">
-                    <p><strong>Role:</strong> <span class="badge badge-${sanitizeHTML(member.role)}">${sanitizeHTML(member.role.toUpperCase())}</span></p>
-                    <p><strong>Phone:</strong> ${sanitizeHTML(member.phone || 'N/A')}</p>
-                    <p><strong>Hours Worked:</strong> ${parseInt(member.hoursWorked) || 0}</p>
-                    <p><strong>Bonus Hours:</strong> ${parseInt(member.bonusHours) || 0}</p>
-                    <div style="margin-top: 15px;">
-                        <button class="btn btn-sm btn-primary" onclick="viewStaffSchedule(${parseInt(member.id)})">View Schedule</button>
-                        <button class="btn btn-sm btn-info" onclick="viewStaffDetails(${parseInt(member.id)})">Details</button>
-                    </div>
-                </div>
-            `;
+            card.dataset.staffName = (member.fullName || '').toLowerCase();
+            card.dataset.staffRole = member.role;
+            card.style.cssText = 'border-top:4px solid ' + roleColor + ';transition:box-shadow .2s;cursor:default;';
+            card.innerHTML =
+                '<div style="padding:16px 18px;">' +
+                  '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">' +
+                    '<div>' +
+                      '<div style="font-size:1.05rem;font-weight:700;color:#2c3e50">' + roleEmoji + ' ' + sanitizeHTML(member.fullName || member.username) + '</div>' +
+                      '<div style="font-size:.8rem;color:#888;margin-top:2px">@' + sanitizeHTML(member.username) + '</div>' +
+                    '</div>' +
+                    '<span style="background:' + roleColor + ';color:#fff;padding:3px 10px;border-radius:12px;font-size:.75rem;font-weight:600">' + member.role.toUpperCase() + '</span>' +
+                  '</div>' +
+                  '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:.85rem;color:#555;margin-bottom:12px;">' +
+                    '<div>📞 ' + sanitizeHTML(member.phone || 'No phone') + '</div>' +
+                    '<div>⏱ ' + hours + 'h worked</div>' +
+                    '<div>📅 ' + upcoming + ' upcoming shift' + (upcoming !== 1 ? 's' : '') + '</div>' +
+                    '<div>⭐ ' + bonus + 'h bonus</div>' +
+                  '</div>' +
+                  '<div style="display:flex;gap:8px;">' +
+                    '<button class="btn btn-sm btn-primary" onclick="viewStaffSchedule(' + parseInt(member.id) + ')" style="flex:1">📅 Schedule</button>' +
+                    '<button class="btn btn-sm btn-info" onclick="viewStaffDetails(' + parseInt(member.id) + ')" style="flex:1">👤 Details</button>' +
+                  '</div>' +
+                '</div>';
             staffGrid.appendChild(card);
         });
+
+        // Update count
+        const countEl = document.getElementById('staffCount');
+        if(countEl) countEl.textContent = staff.length + ' staff';
     } catch (error) {
         Logger.error('[loadStaffDirectory] Error:', error.message || error);
     }
@@ -2414,31 +2467,118 @@ function filterStaff() {
     }
 }
 
-/** @function viewStaffSchedule */
+/** @function viewStaffSchedule — shows a modal with all shifts for a staff member */
 function viewStaffSchedule(staffId) {
-    const staff = users.find(u => u.id === staffId);
-    if(staff) {
-        showAlert(`Viewing schedule for ${staff.fullName || staff.username}`, 'info');
-        // In a full implementation, this would show the staff member's schedule
+    try {
+        const staff = users.find(u => String(u.id) === String(staffId));
+        if(!staff) return;
+
+        const now = new Date();
+        const shifts = [];
+        schedules.forEach(s => {
+            (s.crews || []).forEach(c => {
+                const isP = String(c.paramedicId) === String(staffId);
+                const isE = String(c.emtId) === String(staffId);
+                if(isP || isE) {
+                    shifts.push({
+                        scheduleName: s.name,
+                        date: c.date,
+                        rig: c.rig,
+                        shiftType: c.shiftType,
+                        type: c.type || 'ALS',
+                        hours: c.hours || 12,
+                        partner: isP ? (c.emt || 'TBD') : (c.paramedic || 'TBD'),
+                        partnerRole: isP ? 'EMT' : 'Paramedic',
+                        past: new Date(c.date) < now
+                    });
+                }
+            });
+        });
+        shifts.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+        const upcoming = shifts.filter(s => !s.past);
+        const past     = shifts.filter(s =>  s.past);
+
+        let html = '<div style="max-height:60vh;overflow-y:auto;padding-right:4px;">';
+        html += '<div style="font-size:.85rem;color:#555;margin-bottom:12px;">';
+        html += '<strong>' + sanitizeHTML(staff.fullName || staff.username) + '</strong> &nbsp;·&nbsp; ' + staff.role.toUpperCase();
+        html += ' &nbsp;·&nbsp; ' + upcoming.length + ' upcoming, ' + past.length + ' past</div>';
+
+        if(shifts.length === 0) {
+            html += '<p style="color:#888;text-align:center;padding:20px">No shifts found for this staff member.</p>';
+        } else {
+            const renderShift = (s) =>
+                '<div style="border:1px solid ' + (s.past ? '#eee' : '#dce9ff') + ';border-radius:8px;padding:10px 12px;margin-bottom:8px;opacity:' + (s.past ? '.6' : '1') + '">' +
+                '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">' +
+                '<strong style="font-size:.9rem">' + sanitizeHTML(s.date) + '</strong>' +
+                '<span style="font-size:.75rem;background:' + (s.past ? '#f0f0f0' : '#e3f2fd') + ';padding:2px 8px;border-radius:8px">' + sanitizeHTML(s.shiftType) + '</span>' +
+                '</div>' +
+                '<div style="font-size:.82rem;color:#555">🚑 Rig ' + sanitizeHTML(s.rig || '?') + ' &nbsp;·&nbsp; ' + sanitizeHTML(s.type) + ' &nbsp;·&nbsp; ' + s.hours + 'h</div>' +
+                '<div style="font-size:.82rem;color:#555">👥 ' + sanitizeHTML(s.partnerRole) + ': ' + sanitizeHTML(s.partner) + '</div>' +
+                '</div>';
+
+            if(upcoming.length) {
+                html += '<div style="font-weight:700;color:#2c3e50;margin-bottom:6px">📅 Upcoming (' + upcoming.length + ')</div>';
+                upcoming.forEach(s => { html += renderShift(s); });
+            }
+            if(past.length) {
+                html += '<div style="font-weight:700;color:#888;margin:10px 0 6px">🕐 Past (' + past.length + ')</div>';
+                past.slice(0, 5).forEach(s => { html += renderShift(s); });
+                if(past.length > 5) html += '<p style="color:#aaa;font-size:.8rem;text-align:center">+ ' + (past.length - 5) + ' more past shifts</p>';
+            }
+        }
+        html += '</div>';
+
+        const titleEl = document.getElementById('alertModalTitle');
+        const msgEl   = document.getElementById('alertModalMessage');
+        if(titleEl) titleEl.textContent = 'Schedule: ' + (staff.fullName || staff.username);
+        if(msgEl)   msgEl.innerHTML = html;
+        showModal('alertModal');
+    } catch(error) {
+        Logger.error('[viewStaffSchedule] Error:', error);
     }
 }
 
-/** @function viewStaffDetails */
+/** @function viewStaffDetails — upgraded modal with full staff profile */
 function viewStaffDetails(staffId) {
     try {
-        const staff = users.find(u => u.id === staffId);
-        if(staff) {
-            const details = `
-                <strong>${sanitizeHTML(staff.fullName || staff.username)}</strong><br>
-                Role: ${sanitizeHTML(staff.role.toUpperCase())}<br>
-                Phone: ${sanitizeHTML(staff.phone || 'N/A')}<br>
-                Hours Worked: ${parseInt(staff.hoursWorked) || 0}<br>
-                Bonus Hours: ${parseInt(staff.bonusHours) || 0}
-            `;
-            document.getElementById('alertModalTitle').textContent = 'Staff Details';
-            document.getElementById('alertModalMessage').textContent = details;
-            showModal('alertModal');
-        }
+        const staff = users.find(u => String(u.id) === String(staffId));
+        if(!staff) return;
+
+        // Count total shifts
+        let totalShifts = 0, totalH = 0;
+        schedules.forEach(s => {
+            (s.crews || []).forEach(c => {
+                if(String(c.paramedicId) === String(staffId) || String(c.emtId) === String(staffId)) {
+                    totalShifts++;
+                    totalH += parseInt(c.hours) || 12;
+                }
+            });
+        });
+
+        const isParamedic = staff.role === 'paramedic';
+        const roleColor = isParamedic ? '#e74c3c' : '#2980b9';
+
+        const html =
+            '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:.9rem;">' +
+            '<div><span style="color:#888">Full Name</span><br><strong>' + sanitizeHTML(staff.fullName || 'N/A') + '</strong></div>' +
+            '<div><span style="color:#888">Username</span><br><strong>@' + sanitizeHTML(staff.username) + '</strong></div>' +
+            '<div><span style="color:#888">Role</span><br><span style="background:' + roleColor + ';color:#fff;padding:2px 10px;border-radius:10px;font-size:.8rem">' + staff.role.toUpperCase() + '</span></div>' +
+            '<div><span style="color:#888">Phone</span><br><strong>' + sanitizeHTML(staff.phone || 'N/A') + '</strong></div>' +
+            '<div><span style="color:#888">Hours Worked</span><br><strong>' + (parseInt(staff.hoursWorked) || 0) + 'h</strong></div>' +
+            '<div><span style="color:#888">Bonus Hours</span><br><strong>' + (parseInt(staff.bonusHours) || 0) + 'h</strong></div>' +
+            '<div><span style="color:#888">Total Shifts</span><br><strong>' + totalShifts + '</strong></div>' +
+            '<div><span style="color:#888">Scheduled Hours</span><br><strong>' + totalH + 'h</strong></div>' +
+            '</div>' +
+            '<div style="margin-top:14px;display:flex;gap:8px;">' +
+            '<button class="btn btn-sm btn-primary" onclick="closeModal('alertModal');viewStaffSchedule(' + parseInt(staffId) + ')">📅 View Schedule</button>' +
+            '</div>';
+
+        const titleEl = document.getElementById('alertModalTitle');
+        const msgEl   = document.getElementById('alertModalMessage');
+        if(titleEl) titleEl.textContent = 'Staff Profile';
+        if(msgEl)   msgEl.innerHTML = html;
+        showModal('alertModal');
     } catch (error) {
         Logger.error('[viewStaffDetails] Error:', error.message || error);
     }
@@ -2471,24 +2611,38 @@ function loadTimeoffRequests() {
         document.getElementById('noTimeoffMessage').style.display = 'none';
         document.getElementById('timeoffTable').style.display = 'table';
 
-        timeoffRequests.forEach(request => {
-            const row = document.createElement('tr');
-            const staff = users.find(u => u.id === request.staffId);
-            const statusClass = request.status === 'approved' ? 'badge-success' :
-                               request.status === 'rejected' ? 'badge-danger' : 'badge-warning';
+        // Sort: pending first, then by date descending
+        const sorted = [...timeoffRequests].sort((a, b) => {
+            if(a.status === 'pending' && b.status !== 'pending') return -1;
+            if(b.status === 'pending' && a.status !== 'pending') return 1;
+            return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
+        });
 
-            row.innerHTML = `
-                <td>${sanitizeHTML(staff ? (staff.fullName || staff.username) : 'Unknown')}</td>
-                <td>${sanitizeHTML(request.startDate)} to ${sanitizeHTML(request.endDate)}</td>
-                <td>${sanitizeHTML(request.reason)}</td>
-                <td><span class="badge ${statusClass}">${sanitizeHTML(request.status.toUpperCase())}</span></td>
-                <td>
-                    ${request.status === 'pending' ? `
-                        <button class="btn btn-sm btn-success" onclick="approveTimeoff(${parseInt(request.id)})">Approve</button>
-                        <button class="btn btn-sm btn-danger" onclick="rejectTimeoff(${parseInt(request.id)})">Reject</button>
-                    ` : '-'}
-                </td>
-            `;
+        sorted.forEach(request => {
+            const row = document.createElement('tr');
+            const staff = users.find(u => String(u.id) === String(request.staffId));
+            const statusColors = { approved: '#28a745', rejected: '#dc3545', pending: '#ffc107' };
+            const statusColor  = statusColors[request.status] || '#6c757d';
+            const statusTextC  = request.status === 'pending' ? '#333' : '#fff';
+
+            // Calculate duration
+            const daysDiff = request.startDate && request.endDate
+                ? Math.ceil((new Date(request.endDate) - new Date(request.startDate)) / 86400000) + 1
+                : 1;
+
+            row.innerHTML =
+                '<td><strong>' + sanitizeHTML(staff ? (staff.fullName || staff.username) : 'Unknown') + '</strong>' +
+                '<br><small style="color:#888">' + sanitizeHTML(staff ? staff.role.toUpperCase() : '') + '</small></td>' +
+                '<td>' + sanitizeHTML(request.startDate) + '<br><small style="color:#888">to ' + sanitizeHTML(request.endDate) + ' (' + daysDiff + 'd)</small></td>' +
+                '<td style="max-width:200px;word-wrap:break-word">' + sanitizeHTML(request.reason || 'No reason given') + '</td>' +
+                '<td><span style="background:' + statusColor + ';color:' + statusTextC + ';padding:3px 10px;border-radius:10px;font-size:.8rem;font-weight:600">' + request.status.toUpperCase() + '</span>' +
+                (request.rejectionReason ? '<br><small style="color:#888">' + sanitizeHTML(request.rejectionReason) + '</small>' : '') + '</td>' +
+                '<td style="white-space:nowrap">' +
+                (request.status === 'pending'
+                    ? '<button class="btn btn-sm btn-success" onclick="approveTimeoff(' + parseInt(request.id) + ')" title="Approve">✅</button> ' +
+                      '<button class="btn btn-sm btn-danger" onclick="rejectTimeoff(' + parseInt(request.id) + ')" title="Reject">❌</button>'
+                    : '<span style="color:#aaa;font-size:.85rem">' + (request.approvedAt || request.rejectedAt ? new Date(request.approvedAt || request.rejectedAt).toLocaleDateString() : '—') + '</span>') +
+                '</td>';
             tbody.appendChild(row);
         });
     } catch (error) {
