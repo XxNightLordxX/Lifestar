@@ -481,8 +481,8 @@ function performGlobalSearch(query) {
 
     // Search users
     users.forEach(user => {
-        if(user.fullName.toLowerCase().includes(query) ||
-            user.username.toLowerCase().includes(query) ||
+        if((user.fullName || '').toLowerCase().includes(query) ||
+            (user.username || '').toLowerCase().includes(query) ||
             user.phone?.includes(query)) {
             results.push({
                 type: 'User',

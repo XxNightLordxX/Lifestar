@@ -95,29 +95,23 @@ const SHIFT_CONSTANTS = Object.freeze({
 // ========================================
 
 const USER_ROLES = Object.freeze({
-    SUPER_ADMIN: 'super_admin',
+    SUPER_ADMIN: 'super',
     BOSS: 'boss',
     PARAMEDIC: 'paramedic',
     EMT: 'emt',
-    DISPATCHER: 'dispatcher',
-    ADMIN: 'admin',
-    
+
     // Role hierarchy (higher = more permissions)
     HIERARCHY: Object.freeze({
-        'super_admin': 100,
-        'admin': 90,
+        'super': 100,
         'boss': 70,
-        'dispatcher': 50,
         'paramedic': 30,
         'emt': 20
     }),
-    
+
     // Role display names
     DISPLAY_NAMES: Object.freeze({
-        'super_admin': 'Super Admin',
-        'admin': 'Administrator',
+        'super': 'Super Admin',
         'boss': 'Supervisor',
-        'dispatcher': 'Dispatcher',
         'paramedic': 'Paramedic',
         'emt': 'EMT'
     })
@@ -303,7 +297,7 @@ const EVENTS = Object.freeze({
     // Schedule events
     SCHEDULE_CREATE: 'schedule:create',
     SCHEDULE_UPDATE: 'schedule:update',
-    SCHEDULE_DELETE: 'schedule delete',
+    SCHEDULE_DELETE: 'schedule:delete',
     SCHEDULE_PUBLISH: 'schedule:publish',
     
     // Shift events

@@ -15,10 +15,10 @@
 const VoiceCommands = (function() {
     'use strict';
 
-    const recognition = null;
-    const isListening = false;
-    const micButton = null;
-    const feedbackEl = null;
+    let recognition = null;
+    let isListening = false;
+    let micButton = null;
+    let feedbackEl = null;
 
     // Check browser support
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -81,8 +81,8 @@ const VoiceCommands = (function() {
 
     /** Handle speech recognition result */
     function handleResult(event) {
-        const transcript = '';
-        for (const i = event.resultIndex; i < event.results.length; i++) {
+        let transcript = '';
+        for (let i = event.resultIndex; i < event.results.length; i++) {
             transcript += event.results[i][0].transcript;
         }
         transcript = transcript.trim().toLowerCase();

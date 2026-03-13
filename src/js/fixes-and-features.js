@@ -110,7 +110,7 @@ function submitIncidentReport(type) {
         try { localStorage.setItem('lifestarIncidentReports', JSON.stringify(reports)); } catch(e) {}
 
         // Clear form
-        ['dateId', 'typeId', 'severityId', 'descId'].forEach(id => {
+        [dateId, typeId, severityId, descId].forEach(id => {
             const el = document.getElementById(id);
             if (el) el.value = '';
         });
