@@ -182,10 +182,16 @@ function validateMonth(month) {
     if (month === undefined || month === null || month === '') {
         return { valid: true, errors: [], value: null };
     }
-    
+
+    // Accept month names (e.g. "January") as-is
+    if (typeof month === 'string' && isNaN(Number(month))) {
+        const trimmed = month.trim().substring(0, 20);
+        return { valid: true, errors: [], value: trimmed };
+    }
+
     const parsed = parseInt(month, 10);
     const errors = [];
-    
+
     if (isNaN(parsed) || parsed < 1 || parsed > 12) {
         errors.push('Month must be between 1 and 12');
     }
@@ -193,7 +199,7 @@ function validateMonth(month) {
     return {
         valid: errors.length === 0,
         errors,
-        value: parsed
+        value: errors.length === 0 ? String(parsed) : parsed
     };
 }
 
@@ -206,18 +212,18 @@ function validateYear(year) {
     if (year === undefined || year === null || year === '') {
         return { valid: true, errors: [], value: null };
     }
-    
+
     const parsed = parseInt(year, 10);
     const errors = [];
-    
+
     if (isNaN(parsed) || parsed < CONSTANTS.MIN_YEAR || parsed > CONSTANTS.MAX_YEAR) {
         errors.push(`Year must be between ${CONSTANTS.MIN_YEAR} and ${CONSTANTS.MAX_YEAR}`);
     }
-    
+
     return {
         valid: errors.length === 0,
         errors,
-        value: parsed
+        value: errors.length === 0 ? String(parsed) : parsed
     };
 }
 
@@ -552,6 +558,161 @@ router.get('/', authenticate, async (req, res) => {
         res.status(CONSTANTS.HTTP_STATUS.SERVER_ERROR).json({
             error: 'Failed to retrieve schedules',
             code: 'SCHEDULES_LIST_ERROR'
+        });
+    }
+});
+
+// ============================================
+// CREW TEMPLATES ROUTES
+// (Defined before /:id to avoid route shadowing)
+// ============================================
+
+/**
+ * GET /api/schedules/templates
+ * List all crew templates
+ */
+router.get('/templates', authenticate, async (req, res) => {
+    try {
+        const db = getDb();
+        const templates = db.prepare('SELECT * FROM crew_templates ORDER BY name').all();
+        res.json({ templates, total: templates.length });
+    } catch (err) {
+        console.error('[templates/list] Error:', err.message);
+        res.status(CONSTANTS.HTTP_STATUS.SERVER_ERROR).json({
+            error: 'Failed to retrieve crew templates',
+            code: 'TEMPLATES_LIST_ERROR'
+        });
+    }
+});
+
+/**
+ * POST /api/schedules/templates
+ * Create a new crew template (boss/super only)
+ */
+router.post('/templates', authenticate, authorize('super', 'boss'), async (req, res) => {
+    try {
+        const { name, rig, paramedic, emt, shiftType, crewType } = req.body;
+
+        if (!name || typeof name !== 'string' || name.trim().length === 0) {
+            return res.status(CONSTANTS.HTTP_STATUS.BAD_REQUEST).json({
+                error: 'Template name is required',
+                code: 'VALIDATION_ERROR'
+            });
+        }
+
+        const shiftValidation = validateShiftType(shiftType);
+        const crewValidation = validateCrewType(crewType);
+
+        const db = getDb();
+        const result = db.prepare(`
+            INSERT INTO crew_templates (name, rig, paramedic, emt, shiftType, crewType, createdAt)
+            VALUES (?, ?, ?, ?, ?, ?, datetime('now'))
+        `).run(
+            name.trim().substring(0, 100),
+            validateRig(rig).value,
+            validateCrewName(paramedic).value,
+            validateCrewName(emt).value,
+            shiftValidation.value || 'Day',
+            crewValidation.value || 'ALS'
+        );
+
+        const template = db.prepare('SELECT * FROM crew_templates WHERE id = ?').get(result.lastInsertRowid);
+        res.status(CONSTANTS.HTTP_STATUS.CREATED).json({ template, message: 'Template created successfully' });
+    } catch (err) {
+        console.error('[templates/create] Error:', err.message);
+        res.status(CONSTANTS.HTTP_STATUS.SERVER_ERROR).json({
+            error: 'Failed to create crew template',
+            code: 'TEMPLATE_CREATE_ERROR'
+        });
+    }
+});
+
+/**
+ * PUT /api/schedules/templates/:id
+ * Update a crew template (boss/super only)
+ */
+router.put('/templates/:id', authenticate, authorize('super', 'boss'), async (req, res) => {
+    try {
+        const templateId = parseInt(req.params.id, 10);
+        if (isNaN(templateId) || templateId < 1) {
+            return res.status(CONSTANTS.HTTP_STATUS.BAD_REQUEST).json({
+                error: 'Invalid template ID',
+                code: 'INVALID_TEMPLATE_ID'
+            });
+        }
+
+        const db = getDb();
+        const template = db.prepare('SELECT * FROM crew_templates WHERE id = ?').get(templateId);
+        if (!template) {
+            return res.status(CONSTANTS.HTTP_STATUS.NOT_FOUND).json({
+                error: 'Template not found',
+                code: 'TEMPLATE_NOT_FOUND'
+            });
+        }
+
+        const { name, rig, paramedic, emt, shiftType, crewType } = req.body;
+        const updates = {};
+        if (name !== undefined) updates.name = String(name).trim().substring(0, 100);
+        if (rig !== undefined) updates.rig = validateRig(rig).value;
+        if (paramedic !== undefined) updates.paramedic = validateCrewName(paramedic).value;
+        if (emt !== undefined) updates.emt = validateCrewName(emt).value;
+        if (shiftType !== undefined) updates.shiftType = validateShiftType(shiftType).value || 'Day';
+        if (crewType !== undefined) updates.crewType = validateCrewType(crewType).value || 'ALS';
+
+        if (Object.keys(updates).length === 0) {
+            return res.status(CONSTANTS.HTTP_STATUS.BAD_REQUEST).json({
+                error: 'No valid updates provided',
+                code: 'NO_UPDATES'
+            });
+        }
+
+        const validTemplateCols = new Set(['name', 'rig', 'paramedic', 'emt', 'shiftType', 'crewType']);
+        const setClauses = Object.keys(updates).filter(k => validTemplateCols.has(k)).map(k => `${k} = ?`);
+        setClauses.push("updatedAt = datetime('now')");
+        const safeValues = Object.keys(updates).filter(k => validTemplateCols.has(k)).map(k => updates[k]);
+        db.prepare(`UPDATE crew_templates SET ${setClauses.join(', ')} WHERE id = ?`)
+            .run(...safeValues, templateId);
+
+        const updated = db.prepare('SELECT * FROM crew_templates WHERE id = ?').get(templateId);
+        res.json({ template: updated, message: 'Template updated successfully' });
+    } catch (err) {
+        console.error('[templates/update] Error:', err.message);
+        res.status(CONSTANTS.HTTP_STATUS.SERVER_ERROR).json({
+            error: 'Failed to update crew template',
+            code: 'TEMPLATE_UPDATE_ERROR'
+        });
+    }
+});
+
+/**
+ * DELETE /api/schedules/templates/:id
+ * Delete a crew template (super only)
+ */
+router.delete('/templates/:id', authenticate, authorize('super'), async (req, res) => {
+    try {
+        const templateId = parseInt(req.params.id, 10);
+        if (isNaN(templateId) || templateId < 1) {
+            return res.status(CONSTANTS.HTTP_STATUS.BAD_REQUEST).json({
+                error: 'Invalid template ID',
+                code: 'INVALID_TEMPLATE_ID'
+            });
+        }
+
+        const db = getDb();
+        const result = db.prepare('DELETE FROM crew_templates WHERE id = ?').run(templateId);
+        if (result.changes === 0) {
+            return res.status(CONSTANTS.HTTP_STATUS.NOT_FOUND).json({
+                error: 'Template not found',
+                code: 'TEMPLATE_NOT_FOUND'
+            });
+        }
+
+        res.json({ message: 'Template deleted successfully', code: 'TEMPLATE_DELETED' });
+    } catch (err) {
+        console.error('[templates/delete] Error:', err.message);
+        res.status(CONSTANTS.HTTP_STATUS.SERVER_ERROR).json({
+            error: 'Failed to delete crew template',
+            code: 'TEMPLATE_DELETE_ERROR'
         });
     }
 });
@@ -1002,18 +1163,18 @@ router.post('/:id/crews', authenticate, authorize('super', 'boss'), crewLimiter,
             });
         }
         
-        const { rig, paramedic, emt, shiftType, date, crewType } = req.body;
-        
+        const { rig, paramedic, emt, shiftType, date, crewType, startTime, endTime } = req.body;
+
         const db = getDb();
         const schedule = db.prepare('SELECT id FROM schedules WHERE id = ?').get(idValidation.value);
-        
+
         if (!schedule) {
             return res.status(CONSTANTS.HTTP_STATUS.NOT_FOUND).json({
                 error: 'Schedule not found',
                 code: 'SCHEDULE_NOT_FOUND'
             });
         }
-        
+
         // Validate inputs
         const rigValidation = validateRig(rig);
         const paramedicValidation = validateCrewName(paramedic);
@@ -1021,7 +1182,7 @@ router.post('/:id/crews', authenticate, authorize('super', 'boss'), crewLimiter,
         const shiftTypeValidation = validateShiftType(shiftType);
         const dateValidation = validateDate(date);
         const crewTypeValidation = validateCrewType(crewType);
-        
+
         const allErrors = [
             ...rigValidation.errors,
             ...paramedicValidation.errors,
@@ -1030,7 +1191,7 @@ router.post('/:id/crews', authenticate, authorize('super', 'boss'), crewLimiter,
             ...dateValidation.errors,
             ...crewTypeValidation.errors
         ];
-        
+
         if (allErrors.length > 0) {
             return res.status(CONSTANTS.HTTP_STATUS.BAD_REQUEST).json({
                 error: 'Validation failed',
@@ -1038,10 +1199,14 @@ router.post('/:id/crews', authenticate, authorize('super', 'boss'), crewLimiter,
                 code: 'VALIDATION_ERROR'
             });
         }
-        
+
+        // Sanitize optional time fields (HH:MM format)
+        const safeStartTime = (typeof startTime === 'string' && /^\d{2}:\d{2}$/.test(startTime)) ? startTime : null;
+        const safeEndTime = (typeof endTime === 'string' && /^\d{2}:\d{2}$/.test(endTime)) ? endTime : null;
+
         const result = db.prepare(`
-            INSERT INTO crews (scheduleId, rig, paramedic, emt, shiftType, date, crewType, createdAt)
-            VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))
+            INSERT INTO crews (scheduleId, rig, paramedic, emt, shiftType, date, crewType, startTime, endTime, createdAt)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
         `).run(
             idValidation.value,
             rigValidation.value,
@@ -1049,7 +1214,9 @@ router.post('/:id/crews', authenticate, authorize('super', 'boss'), crewLimiter,
             emtValidation.value,
             shiftTypeValidation.value,
             dateValidation.value || '',
-            crewTypeValidation.value || ''
+            crewTypeValidation.value || '',
+            safeStartTime,
+            safeEndTime
         );
         
         const crew = db.prepare('SELECT * FROM crews WHERE id = ?').get(result.lastInsertRowid);
@@ -1108,17 +1275,17 @@ router.post('/:id/crews/batch', authenticate, authorize('super', 'boss'), crewLi
         }
         
         const insertCrew = db.prepare(`
-            INSERT INTO crews (scheduleId, rig, paramedic, emt, shiftType, date, crewType, createdAt)
-            VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))
+            INSERT INTO crews (scheduleId, rig, paramedic, emt, shiftType, date, crewType, startTime, endTime, createdAt)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
         `);
-        
+
         const insertedCrews = [];
         const errors = [];
-        
+
         const transaction = db.transaction(() => {
             for (let i = 0; i < crews.length; i++) {
                 const crew = crews[i];
-                
+
                 // Validate each crew
                 const rigValidation = validateRig(crew.rig);
                 const paramedicValidation = validateCrewName(crew.paramedic);
@@ -1126,9 +1293,11 @@ router.post('/:id/crews/batch', authenticate, authorize('super', 'boss'), crewLi
                 const shiftTypeValidation = validateShiftType(crew.shiftType);
                 const dateValidation = validateDate(crew.date);
                 const crewTypeValidation = validateCrewType(crew.crewType);
-                
+
                 if (rigValidation.valid && paramedicValidation.valid && emtValidation.valid &&
                     shiftTypeValidation.valid && dateValidation.valid && crewTypeValidation.valid) {
+                    const safeStart = (typeof crew.startTime === 'string' && /^\d{2}:\d{2}$/.test(crew.startTime)) ? crew.startTime : null;
+                    const safeEnd = (typeof crew.endTime === 'string' && /^\d{2}:\d{2}$/.test(crew.endTime)) ? crew.endTime : null;
                     const result = insertCrew.run(
                         idValidation.value,
                         rigValidation.value,
@@ -1136,7 +1305,9 @@ router.post('/:id/crews/batch', authenticate, authorize('super', 'boss'), crewLi
                         emtValidation.value,
                         shiftTypeValidation.value,
                         dateValidation.value || '',
-                        crewTypeValidation.value || ''
+                        crewTypeValidation.value || '',
+                        safeStart,
+                        safeEnd
                     );
                     insertedCrews.push(result.lastInsertRowid);
                 } else {
@@ -1314,160 +1485,6 @@ router.delete('/:id/crews', authenticate, authorize('super', 'boss'), async (req
         res.status(CONSTANTS.HTTP_STATUS.SERVER_ERROR).json({
             error: 'Failed to clear crews',
             code: 'CREWS_CLEAR_ERROR'
-        });
-    }
-});
-
-// ============================================
-// CREW TEMPLATES ROUTES
-// ============================================
-
-/**
- * GET /api/schedules/templates
- * List all crew templates
- */
-router.get('/templates', authenticate, async (req, res) => {
-    try {
-        const db = getDb();
-        const templates = db.prepare('SELECT * FROM crew_templates ORDER BY name').all();
-        res.json({ templates, total: templates.length });
-    } catch (err) {
-        console.error('[templates/list] Error:', err.message);
-        res.status(CONSTANTS.HTTP_STATUS.SERVER_ERROR).json({
-            error: 'Failed to retrieve crew templates',
-            code: 'TEMPLATES_LIST_ERROR'
-        });
-    }
-});
-
-/**
- * POST /api/schedules/templates
- * Create a new crew template (boss/super only)
- */
-router.post('/templates', authenticate, authorize('super', 'boss'), async (req, res) => {
-    try {
-        const { name, rig, paramedic, emt, shiftType, crewType } = req.body;
-
-        if (!name || typeof name !== 'string' || name.trim().length === 0) {
-            return res.status(CONSTANTS.HTTP_STATUS.BAD_REQUEST).json({
-                error: 'Template name is required',
-                code: 'VALIDATION_ERROR'
-            });
-        }
-
-        const shiftValidation = validateShiftType(shiftType);
-        const crewValidation = validateCrewType(crewType);
-
-        const db = getDb();
-        const result = db.prepare(`
-            INSERT INTO crew_templates (name, rig, paramedic, emt, shiftType, crewType, createdAt)
-            VALUES (?, ?, ?, ?, ?, ?, datetime('now'))
-        `).run(
-            name.trim().substring(0, 100),
-            validateRig(rig).value,
-            validateCrewName(paramedic).value,
-            validateCrewName(emt).value,
-            shiftValidation.value || 'Day',
-            crewValidation.value || 'ALS'
-        );
-
-        const template = db.prepare('SELECT * FROM crew_templates WHERE id = ?').get(result.lastInsertRowid);
-        res.status(CONSTANTS.HTTP_STATUS.CREATED).json({ template, message: 'Template created successfully' });
-    } catch (err) {
-        console.error('[templates/create] Error:', err.message);
-        res.status(CONSTANTS.HTTP_STATUS.SERVER_ERROR).json({
-            error: 'Failed to create crew template',
-            code: 'TEMPLATE_CREATE_ERROR'
-        });
-    }
-});
-
-/**
- * PUT /api/schedules/templates/:id
- * Update a crew template (boss/super only)
- */
-router.put('/templates/:id', authenticate, authorize('super', 'boss'), async (req, res) => {
-    try {
-        const templateId = parseInt(req.params.id, 10);
-        if (isNaN(templateId) || templateId < 1) {
-            return res.status(CONSTANTS.HTTP_STATUS.BAD_REQUEST).json({
-                error: 'Invalid template ID',
-                code: 'INVALID_TEMPLATE_ID'
-            });
-        }
-
-        const db = getDb();
-        const template = db.prepare('SELECT * FROM crew_templates WHERE id = ?').get(templateId);
-        if (!template) {
-            return res.status(CONSTANTS.HTTP_STATUS.NOT_FOUND).json({
-                error: 'Template not found',
-                code: 'TEMPLATE_NOT_FOUND'
-            });
-        }
-
-        const { name, rig, paramedic, emt, shiftType, crewType } = req.body;
-        const updates = {};
-        if (name !== undefined) updates.name = String(name).trim().substring(0, 100);
-        if (rig !== undefined) updates.rig = validateRig(rig).value;
-        if (paramedic !== undefined) updates.paramedic = validateCrewName(paramedic).value;
-        if (emt !== undefined) updates.emt = validateCrewName(emt).value;
-        if (shiftType !== undefined) updates.shiftType = validateShiftType(shiftType).value || 'Day';
-        if (crewType !== undefined) updates.crewType = validateCrewType(crewType).value || 'ALS';
-
-        if (Object.keys(updates).length === 0) {
-            return res.status(CONSTANTS.HTTP_STATUS.BAD_REQUEST).json({
-                error: 'No valid updates provided',
-                code: 'NO_UPDATES'
-            });
-        }
-
-        const validTemplateCols = new Set(['name', 'rig', 'paramedic', 'emt', 'shiftType', 'crewType']);
-        const setClauses = Object.keys(updates).filter(k => validTemplateCols.has(k)).map(k => `${k} = ?`);
-        setClauses.push("updatedAt = datetime('now')");
-        const safeValues = Object.keys(updates).filter(k => validTemplateCols.has(k)).map(k => updates[k]);
-        db.prepare(`UPDATE crew_templates SET ${setClauses.join(', ')} WHERE id = ?`)
-            .run(...safeValues, templateId);
-
-        const updated = db.prepare('SELECT * FROM crew_templates WHERE id = ?').get(templateId);
-        res.json({ template: updated, message: 'Template updated successfully' });
-    } catch (err) {
-        console.error('[templates/update] Error:', err.message);
-        res.status(CONSTANTS.HTTP_STATUS.SERVER_ERROR).json({
-            error: 'Failed to update crew template',
-            code: 'TEMPLATE_UPDATE_ERROR'
-        });
-    }
-});
-
-/**
- * DELETE /api/schedules/templates/:id
- * Delete a crew template (super only)
- */
-router.delete('/templates/:id', authenticate, authorize('super'), async (req, res) => {
-    try {
-        const templateId = parseInt(req.params.id, 10);
-        if (isNaN(templateId) || templateId < 1) {
-            return res.status(CONSTANTS.HTTP_STATUS.BAD_REQUEST).json({
-                error: 'Invalid template ID',
-                code: 'INVALID_TEMPLATE_ID'
-            });
-        }
-
-        const db = getDb();
-        const result = db.prepare('DELETE FROM crew_templates WHERE id = ?').run(templateId);
-        if (result.changes === 0) {
-            return res.status(CONSTANTS.HTTP_STATUS.NOT_FOUND).json({
-                error: 'Template not found',
-                code: 'TEMPLATE_NOT_FOUND'
-            });
-        }
-
-        res.json({ message: 'Template deleted successfully', code: 'TEMPLATE_DELETED' });
-    } catch (err) {
-        console.error('[templates/delete] Error:', err.message);
-        res.status(CONSTANTS.HTTP_STATUS.SERVER_ERROR).json({
-            error: 'Failed to delete crew template',
-            code: 'TEMPLATE_DELETE_ERROR'
         });
     }
 });

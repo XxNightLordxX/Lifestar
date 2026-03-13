@@ -31,11 +31,23 @@ const CONSTANTS = {
         zip: /^\d{5}(-\d{4})?$/
     },
     
-    // SQL injection patterns (basic detection)
+    // SQL injection patterns — only flag multi-keyword sequences that look
+    // like real injection attempts.  Single words such as "delete" or "select"
+    // are common in ordinary English and must NOT be blocked.  The app uses
+    // parameterised queries everywhere, so these are a defence-in-depth layer.
     SQL_INJECTION_PATTERNS: [
-        /(\b(SELECT|INSERT|UPDATE|DELETE|DROP|UNION|ALTER|CREATE|TRUNCATE|EXEC)\b)/i,
-        /(--)|(\/\*)|(\*\/)/,
-        /(;|\|)/,
+        /\b(UNION)\s+(ALL\s+)?SELECT\b/i,
+        /\b(INSERT)\s+INTO\b/i,
+        /\b(DELETE)\s+FROM\b/i,
+        /\b(DROP)\s+(TABLE|DATABASE|INDEX|VIEW)\b/i,
+        /\b(ALTER)\s+TABLE\b/i,
+        /\b(TRUNCATE)\s+TABLE\b/i,
+        /\b(UPDATE)\s+\w+\s+SET\b/i,
+        /\bEXEC(UTE)?\s*\(/i,
+        /\bSELECT\b.+\bFROM\b/i,
+        /\b(CREATE)\s+(TABLE|DATABASE|INDEX|VIEW|PROCEDURE)\b/i,
+        /(\/\*[\s\S]*?\*\/)/,
+        /('|")\s*(OR|AND)\s+\d+\s*=\s*\d+/i,
         /('|")\s*(OR|AND)\s*('|")/i
     ],
     

@@ -686,7 +686,7 @@ router.put('/:id', authenticate, updateLimiter, async (req, res) => {
         }
         
         const id = idValidation.value;
-        const { status, startDate, endDate, reason } = req.body;
+        const { status, startDate, endDate, reason, reviewNotes } = req.body;
         
         const db = getDb();
         const request = db.prepare('SELECT * FROM timeoff_requests WHERE id = ?').get(id);
@@ -735,11 +735,12 @@ router.put('/:id', authenticate, updateLimiter, async (req, res) => {
                 }
             }
             
+            const safeReviewNotes = (typeof reviewNotes === 'string') ? reviewNotes.trim().substring(0, 500) : '';
             db.prepare(`
-                UPDATE timeoff_requests 
-                SET status = ?, reviewedBy = ?, updatedAt = datetime('now')
+                UPDATE timeoff_requests
+                SET status = ?, reviewedBy = ?, reviewNotes = ?, reviewedAt = datetime('now'), updatedAt = datetime('now')
                 WHERE id = ?
-            `).run(statusValidation.value, isAdmin ? req.user.id : null, id);
+            `).run(statusValidation.value, isAdmin ? req.user.id : null, safeReviewNotes, id);
             
             await addLog(`Time-off ${statusValidation.value}: request #${id}`, req.user.id, req.user.username);
         }
