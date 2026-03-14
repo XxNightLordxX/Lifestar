@@ -372,8 +372,7 @@ app.use((req, res, next) => {
     const lowerPath = req.path.toLowerCase();
     // Block server source code, database files, config, env, and package files
     if (
-        lowerPath.startsWith('/server/') ||
-        lowerPath.startsWith('/server') && lowerPath === '/server' ||
+        lowerPath.startsWith('/server') ||
         lowerPath.endsWith('.db') ||
         lowerPath.endsWith('.db-journal') ||
         lowerPath.endsWith('.db-wal') ||

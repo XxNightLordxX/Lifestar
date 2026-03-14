@@ -237,11 +237,11 @@ router.get('/', authenticate, readLimiter, (req, res) => {
                 END,
                 i.createdAt DESC
             LIMIT ? OFFSET ?
-        `).all([...params, limit, offset]);
+        `).all(...params, limit, offset);
 
         const totalRow = db.prepare(`
             SELECT COUNT(*) AS total FROM incident_reports i ${whereSQL}
-        `).get(params);
+        `).get(...params);
 
         return res.json({
             success: true,
@@ -255,6 +255,52 @@ router.get('/', authenticate, readLimiter, (req, res) => {
         });
     } catch (err) {
         console.error('[incidents/list]', err.message);
+        return res.status(HTTP_STATUS.SERVER_ERROR).json({ error: 'Server error' });
+    }
+});
+
+// ============================================
+// STATS ENDPOINT (must be above /:id to avoid route shadowing)
+// ============================================
+
+/**
+ * GET /api/incidents/stats/summary
+ * Summary counts by status and priority (boss/super).
+ */
+router.get('/stats/summary', authenticate, requireMinRole('boss'), (req, res) => {
+    try {
+        const db = getDb();
+
+        const byStatus = db.prepare(`
+            SELECT status, COUNT(*) as count FROM incident_reports GROUP BY status
+        `).all();
+
+        const byPriority = db.prepare(`
+            SELECT priority, COUNT(*) as count FROM incident_reports GROUP BY priority
+        `).all();
+
+        const byType = db.prepare(`
+            SELECT type, COUNT(*) as count FROM incident_reports GROUP BY type
+        `).all();
+
+        const recent = db.prepare(`
+            SELECT i.*, u.fullName AS reporterName
+            FROM incident_reports i
+            LEFT JOIN users u ON u.id = i.reportedBy
+            WHERE i.status IN ('open','under-review')
+            ORDER BY
+                CASE i.priority WHEN 'critical' THEN 1 WHEN 'high' THEN 2 ELSE 3 END,
+                i.createdAt DESC
+            LIMIT 5
+        `).all();
+
+        return res.json({
+            success: true,
+            stats: { byStatus, byPriority, byType },
+            recentOpen: recent.map(_format)
+        });
+    } catch (err) {
+        console.error('[incidents/stats]', err.message);
         return res.status(HTTP_STATUS.SERVER_ERROR).json({ error: 'Server error' });
     }
 });
@@ -426,52 +472,6 @@ router.delete('/:id', authenticate, authorize('super'), (req, res) => {
         return res.json({ success: true, message: 'Report deleted' });
     } catch (err) {
         console.error('[incidents/delete]', err.message);
-        return res.status(HTTP_STATUS.SERVER_ERROR).json({ error: 'Server error' });
-    }
-});
-
-// ============================================
-// STATS ENDPOINT
-// ============================================
-
-/**
- * GET /api/incidents/stats
- * Summary counts by status and priority (boss/super).
- */
-router.get('/stats/summary', authenticate, requireMinRole('boss'), (req, res) => {
-    try {
-        const db = getDb();
-
-        const byStatus = db.prepare(`
-            SELECT status, COUNT(*) as count FROM incident_reports GROUP BY status
-        `).all();
-
-        const byPriority = db.prepare(`
-            SELECT priority, COUNT(*) as count FROM incident_reports GROUP BY priority
-        `).all();
-
-        const byType = db.prepare(`
-            SELECT type, COUNT(*) as count FROM incident_reports GROUP BY type
-        `).all();
-
-        const recent = db.prepare(`
-            SELECT i.*, u.fullName AS reporterName
-            FROM incident_reports i
-            LEFT JOIN users u ON u.id = i.reportedBy
-            WHERE i.status IN ('open','under-review')
-            ORDER BY
-                CASE i.priority WHEN 'critical' THEN 1 WHEN 'high' THEN 2 ELSE 3 END,
-                i.createdAt DESC
-            LIMIT 5
-        `).all();
-
-        return res.json({
-            success: true,
-            stats: { byStatus, byPriority, byType },
-            recentOpen: recent.map(_format)
-        });
-    } catch (err) {
-        console.error('[incidents/stats]', err.message);
         return res.status(HTTP_STATUS.SERVER_ERROR).json({ error: 'Server error' });
     }
 });

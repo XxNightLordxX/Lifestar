@@ -201,18 +201,19 @@ router.get('/overtime', (req, res) => {
 
         // Staff approaching or exceeding 160-hour monthly cap
         const MONTHLY_CAP = 160;
+        const APPROACHING_THRESHOLD = MONTHLY_CAP * 0.85;
         const overtimeStaff = db.prepare(`
             SELECT id, username, fullName, role, hoursWorked, bonusHours,
                    (hoursWorked + bonusHours) AS totalHours,
                    CASE
-                       WHEN (hoursWorked + bonusHours) >= ${MONTHLY_CAP} THEN 'exceeded'
-                       WHEN (hoursWorked + bonusHours) >= ${MONTHLY_CAP * 0.85} THEN 'approaching'
+                       WHEN (hoursWorked + bonusHours) >= ? THEN 'exceeded'
+                       WHEN (hoursWorked + bonusHours) >= ? THEN 'approaching'
                        ELSE 'normal'
                    END AS overtimeStatus
             FROM users
             WHERE active = 1
             ORDER BY totalHours DESC
-        `).all();
+        `).all(MONTHLY_CAP, APPROACHING_THRESHOLD);
 
         const exceededCount = overtimeStaff.filter(s => s.overtimeStatus === 'exceeded').length;
         const approachingCount = overtimeStaff.filter(s => s.overtimeStatus === 'approaching').length;

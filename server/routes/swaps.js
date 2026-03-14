@@ -45,7 +45,11 @@ router.get('/', authenticate, (req, res) => {
             params.push(req.user.id, req.user.id);
         }
 
+        const VALID_SWAP_STATUSES = ['open', 'matched', 'approved', 'denied', 'cancelled'];
         if (req.query.status) {
+            if (!VALID_SWAP_STATUSES.includes(req.query.status)) {
+                return res.status(HTTP_STATUS.BAD_REQUEST).json({ error: `Invalid status. Must be one of: ${VALID_SWAP_STATUSES.join(', ')}` });
+            }
             conditions.push('s.status = ?');
             params.push(req.query.status);
         }

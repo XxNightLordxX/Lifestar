@@ -29,7 +29,13 @@ router.get('/', authenticate, (req, res) => {
         const conditions = isAdmin ? [] : ['c.userId = ?'];
         const params = isAdmin ? [] : [req.user.id];
 
-        if (req.query.status) { conditions.push('c.status = ?'); params.push(req.query.status); }
+        const VALID_CALLIN_STATUSES = ['open', 'covered', 'uncovered'];
+        if (req.query.status) {
+            if (!VALID_CALLIN_STATUSES.includes(req.query.status)) {
+                return res.status(HTTP_STATUS.BAD_REQUEST).json({ error: `Invalid status. Must be one of: ${VALID_CALLIN_STATUSES.join(', ')}` });
+            }
+            conditions.push('c.status = ?'); params.push(req.query.status);
+        }
 
         const where = conditions.length ? 'WHERE ' + conditions.join(' AND ') : '';
 
@@ -83,6 +89,7 @@ router.post('/', authenticate, writeLimiter, (req, res) => {
 router.patch('/:id', authenticate, authorize('super', 'boss'), (req, res) => {
     try {
         const id = parseInt(req.params.id, 10);
+        if (isNaN(id)) return res.status(HTTP_STATUS.BAD_REQUEST).json({ error: 'Invalid ID' });
         const db = getDb();
         const callIn = db.prepare('SELECT * FROM emergency_callins WHERE id = ?').get(id);
         if (!callIn) return res.status(HTTP_STATUS.NOT_FOUND).json({ error: 'Call-in not found' });

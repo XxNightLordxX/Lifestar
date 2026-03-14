@@ -269,7 +269,7 @@ function sanitizeUser(user) {
         locationId: user.locationId || null,
         hoursWorked: user.hoursWorked || 0,
         bonusHours: user.bonusHours || 0,
-        active: user.active !== undefined ? user.active : true,
+        active: user.active != null ? !!user.active : true,
         createdAt: user.createdAt,
         updatedAt: user.updatedAt || null
     };

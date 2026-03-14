@@ -83,7 +83,7 @@ router.post('/reset', async (req, res) => {
         });
     } catch (err) {
         console.error('[admin/reset] Error:', err.message);
-        res.status(HTTP_STATUS.SERVER_ERROR).json({ error: 'Reset failed', message: err.message });
+        res.status(HTTP_STATUS.SERVER_ERROR).json({ error: 'Reset failed' });
     }
 });
 

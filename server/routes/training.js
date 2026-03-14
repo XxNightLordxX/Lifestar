@@ -39,6 +39,9 @@ router.get('/', authenticate, (req, res) => {
         if (userId) { query += ' AND t.userId = ?'; params.push(userId); }
 
         if (req.query.expiresBefore) {
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(req.query.expiresBefore)) {
+                return res.status(HTTP_STATUS.BAD_REQUEST).json({ error: 'expiresBefore must be YYYY-MM-DD format' });
+            }
             query += ' AND t.expiresAt <= ?';
             params.push(req.query.expiresBefore);
         }
@@ -90,6 +93,15 @@ router.post('/', authenticate, writeLimiter, (req, res) => {
         const assignedUserId = (isAdmin && targetUserId) ? parseInt(targetUserId) : req.user.id;
 
         const db = getDb();
+
+        // Verify target user exists when assigning to another user
+        if (isAdmin && targetUserId) {
+            const targetUser = db.prepare('SELECT id FROM users WHERE id = ? AND active = 1').get(assignedUserId);
+            if (!targetUser) {
+                return res.status(HTTP_STATUS.BAD_REQUEST).json({ error: 'Target user not found or inactive' });
+            }
+        }
+
         const result = db.prepare(`
             INSERT INTO training_records (userId, courseTitle, completedAt, expiresAt, certificationNumber, hours, notes)
             VALUES (?, ?, ?, ?, ?, ?, ?)

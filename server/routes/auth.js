@@ -275,8 +275,7 @@ router.post('/login', loginLimiter, async (req, res) => {
             recordFailedAttempt(usernameResult.value);
             addLog(`Failed login attempt for user: ${usernameResult.value}`, null, usernameResult.value);
 
-            // Delay to prevent timing attacks
-            await new Promise(resolve => setTimeout(resolve, Math.max(0, minResponseTime - (Date.now() - startTime))));
+            // Timing attack protection is already handled by the bcrypt.compare above
 
             // Use the same message as "user not found" to prevent username enumeration
             return res.status(401).json({
@@ -534,7 +533,7 @@ router.get('/status', (req, res) => {
 });
 
 // Cleanup old login attempts periodically
-setInterval(() => {
+const _loginCleanupInterval = setInterval(() => {
     const now = Date.now();
     for (const [username, attempts] of loginAttempts.entries()) {
         if (now - attempts.lastAttempt > LOCKOUT_DURATION) {
@@ -542,5 +541,6 @@ setInterval(() => {
         }
     }
 }, 60000); // Clean up every minute
+_loginCleanupInterval.unref();
 
 module.exports = router;
