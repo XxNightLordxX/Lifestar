@@ -535,8 +535,15 @@
     // ============================================
     // INITIALIZE
     // ============================================
-    NotificationCenter.init();
-    NotificationService.init();
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+            NotificationCenter.init();
+            NotificationService.init();
+        });
+    } else {
+        NotificationCenter.init();
+        NotificationService.init();
+    }
 
     // ============================================
     // EXPOSE TO GLOBAL SCOPE

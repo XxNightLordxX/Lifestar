@@ -28,7 +28,7 @@ var STATIC_ASSETS = [
     '/src/js/api-client.js',
     '/src/js/app.js',
     '/src/js/drag-drop-scheduler.js',
-    '/src/js/bug-fixes.js',
+    '/src/js/core-validation.js',
     '/src/js/fixes-and-features.js'
 ];
 

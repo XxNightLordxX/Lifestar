@@ -99,7 +99,7 @@
     }
 
     function _deleteReportData(id) {
-        const reports = loadReports().filter(r => r.id != id);
+        const reports = loadReports().filter(r => String(r.id) !== String(id));
         saveReports(reports);
     }
 

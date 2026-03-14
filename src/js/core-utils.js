@@ -698,7 +698,7 @@ const ValidationUtils = {
             errors.push('Username is required');
         }
         
-        if (!user.role || !['paramedic', 'emt', 'boss', 'admin', 'super_admin'].includes(user.role)) {
+        if (!user.role || !['paramedic', 'emt', 'boss', 'super'].includes(user.role)) {
             errors.push('Valid role is required');
         }
         

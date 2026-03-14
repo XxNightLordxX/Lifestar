@@ -29,7 +29,7 @@
 
             // Add active class to clicked nav item
             try {
-                const evt = window.event;
+                const evt = (typeof event !== 'undefined') ? event : window.event;
                 if(evt && evt.currentTarget && evt.currentTarget.classList) {
                     evt.currentTarget.classList.add('active');
                 } else {

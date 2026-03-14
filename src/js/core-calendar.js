@@ -336,7 +336,7 @@
             // Header row with staff names
             html += '<thead><tr><th style="border: 1px solid #ddd; padding: 8px; background: #f5f5f5; min-width: 80px;">Date</th>';
             staff.forEach(s => {
-                const name = this.escapeHtml(s.firstName + ' ' + s.lastName);
+                const name = this.escapeHtml(s.fullName || s.username || 'Unknown');
                 html += `<th style="border: 1px solid #ddd; padding: 8px; background: #f5f5f5; min-width: 100px;">${name}</th>`;
             });
             html += '</tr></thead>';

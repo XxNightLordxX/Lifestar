@@ -327,14 +327,14 @@
      * Export the staff directory to CSV.
      */
     function exportStaffCsv() {
-        let users = [];
+        let staffData = [];
         try {
-            users = JSON.parse(localStorage.getItem('lifestarUsers') || '[]');
-        } catch (e) { users = []; }
+            staffData = window.users || JSON.parse(localStorage.getItem('lifestarUsers') || '[]');
+        } catch (e) { staffData = []; }
 
-        if (users.length === 0) { _toast('No staff data to export', 'warning'); return; }
+        if (staffData.length === 0) { _toast('No staff data to export', 'warning'); return; }
 
-        const rows = users
+        const rows = staffData
             .filter(u => u.username !== 'super') // omit system accounts
             .map(u => ({
                 'Full Name': u.fullName || u.username || '',

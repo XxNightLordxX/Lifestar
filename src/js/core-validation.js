@@ -11,7 +11,9 @@
 // VALIDATION UTILITIES
 // ========================================
 
-const ValidationUtils = {
+// Extend the ValidationUtils object defined in core-utils.js
+// instead of redeclaring it (which would throw a SyntaxError)
+Object.assign(ValidationUtils, {
     // Common regex patterns
     patterns: {
         email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
@@ -157,7 +159,7 @@ const ValidationUtils = {
         div.textContent = html;
         return div.innerHTML;
     }
-};
+});
 
 // ========================================
 // SCHEMA VALIDATOR

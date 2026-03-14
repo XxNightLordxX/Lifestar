@@ -97,7 +97,7 @@ function calculateShiftPay(shift, employeeId) {
  */
 function calculateEmployeePayroll(employeeId, startDate, endDate) {
     const schedules = safeJSONParse(localStorage.getItem('lifestarSchedules')) || safeJSONParse(localStorage.getItem('schedules')) || [];
-    const crews = safeJSONParse(localStorage.getItem('crews')) || [];
+    // crews data is accessed via schedule.crews, not a standalone key
     
     let totalRegularHours = 0;
     let totalOvertimeHours = 0;
@@ -162,7 +162,7 @@ function calculateEmployeePayroll(employeeId, startDate, endDate) {
 function getEmployeeName(employeeId) {
     const storedUsers = safeJSONParse(localStorage.getItem('lifestarUsers')) || safeJSONParse(localStorage.getItem('users')) || [];
     const employee = storedUsers.find(u => u.id === employeeId);
-    return employee ? `${employee.firstName} ${employee.lastName}` : 'Unknown';
+    return employee ? (employee.fullName || employee.username || 'Unknown') : 'Unknown';
 }
 
 /**
@@ -606,7 +606,23 @@ function viewEmployeePayrollDetails(employeeId, startDate, endDate) {
         </table>
     `;
     
-    showModal('Employee Payroll Details', modalContent);
+    // Use ModalManager if available, otherwise create a temporary modal
+    if (typeof ModalManager !== 'undefined' && ModalManager.show) {
+        ModalManager.show('Employee Payroll Details', modalContent);
+    } else {
+        let modal = document.getElementById('payrollDetailModal');
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'payrollDetailModal';
+            modal.className = 'modal';
+            modal.innerHTML = '<div class="modal-content"><span class="close-btn" onclick="this.closest(\'.modal\').style.display=\'none\'">&times;</span><div class="modal-body"></div></div>';
+            document.body.appendChild(modal);
+        }
+        const body = modal.querySelector('.modal-body');
+        if (body) body.innerHTML = typeof sanitizeHTML === 'function' ? sanitizeHTML(modalContent) : modalContent;
+        modal.style.display = 'block';
+        modal.classList.add('active');
+    }
 }
 
 // Initialize payroll dashboard when boss section is shown

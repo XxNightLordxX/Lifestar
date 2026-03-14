@@ -288,15 +288,12 @@ function handleKeyboardShortcuts(e) {
         showGlobalSearch();
     }
 
-    // Escape - Close modal
+    // Escape - Close all open modals
     if(e.key === 'Escape') {
-        closeAllModals();
-    }
-
-    // F5 - Refresh (prevent default reload)
-    if(e.key === 'F5') {
-        e.preventDefault();
-        refreshCurrentView();
+        document.querySelectorAll('.modal.active, .modal[style*="display: block"], .modal[style*="display:block"], .modal-overlay.active').forEach(function(m) {
+            m.classList.remove('active');
+            m.style.display = 'none';
+        });
     }
 }
 
@@ -451,7 +448,7 @@ function deselectAll() {
         document.querySelectorAll('.selected').forEach(el => {
             el.classList.remove('selected');
         });
-        updateSelectionUI();
+        if (typeof updateSelectionUI === 'function') updateSelectionUI();
     } catch (error) {
         Logger.error('[deselectAll] Error:', error.message || error);
     }
@@ -665,7 +662,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize keyboard shortcuts for modals
     document.addEventListener('keydown', (e) => {
         if(e.key === 'Escape') {
-            closeAllModals();
+            document.querySelectorAll('.modal.active, .modal[style*="display: block"], .modal[style*="display:block"], .modal-overlay.active').forEach(function(m) {
+                m.classList.remove('active');
+                m.style.display = 'none';
+            });
         }
     });
 
